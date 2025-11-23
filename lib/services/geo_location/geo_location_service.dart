@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/core/types/lat_lng.dart';
+import '/services/logging/logger_service.dart';
 
 /// IP 기반 국가 자동 감지 서비스
 ///
@@ -13,7 +14,10 @@ import '/core/types/lat_lng.dart';
 /// ```dart
 /// final service = CountryDetectionService();
 /// final result = await service.detectCountry();
-/// print('Detected: ${result.country} (${result.countryCode})');
+/// ServicesLogger.locationDetected(
+///   city: '',
+///   country: '${result.country} (${result.countryCode})',
+/// );
 /// ```
 ///
 /// **API 응답 예시**:
@@ -80,13 +84,22 @@ class CountryDetectionService {
       }
     } on http.ClientException catch (e) {
       // 네트워크 연결 에러
-      print('CountryDetectionService: Network error - $e');
+      ServicesLogger.serviceError(
+        service: 'CountryDetection',
+        error: 'Network error - $e',
+      );
     } on FormatException catch (e) {
       // JSON 파싱 에러
-      print('CountryDetectionService: JSON parsing error - $e');
+      ServicesLogger.serviceError(
+        service: 'CountryDetection',
+        error: 'JSON parsing error - $e',
+      );
     } catch (e) {
       // 기타 에러 (타임아웃 등)
-      print('CountryDetectionService: Unexpected error - $e');
+      ServicesLogger.serviceError(
+        service: 'CountryDetection',
+        error: 'Unexpected error - $e',
+      );
     }
 
     // Fallback: 기본값 (미국, 영어, 좌표 없음)

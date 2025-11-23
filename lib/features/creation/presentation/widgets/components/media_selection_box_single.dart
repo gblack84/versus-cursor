@@ -48,7 +48,8 @@ class MediaSelectionBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 동적 높이가 제공되면 사용, 없으면 기본값 사용
-    final double boxHeight = dynamicHeight ??
+    final double boxHeight =
+        dynamicHeight ??
         (isSelected
             ? (isHorizontal ? 350.0 : 250.0)
             : (isHorizontal ? 200.0 : 150.0));
@@ -58,8 +59,12 @@ class MediaSelectionBox extends StatelessWidget {
         : (isHorizontal ? 180.0 : 100.0);
 
     Widget content = Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(label == 'A' ? 5.0 : 2.5,
-          label == 'A' ? 2.5 : 0.0, label == 'B' ? 5.0 : 2.5, 2.5),
+      padding: EdgeInsetsDirectional.fromSTEB(
+        label == 'A' ? 5.0 : 2.5,
+        label == 'A' ? 2.5 : 0.0,
+        label == 'B' ? 5.0 : 2.5,
+        2.5,
+      ),
       child: InkWell(
         onTap: onTap,
         child: Container(
@@ -99,8 +104,7 @@ class MediaSelectionBox extends StatelessWidget {
                       ),
                     ),
                     errorWidget: (context, url, error) {
-                      print('이미지 로드 에러: $error');
-                      print('문제 URL: $url');
+                      // 이미지 로드 에러 - Flutter DevTools Network tab에서 확인 가능
                       return Icon(
                         Icons.error,
                         color: AppTheme.of(context).error,
@@ -132,21 +136,18 @@ class MediaSelectionBox extends StatelessWidget {
                   child: Text(
                     label,
                     style: AppTheme.of(context).bodyMedium.override(
-                          font: GoogleFonts.plusJakartaSans(
-                            fontWeight:
-                                AppTheme.of(context).bodyMedium.fontWeight,
-                            fontStyle:
-                                AppTheme.of(context).bodyMedium.fontStyle,
-                          ),
-                          fontSize: 50.0,
-                          letterSpacing: 0.0,
-                          color: (imageUrl != null && imageUrl!.isNotEmpty)
-                              ? Colors.white
-                              : AppTheme.of(context).primaryText,
-                          fontWeight:
-                              AppTheme.of(context).bodyMedium.fontWeight,
-                          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-                        ),
+                      font: GoogleFonts.plusJakartaSans(
+                        fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+                        fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+                      ),
+                      fontSize: 50.0,
+                      letterSpacing: 0.0,
+                      color: (imageUrl != null && imageUrl!.isNotEmpty)
+                          ? Colors.white
+                          : AppTheme.of(context).primaryText,
+                      fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+                      fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+                    ),
                   ),
                 ),
               ),
@@ -330,8 +331,9 @@ class MediaSelectionBox extends StatelessWidget {
                             // +이미지 아이콘
                             Container(
                               margin: EdgeInsets.only(
-                                  bottom: isHorizontal ? 0.0 : 8.0,
-                                  right: isHorizontal ? 8.0 : 0.0),
+                                bottom: isHorizontal ? 0.0 : 8.0,
+                                right: isHorizontal ? 8.0 : 0.0,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
@@ -385,11 +387,7 @@ class MediaSelectionBox extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.block,
-                            color: Colors.white,
-                            size: 48.0,
-                          ),
+                          Icon(Icons.block, color: Colors.white, size: 48.0),
                           SizedBox(height: 8.0),
                           Text(
                             '부적절한 콘텐츠',
@@ -409,7 +407,9 @@ class MediaSelectionBox extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(20.0),
                               ),
                               padding: EdgeInsets.symmetric(
-                                  horizontal: 24.0, vertical: 12.0),
+                                horizontal: 24.0,
+                                vertical: 12.0,
+                              ),
                             ),
                             child: Text(
                               '다시 선택',
@@ -457,11 +457,14 @@ class MediaSelectionBox extends StatelessWidget {
                   left: 12.0,
                   bottom: 12.0,
                   child: Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.0,
+                      vertical: 6.0,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getModerationStatusColor(moderationStatus!)
-                          .withValues(alpha: 0.9),
+                      color: _getModerationStatusColor(
+                        moderationStatus!,
+                      ).withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Row(
@@ -474,13 +477,17 @@ class MediaSelectionBox extends StatelessWidget {
                             height: 12.0,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.0,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           ),
                         if (moderationStatus == 'approved')
-                          Icon(Icons.check_circle,
-                              color: Colors.white, size: 16.0),
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 16.0,
+                          ),
                         if (moderationStatus == 'rejected')
                           Icon(Icons.error, color: Colors.white, size: 16.0),
                         SizedBox(width: 6.0),

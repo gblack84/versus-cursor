@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../domain/repositories/i_chat_repository.dart';
 import '../../domain/entities/chat.dart';
@@ -10,8 +9,9 @@ import '../../domain/entities/message.dart';
 import '../../domain/failures/chat_failure.dart';
 import '../../domain/entities/chat_extensions.dart';
 import '../../domain/entities/message_extensions.dart';
-import '/services/idempotency/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/logging/logger_service.dart';
+import '/services/batch/batch_service.dart';
 
 /// Implementation of chat repository with Clean Architecture v4.0 + 3-Layer Caching
 ///
@@ -34,16 +34,23 @@ import '/services/cache/unified_cache_service.dart';
 /// **Contract 패턴 폐기** (2025-11-09):
 /// - ChatContract 제거 → IChatRepository만 구현
 /// - Firebase-Centric v2.0: Feature 간 Firestore 직접 통신
+///
+/// **PHASE 7: BatchService Integration** (2025-11-22):
+/// - BatchService for atomic batch operations with auto-chunking (500+ operations)
+/// - Consistent with Notifications Feature pattern
+/// - Replaces direct Transaction usage in deleteChat()
 class ChatRepositoryImpl implements IChatRepository {
-  final UnifiedCacheService _cacheService = UnifiedCacheService.instance;
-  final IdempotencyService _idempotencyService;
+  final UnifiedCacheService _cacheService;
   final FirebaseFirestore _firestore;
+  final BatchService _batchService;
 
   ChatRepositoryImpl({
-    required IdempotencyService idempotencyService,
     required FirebaseFirestore firestore,
-  })  : _idempotencyService = idempotencyService,
-        _firestore = firestore;
+    required BatchService batchService,
+    UnifiedCacheService? cacheService,
+  })  : _firestore = firestore,
+        _batchService = batchService,
+        _cacheService = cacheService ?? UnifiedCacheService.instance;
 
   // PHASE 5: Direct Firestore query with Extension pattern
   @override
@@ -118,19 +125,11 @@ class ChatRepositoryImpl implements IChatRepository {
 
         yield right(chats); // ✅ Either 래핑: 성공
       }
-    } on FirebaseException catch (e, stackTrace) {
+    } on FirebaseException catch (e) {
       // Firebase 에러 처리 (네트워크, 권한 등)
-      if (kDebugMode) {
-        print('❌ [ChatRepository] Firestore error in queryChats: ${e.code} - ${e.message}');
-        print('Stack trace: $stackTrace');
-      }
       yield left(Unexpected('Firestore error: ${e.code} - ${e.message}'));
-    } on Exception catch (e, stackTrace) {
+    } on Exception catch (e) {
       // 일반 에러 처리 (Cache, Extension 등)
-      if (kDebugMode) {
-        print('❌ [ChatRepository] Error in queryChats: ${e.toString()}');
-        print('Stack trace: $stackTrace');
-      }
       yield left(Unexpected(e.toString()));
     }
   }
@@ -213,19 +212,11 @@ class ChatRepositoryImpl implements IChatRepository {
 
         yield right(messages); // ✅ Either 래핑: 성공
       }
-    } on FirebaseException catch (e, stackTrace) {
+    } on FirebaseException catch (e) {
       // Firebase 에러 처리 (네트워크, 권한 등)
-      if (kDebugMode) {
-        print('❌ [ChatRepository] Firestore error in queryMessagesByChatId: ${e.code} - ${e.message}');
-        print('Stack trace: $stackTrace');
-      }
       yield left(Unexpected('Firestore error: ${e.code} - ${e.message}'));
-    } on Exception catch (e, stackTrace) {
+    } on Exception catch (e) {
       // 일반 에러 처리 (Cache, Extension 등)
-      if (kDebugMode) {
-        print('❌ [ChatRepository] Error in queryMessagesByChatId: ${e.toString()}');
-        print('Stack trace: $stackTrace');
-      }
       yield left(Unexpected(e.toString()));
     }
   }
@@ -287,93 +278,76 @@ class ChatRepositoryImpl implements IChatRepository {
 
       final chat = ChatFirestore.fromFirestore(chatDoc);
       return right(chat);
-    } catch (e, stackTrace) {
-      debugPrint('Failed to get chat: $e');
-      debugPrint(stackTrace.toString());
+    } catch (e) {
+      ChatLogger.messageError(errorType: 'getChatFailed', error: e);
       return left(Unexpected(e.toString()));
     }
   }
 
-  /// Create chat with Idempotency (PHASE 5: Extension Pattern)
+  /// Create chat (Extension Pattern - No IdempotencyService)
   ///
-  /// **Idempotency**: eventId로 중복 생성 방지
+  /// **Idempotency**: chat.chatId provides natural idempotency via Firestore set()
   /// **Transaction**: 원자적 생성 보장
   ///
   /// **Returns**: Either<ChatFailure, Unit>
   @override
   Future<Either<ChatFailure, Unit>> createChat({
     required Chat chat,
-    required String eventId,
   }) async {
     try {
-      return await _idempotencyService.executeIdempotent<Either<ChatFailure, Unit>>(
-        entityType: 'chat_create',
-        entityId: chat.chatId,
-        userId: chat.participantIds.first,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Create chat document with Extension pattern
-          final chatRef = _firestore.collection('chats').doc(chat.chatId);
-          transaction.set(chatRef, chat.toFirestore());
+      // Direct Firestore transaction (no IdempotencyService wrapper)
+      // chat.chatId is deterministic → Firestore set() is idempotent
+      await _firestore.runTransaction((transaction) async {
+        // Create chat document with Extension pattern
+        final chatRef = _firestore.collection('chats').doc(chat.chatId);
+        transaction.set(chatRef, chat.toFirestore());
+      });
 
-          // Invalidate cache (outside transaction)
-          Future.microtask(() async {
-            for (final userId in chat.participantIds) {
-              await _cacheService.remove('chat_list_$userId');
-            }
-          });
+      // Invalidate cache (after successful transaction)
+      for (final userId in chat.participantIds) {
+        await _cacheService.remove('chat_list_$userId');
+      }
 
-          return right(unit);
-        },
-      );
-    } catch (e, stackTrace) {
-      debugPrint('Failed to create chat: $e');
-      debugPrint(stackTrace.toString());
+      return right(unit);
+    } catch (e) {
+      ChatLogger.messageError(errorType: 'createChatFailed', error: e);
       return left(const ChatCreationFailed());
     }
   }
 
-  /// Update chat with Idempotency (PHASE 5: Extension Pattern)
+  /// Update chat (Extension Pattern - No IdempotencyService)
   ///
-  /// **Idempotency**: eventId로 중복 업데이트 방지
+  /// **Idempotency**: chat.chatId provides natural idempotency via Firestore update()
   /// **Transaction**: 원자적 업데이트 보장
   ///
   /// **Returns**: Either<ChatFailure, Unit>
   @override
   Future<Either<ChatFailure, Unit>> updateChat({
     required Chat chat,
-    required String eventId,
   }) async {
     try {
-      return await _idempotencyService.executeIdempotent<Either<ChatFailure, Unit>>(
-        entityType: 'chat_update',
-        entityId: chat.chatId,
-        userId: chat.participantIds.first,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Update chat document with Extension pattern
-          final chatRef = _firestore.collection('chats').doc(chat.chatId);
-          transaction.update(chatRef, chat.toFirestore());
+      // Direct Firestore transaction (no IdempotencyService wrapper)
+      // chat.chatId is deterministic → Firestore update() is idempotent
+      await _firestore.runTransaction((transaction) async {
+        // Update chat document with Extension pattern
+        final chatRef = _firestore.collection('chats').doc(chat.chatId);
+        transaction.update(chatRef, chat.toFirestore());
+      });
 
-          // Invalidate cache (outside transaction)
-          Future.microtask(() async {
-            for (final userId in chat.participantIds) {
-              await _cacheService.remove('chat_list_$userId');
-            }
-            await _cacheService.remove('chat_${chat.chatId}');
-          });
+      // Invalidate cache (after successful transaction)
+      for (final userId in chat.participantIds) {
+        await _cacheService.remove('chat_list_$userId');
+      }
+      await _cacheService.remove('chat_${chat.chatId}');
 
-          return right(unit);
-        },
-      );
-    } catch (e, stackTrace) {
-      debugPrint('Failed to update chat: $e');
-      debugPrint(stackTrace.toString());
+      return right(unit);
+    } catch (e) {
+      ChatLogger.messageError(errorType: 'updateChatFailed', error: e);
       return left(Unexpected(e.toString()));
     }
   }
 
-  /// Delete chat with complete subcollection cleanup (PHASE 4)
+  /// Delete chat with complete subcollection cleanup (Extension Pattern - No IdempotencyService)
   ///
   /// **Transaction-based Cleanup**:
   /// - messages 서브컬렉션 완전 삭제
@@ -381,13 +355,26 @@ class ChatRepositoryImpl implements IChatRepository {
   /// - chat 문서 삭제
   /// - 원자성 보장 (Transaction)
   ///
-  /// **Idempotency**: eventId로 중복 삭제 방지
+  /// **Idempotency**: chatId is deterministic → Firestore delete() is idempotent
   ///
   /// **Returns**: Either<ChatFailure, Unit>
   @override
+  /// Delete chat with BatchService pattern (PHASE 7: BatchService Integration)
+  ///
+  /// **BEFORE (Transaction)**: 500개 제한 위험
+  /// - Transaction 내부에서 서브컬렉션 반복문 삭제
+  /// - messages가 500개 초과 시 Transaction 실패
+  ///
+  /// **AFTER (BatchService)**: Auto-chunking 지원
+  /// - Query로 문서들 가져오기
+  /// - BatchOperation 리스트 생성
+  /// - BatchService.executeBatch() 자동 500개씩 chunk 처리
+  ///
+  /// **Consistent with**: Notifications Feature pattern
+  ///
+  /// **Returns**: Either<ChatFailure, Unit>
   Future<Either<ChatFailure, Unit>> deleteChat({
     required String chatId,
-    required String eventId,
   }) async {
     try {
       // 1. Get chat to access participantIds for cache invalidation
@@ -401,58 +388,59 @@ class ChatRepositoryImpl implements IChatRepository {
         return left(const ChatNotFound());
       }
 
-      // 2. Execute idempotent transaction
-      return await _idempotencyService.executeIdempotent<Either<ChatFailure, Unit>>(
-        entityType: 'chat_delete',
-        entityId: chatId,
-        userId: chat.participantIds.first,
-        eventId: eventId,
-        operation: (transaction) async {
-          // 2-1. Delete messages subcollection
-          final messagesSnapshot = await _firestore
-              .collection('chats')
-              .doc(chatId)
-              .collection('messages')
-              .get();
+      // 2. Query messages subcollection
+      final messagesSnapshot = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .get();
 
-          for (final doc in messagesSnapshot.docs) {
-            transaction.delete(doc.reference);
-          }
+      // 3. Query participants subcollection (if exists)
+      QuerySnapshot? participantsSnapshot;
+      try {
+        participantsSnapshot = await _firestore
+            .collection('chats')
+            .doc(chatId)
+            .collection('participants')
+            .get();
+      } catch (_) {
+        // participants subcollection may not exist - continue without it
+      }
 
-          // 2-2. Delete participants subcollection (if exists)
-          try {
-            final participantsSnapshot = await _firestore
-                .collection('chats')
-                .doc(chatId)
-                .collection('participants')
-                .get();
+      // 4. Build batch operations
+      final operations = <BatchOperation>[];
 
-            for (final doc in participantsSnapshot.docs) {
-              transaction.delete(doc.reference);
-            }
-          } catch (_) {
-            // participants subcollection may not exist, continue
-          }
+      // Add messages deletes
+      for (final doc in messagesSnapshot.docs) {
+        operations.add(BatchOperation.delete(doc.reference));
+      }
 
-          // 2-3. Delete chat document
-          transaction.delete(_firestore.collection('chats').doc(chatId));
+      // Add participants deletes
+      if (participantsSnapshot != null) {
+        for (final doc in participantsSnapshot.docs) {
+          operations.add(BatchOperation.delete(doc.reference));
+        }
+      }
 
-          // 2-4. Invalidate cache (outside transaction to avoid blocking)
-          Future.microtask(() async {
-            for (final userId in chat.participantIds) {
-              // CASCADE 무효화: 채팅 목록 + 메시지 + 단일 채팅 캐시
-              await _cacheService.remove('chat_list_$userId');
-              await _cacheService.remove('chat_messages_$chatId');
-              await _cacheService.remove('chat_$chatId');
-            }
-          });
+      // Add chat document delete
+      operations.add(BatchOperation.delete(
+        _firestore.collection('chats').doc(chatId),
+      ));
 
-          return right(unit);
-        },
-      );
-    } catch (e, stackTrace) {
-      debugPrint('Failed to delete chat: $e');
-      debugPrint(stackTrace.toString());
+      // 5. Execute via BatchService (auto-chunks at 500 operations)
+      await _batchService.executeBatch(operations: operations);
+
+      // 6. Invalidate cache (after successful batch)
+      for (final userId in chat.participantIds) {
+        // CASCADE 무효화: 채팅 목록 + 메시지 + 단일 채팅 캐시
+        await _cacheService.remove('chat_list_$userId');
+        await _cacheService.remove('chat_messages_$chatId');
+        await _cacheService.remove('chat_$chatId');
+      }
+
+      return right(unit);
+    } catch (e) {
+      ChatLogger.messageError(errorType: 'deleteChatFailed', error: e);
       return left(Unexpected(e.toString()));
     }
   }
@@ -462,14 +450,13 @@ class ChatRepositoryImpl implements IChatRepository {
   /// Send message with Transaction and Idempotency (PHASE 5: Extension Pattern)
   ///
   /// **Transaction**: 메시지 생성 + lastMessageAt 업데이트 원자적 처리
-  /// **Idempotency**: eventId로 중복 전송 방지
+  /// **Idempotency**: message.id로 중복 전송 방지 (Firestore set() 멱등성)
   ///
   /// **Returns**: Either<ChatFailure, Unit>
   @override
   Future<Either<ChatFailure, Unit>> sendMessage({
     required String chatId,
     required Message message,
-    required String eventId,
   }) async {
     try {
       // 1. Get chat for participantIds (for cache invalidation)
@@ -483,49 +470,42 @@ class ChatRepositoryImpl implements IChatRepository {
         return left(const ChatNotFound());
       }
 
-      // 2. Execute idempotent transaction
-      return await _idempotencyService.executeIdempotent<Either<ChatFailure, Unit>>(
-        entityType: 'message_send',
-        entityId: message.id,
-        userId: message.senderId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // 2-1. Create message document with Extension pattern
-          final messageRef = _firestore
-              .collection('chats')
-              .doc(chatId)
-              .collection('messages')
-              .doc(message.id);
+      // 2. Execute direct Firestore transaction
+      // message.id is client-generated UUID → deterministic document ID
+      // Firestore set() is idempotent: retry overwrites, no duplicates
+      await _firestore.runTransaction((transaction) async {
+        // 2-1. Create message document with Extension pattern
+        final messageRef = _firestore
+            .collection('chats')
+            .doc(chatId)
+            .collection('messages')
+            .doc(message.id);
 
-          transaction.set(messageRef, message.toFirestore());
+        transaction.set(messageRef, message.toFirestore());
 
-          // 2-2. Update chat's lastMessageAt
-          final chatRef = _firestore.collection('chats').doc(chatId);
-          transaction.update(chatRef, {
-            'lastMessageAt': FieldValue.serverTimestamp(),
-          });
+        // 2-2. Update chat's lastMessageAt
+        final chatRef = _firestore.collection('chats').doc(chatId);
+        transaction.update(chatRef, {
+          'lastMessageAt': FieldValue.serverTimestamp(),
+        });
+      });
 
-          // 2-3. Invalidate caches (outside transaction)
-          Future.microtask(() async {
-            await _cacheService.remove('chat_messages_$chatId');
-            for (final userId in chat.participantIds) {
-              await _cacheService.remove('chat_list_$userId');
-            }
-          });
+      // 2-3. Invalidate caches (after successful transaction)
+      await _cacheService.remove('chat_messages_$chatId');
+      for (final userId in chat.participantIds) {
+        await _cacheService.remove('chat_list_$userId');
+      }
 
-          return right(unit);
-        },
-      );
-    } catch (e, stackTrace) {
-      debugPrint('Failed to send message: $e');
-      debugPrint(stackTrace.toString());
+      return right(unit);
+    } catch (e) {
+      ChatLogger.messageError(errorType: 'sendMessageFailed', error: e);
       return left(const MessageSendFailed());
     }
   }
 
-  /// Delete message with Idempotency (PHASE 4)
+  /// Delete message (Extension Pattern - No IdempotencyService)
   ///
-  /// **Idempotency**: eventId로 중복 삭제 방지
+  /// **Idempotency**: messageId is deterministic → Firestore delete() is idempotent
   /// **Transaction**: 원자적 삭제 보장
   ///
   /// **Returns**: Either<ChatFailure, Unit>
@@ -533,40 +513,27 @@ class ChatRepositoryImpl implements IChatRepository {
   Future<Either<ChatFailure, Unit>> deleteMessage({
     required String chatId,
     required String messageId,
-    required String eventId,
   }) async {
     try {
-      // Get current user for idempotency userId
-      // Note: In a real scenario, we'd get this from auth service
-      // For now, we'll use a placeholder
-      const userId = 'current_user'; // TODO: Get from AuthService
+      // Direct Firestore transaction (no IdempotencyService wrapper)
+      // messageId is deterministic → Firestore delete() is idempotent
+      await _firestore.runTransaction((transaction) async {
+        // Delete message document
+        final messageRef = _firestore
+            .collection('chats')
+            .doc(chatId)
+            .collection('messages')
+            .doc(messageId);
 
-      return await _idempotencyService.executeIdempotent<Either<ChatFailure, Unit>>(
-        entityType: 'message_delete',
-        entityId: messageId,
-        userId: userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Delete message document
-          final messageRef = _firestore
-              .collection('chats')
-              .doc(chatId)
-              .collection('messages')
-              .doc(messageId);
+        transaction.delete(messageRef);
+      });
 
-          transaction.delete(messageRef);
+      // Invalidate cache (after successful transaction)
+      await _cacheService.remove('chat_messages_$chatId');
 
-          // Invalidate cache (outside transaction)
-          Future.microtask(() async {
-            await _cacheService.remove('chat_messages_$chatId');
-          });
-
-          return right(unit);
-        },
-      );
-    } catch (e, stackTrace) {
-      debugPrint('Failed to delete message: $e');
-      debugPrint(stackTrace.toString());
+      return right(unit);
+    } catch (e) {
+      ChatLogger.messageError(errorType: 'deleteMessageFailed', error: e);
       return left(Unexpected(e.toString()));
     }
   }
@@ -612,9 +579,8 @@ class ChatRepositoryImpl implements IChatRepository {
         final users = snapshot.docs.map((doc) => doc.data()).toList();
         yield right(users);
       }
-    } catch (e, stackTrace) {
-      debugPrint('Failed to get recommended friends: $e');
-      debugPrint(stackTrace.toString());
+    } catch (e) {
+      ChatLogger.loadError(error: e);
       yield left(const FriendLoadFailed());
     }
   }
@@ -640,9 +606,8 @@ class ChatRepositoryImpl implements IChatRepository {
         final users = snapshot.docs.map((doc) => doc.data()).toList();
         yield right(users);
       }
-    } catch (e, stackTrace) {
-      debugPrint('Failed to search users: $e');
-      debugPrint(stackTrace.toString());
+    } catch (e) {
+      ChatLogger.loadError(error: e);
       yield left(const SearchFailed());
     }
   }
@@ -655,7 +620,6 @@ class ChatRepositoryImpl implements IChatRepository {
   Future<Either<ChatFailure, Unit>> sendFriendRequest({
     required String fromUserId,
     required String toUserId,
-    required String eventId,
   }) async {
     // TODO: Direct Firestore 구현 필요 - friend_requests 컬렉션 생성 및 트랜잭션 처리
     return left(const Unexpected('sendFriendRequest not yet implemented'));
@@ -669,7 +633,6 @@ class ChatRepositoryImpl implements IChatRepository {
   Future<Either<ChatFailure, Unit>> followUser({
     required String userId,
     required String targetUserId,
-    required String eventId,
   }) async {
     // TODO: Direct Firestore 구현 필요 - users/{userId}/following 서브컬렉션 업데이트
     return left(const Unexpected('followUser not yet implemented'));
@@ -683,7 +646,6 @@ class ChatRepositoryImpl implements IChatRepository {
   Future<Either<ChatFailure, Unit>> unfollowUser({
     required String userId,
     required String targetUserId,
-    required String eventId,
   }) async {
     // TODO: Direct Firestore 구현 필요 - users/{userId}/following 서브컬렉션에서 제거
     return left(const Unexpected('unfollowUser not yet implemented'));
@@ -706,9 +668,8 @@ class ChatRepositoryImpl implements IChatRepository {
       final data = userDoc.data();
       final following = data?['following'] as List<dynamic>? ?? [];
       return right(following.contains(targetUserId));
-    } catch (e, stackTrace) {
-      debugPrint('Failed to check following status: $e');
-      debugPrint(stackTrace.toString());
+    } catch (e) {
+      ChatLogger.loadError(error: e);
       return left(Unexpected(e.toString()));
     }
   }

@@ -33,6 +33,12 @@ abstract class IVotingDialogRepository {
   /// - Atomic update to prevent duplicate votes
   /// - Updates posts document and votes subcollection
   /// - Optionally updates chat messages if context provided
+  /// - Uses deterministic vote ID (userId) for natural idempotency
+  ///
+  /// **Idempotency:**
+  /// - Vote document ID: votes/{userId} (deterministic)
+  /// - Firestore set() overwrites on retry (no duplicates)
+  /// - No additional idempotency service needed
   ///
   /// **Error Handling:**
   /// - VotingFailure.alreadyVoted: User already voted on this post
@@ -44,7 +50,6 @@ abstract class IVotingDialogRepository {
     required String voteOption,
     String? messageId,
     String? chatId,
-    String? eventId, // Idempotency를 위한 eventId (optional)
   });
 
   /// Remove a vote from a post

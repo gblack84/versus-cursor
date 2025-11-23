@@ -16,17 +16,16 @@ abstract class IInterestsRepository {
   /// **Parameters**:
   /// - `userId`: 사용자 ID
   /// - `interests`: 업데이트할 관심사 목록
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(unit)`: 업데이트 성공
   /// - `Left(ProfileFailure)`: 업데이트 실패
-  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  ///
+  /// **Natural Idempotency**: Deterministic userId provides natural idempotency
   Future<Either<ProfileFailure, Unit>> updateUserInterests(
     String userId,
-    List<Interest> interests, {
-    String? eventId,
-  });
+    List<Interest> interests,
+  );
 
   /// 관심사 개별 추가 (arrayUnion)
   ///

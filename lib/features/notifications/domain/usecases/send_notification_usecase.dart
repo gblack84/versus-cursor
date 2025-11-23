@@ -1,5 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart';
+
+import '/services/logging/dev_logger.dart';
 import '../entities/notification.dart';
 import '../repositories/i_notification_repository.dart';
 import '../failures/notification_failure.dart';
@@ -19,14 +21,30 @@ class SendNotificationUseCase {
 
   Future<Either<NotificationFailure, List<String>>> call(
       SendNotificationParams params) async {
+    DevLogger.params({
+      'notificationType': params.notification.runtimeType.toString(),
+      'targetUserCount': params.targetUserIds.length,
+      'targetAudience': params.targetAudience ?? 'N/A',
+    }, tag: 'SendNotification');
+
     // 비즈니스 규칙: 타겟 사용자 검증
     if (params.targetUserIds.isEmpty) {
+      DevLogger.validation(
+        field: 'targetUserIds',
+        reason: 'Target user list cannot be empty',
+        tag: 'SendNotification',
+      );
       return left(const NotificationFailure.invalidNotificationData());
     }
 
     // 비즈니스 규칙: 최대 타겟 사용자 수 제한
     const maxTargets = 100;
     if (params.targetUserIds.length > maxTargets) {
+      DevLogger.validation(
+        field: 'targetUserIds',
+        reason: 'Target user count exceeds maximum ($maxTargets)',
+        tag: 'SendNotification',
+      );
       return left(const NotificationFailure.invalidNotificationData());
     }
 
@@ -34,6 +52,10 @@ class SendNotificationUseCase {
     // Note: VoteNotification is now handled by Voting Feature
 
     // 일반 알림 처리 - 각 사용자별로 생성
+    DevLogger.checkpoint(
+      'Creating notifications for ${params.targetUserIds.length} users',
+      tag: 'SendNotification',
+    );
     final createdIds = <String>[];
 
     for (final userId in params.targetUserIds) {
@@ -44,15 +66,23 @@ class SendNotificationUseCase {
       );
 
       // Repository 호출 - Either 반환 (eventId 생성)
+      final eventId = const Uuid().v4();
       final result = await _repository.createNotification(
         userNotification,
-        const Uuid().v4(), // UUID 생성
+        eventId, // UUID 생성
       );
 
       // fold()로 Either 처리
       final idOrError = result.fold(
         // Left: 생성 실패 시 전체 실패
-        (failure) => left<NotificationFailure, String>(failure),
+        (failure) {
+          DevLogger.error(
+            'Failed to create notification for user $userId (eventId: $eventId)',
+            error: failure,
+            tag: 'SendNotification',
+          );
+          return left<NotificationFailure, String>(failure);
+        },
         // Right: 생성 성공 시 ID 반환
         (id) => right<NotificationFailure, String>(id),
       );
@@ -71,6 +101,12 @@ class SendNotificationUseCase {
         (id) => createdIds.add(id),
       );
     }
+
+    DevLogger.result(
+      isSuccess: true,
+      data: '${createdIds.length}/${params.targetUserIds.length} notifications created',
+      tag: 'SendNotification',
+    );
 
     return right(createdIds);
   }

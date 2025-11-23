@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import '../repositories/i_search_repository.dart';
 import '../failures/search_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// Use case for updating rankings
 ///
@@ -19,6 +20,24 @@ class UpdateRankingsUseCase {
   /// - Left: SearchFailure when error occurs
   /// - Right: void when successful
   Future<Either<SearchFailure, void>> call() async {
-    return repository.updateRankings();
+    DevLogger.params({}, tag: 'UpdateRankings');  // NoParams pattern
+
+    DevLogger.checkpoint('Calling repository.updateRankings', tag: 'UpdateRankings');
+    final result = await repository.updateRankings();
+
+    result.fold(
+      (failure) => DevLogger.result(
+        isSuccess: false,
+        data: failure.toString(),
+        tag: 'UpdateRankings',
+      ),
+      (_) => DevLogger.result(
+        isSuccess: true,
+        data: {'updated': true},
+        tag: 'UpdateRankings',
+      ),
+    );
+
+    return result;
   }
 }

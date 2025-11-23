@@ -12,16 +12,17 @@
 
 import 'package:get_it/get_it.dart';
 
+// ===== Services Layer - Global Services =====
+import '/services/batch/batch_service.dart';
+
 // ===== Services Layer - Cache Services (Phase 3) =====
 import '/services/cache/unified_cache_service.dart';
 import '/services/cache/creation_cache_service.dart';
 
-// ===== Core Services - Idempotency (Phase 4) =====
-import '/services/idempotency/idempotency_service.dart';
-
 // ===== Moderation Services (Text + Image Moderation) =====
-import '/services/moderation/perspective_api_service.dart';
-import '/services/moderation/image_moderation_service.dart'; // ✅ Image Moderation Service
+// Moderation service implementations are registered globally in moderation_di_module.dart
+// We only import the interfaces which are used for type annotations in getIt<T>()
+import '/services/moderation/perspective_api_service.dart'; // For IPerspectiveApiService
 
 // ===== Data Layer - DataSource Implementations =====
 // ❌ Phase 5: Removed firebase_post_creation_datasource.dart (Extension Pattern replaces DataSource)
@@ -56,26 +57,19 @@ import '../domain/usecases/moderate_content_usecase.dart';
 import '../domain/usecases/validation/validate_post_usecase.dart';
 import '../domain/usecases/audience/manage_target_audience_usecase.dart';
 
-
 /// Register all Creation feature dependencies
 /// Call this function from main setupDependencyInjection()
 ///
 /// **Phase 3**: UnifiedCacheService Integration
 /// - CreationCacheService Singleton 등록
 /// - PostCreationRepositoryV2Impl에 캐시 주입
-///
-/// **Phase 4**: Idempotency Pattern Integration
-/// - IdempotencyService Singleton 등록
-/// - PostCreationRepositoryV2Impl에 IdempotencyService 주입
 void registerCreationModule(GetIt getIt) {
   // ===== Phase 3: Cache Services Registration =====
   _registerCacheServices(getIt);
 
-  // ===== Phase 4: Idempotency Service Registration =====
-  _registerIdempotencyService(getIt);
-
-  // ===== Moderation Services Registration (Text Moderation) =====
-  _registerModerationServices(getIt);
+  // ===== Moderation Services Registration =====
+  // Moderation services are registered globally in registerModerationModule()
+  // (called before registerCreationModule in app/di.dart:76)
 
   // ===== DataSources Registration =====
   _registerDataSources(getIt);
@@ -105,62 +99,7 @@ void _registerCacheServices(GetIt getIt) {
   //
   // **Lifecycle**: Singleton (앱 전체에서 공유)
   getIt.registerLazySingleton<CreationCacheService>(
-    () => CreationCacheService(
-      cacheService: getIt<UnifiedCacheService>(),
-    ),
-  );
-}
-
-/// Register Idempotency Service (Phase 4)
-///
-/// **Responsibilities**:
-/// - Prevent duplicate post creation during network retries
-/// - Prevent duplicate media upload
-/// - Prevent duplicate draft save operations
-///
-/// **Lifecycle**: Singleton (앱 전체에서 공유, 재사용 가능)
-void _registerIdempotencyService(GetIt getIt) {
-  getIt.registerLazySingleton<IdempotencyService>(
-    () => IdempotencyService(),
-  );
-}
-
-/// Register Moderation Services (Text + Image Moderation)
-///
-/// **Responsibilities**:
-/// - Text: AI-based text toxicity detection (Google Perspective API)
-/// - Image: AI-based image content moderation (Cloud Vision API)
-///
-/// **Lifecycle**: Singleton (앱 전체에서 공유, API 키 재사용)
-/// **Pattern**: Port-Adapter (IPerspectiveApiService → PerspectiveApiService)
-///                            (IImageModerationService → ImageModerationService)
-void _registerModerationServices(GetIt getIt) {
-  // ===== Text Moderation Service =====
-  // Perspective API Service Singleton
-  //
-  // **Responsibilities**:
-  // - Text toxicity analysis (TOXICITY, PROFANITY, THREAT, INSULT scores)
-  // - Korean/English language support
-  // - Rate limiting handling (100ms between calls)
-  //
-  // **Environment**: Requires PERSPECTIVE_API_KEY in .env file
-  // **Lifecycle**: Singleton (single instance with API key from EnvironmentConfig)
-  getIt.registerLazySingleton<IPerspectiveApiService>(
-    () => PerspectiveApiService.fromEnvironment(),
-  );
-
-  // ===== Image Moderation Service ===== (NEW)
-  // Image Moderation Service Singleton
-  //
-  // **Responsibilities**:
-  // - Image content moderation via Cloud Vision API
-  // - Inappropriate content detection (violence, adult, etc.)
-  // - Cloud Function integration (checkImageContent)
-  //
-  // **Lifecycle**: Singleton (single instance with Firebase Functions)
-  // **Pattern**: Port-Adapter (IImageModerationService → ImageModerationService)
-  getIt.registerLazySingleton<IImageModerationService>(
-    () => ImageModerationService(),
+    () => CreationCacheService(cacheService: getIt<UnifiedCacheService>()),
   );
 }
 
@@ -208,9 +147,11 @@ void _registerServices(GetIt getIt) {
 /// **Phase 6: Metrics Repository Migration** (2025-11-06)
 /// - IContentMetricsRepository moved to Post Feature
 void _registerRepositories(GetIt getIt) {
-  // 1. Content Moderation Repository
+  // 1. Content Moderation Repository (Phase 6: BatchService Integration)
   getIt.registerLazySingleton<IContentModerationRepository>(
-    () => ContentModerationRepositoryImpl(),
+    () => ContentModerationRepositoryImpl(
+      batchService: getIt<BatchService>(),
+    ),
   );
 
   // 2. Content Visibility Repository
@@ -225,13 +166,12 @@ void _registerRepositories(GetIt getIt) {
     ),
   );
 
-  // 4. Post Creation Repository V2 (Phase 3 & 4 & 5: Cache + Idempotency + Extension)
+  // 4. Post Creation Repository V2 (Phase 3 & 5: Cache + Extension)
   getIt.registerLazySingleton<IPostCreationRepositoryV2>(
     () => PostCreationRepositoryV2Impl(
       // ❌ Phase 5: dataSource removed - Direct Firestore via Extension Pattern
       imageProcessingService: getIt<IImageProcessingService>(),
       cacheService: getIt<CreationCacheService>(), // ✅ Phase 3: Cache Injection
-      idempotencyService: getIt<IdempotencyService>(), // ✅ Phase 4: Idempotency Injection
     ),
   );
 }
@@ -263,8 +203,5 @@ void _registerUseCases(GetIt getIt) {
   );
 
   // Validate Post UseCase
-  getIt.registerFactory(
-    () => ValidatePostUseCase(),
-  );
+  getIt.registerFactory(() => ValidatePostUseCase());
 }
-

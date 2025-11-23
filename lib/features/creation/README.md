@@ -84,6 +84,7 @@ flutter analyze
 - [아키텍처 개요](#-아키텍처-개요)
 - [핵심 기능](#-핵심-기능)
 - [BOUNDARIES - Clean Architecture 3-Layer 경계](#️-boundaries---clean-architecture-3-layer-경계)
+- [로깅 전략](#-로깅-전략)
 - [빠른 참조 가이드](#-빠른-참조-가이드)
 - [레이어별 README 안내](#-레이어별-readme-안내)
 - [주요 파일 위치](#-주요-파일-위치)
@@ -610,6 +611,202 @@ grep -r "import.*firebase" lib/features/creation/domain/
 - **Creation Domain Layer**: `domain/README.md` - UseCase, Entity, Failure
 - **Creation Data Layer**: `data/README.md` - Repository 구현, Extension
 - **Creation Presentation Layer**: `presentation/README.md` - Provider, Widget
+
+---
+
+## 📝 로깅 전략
+
+### 개요
+
+Creation Feature는 **Layer별 로깅 책임 분리** 원칙을 따릅니다.
+
+| Layer | 로깅 여부 | 근거 | 예시 |
+|-------|----------|------|------|
+| **Domain** | ❌ 불필요 | Pure Dart, 프레임워크 독립 | UseCase는 순수 비즈니스 로직만 |
+| **Data** | ✅ 필수 | Firestore 쓰기, 캐시, AI API 호출 | Repository에서 모든 외부 작업 로깅 |
+| **Presentation** | ⚠️ 선택적 | UI 상태 관리 중심 | Notifier는 비즈니스 로직만 로깅 |
+
+---
+
+### Layer별 세부 전략
+
+#### Domain Layer: ❌ 로깅 불필요
+
+**원칙**: Pure Dart만 사용하며 프레임워크에 독립적이어야 함
+
+```dart
+// ❌ BAD: UseCase에서 로깅
+class CreatePostUseCase {
+  Future<Either<CreationFailure, PostCreation>> execute({
+    required String userId,
+    required String title,
+  }) {
+    Logger.debug('Creating post: $title');  // ❌ 불필요
+    return _repository.createPost(...);
+  }
+}
+
+// ✅ GOOD: UseCase는 로깅 없음
+class CreatePostUseCase {
+  Future<Either<CreationFailure, PostCreation>> execute({
+    required String userId,
+    required String title,
+  }) {
+    return _repository.createPost(...);  // ✅ 깔끔
+  }
+}
+```
+
+**근거**:
+- UseCase는 순수 비즈니스 로직만 담당
+- 로깅은 Repository (Data Layer)에서 처리
+- Entity, Failure는 데이터 구조만 정의
+
+---
+
+#### Data Layer: ✅ Logger 사용 (필수)
+
+**로깅이 필요한 경우**:
+- ✅ Firestore 쓰기 작업 (create, update, delete)
+- ✅ 캐시 저장/로딩 실패
+- ✅ AI/외부 API 호출
+- ✅ Idempotency 위반
+- ✅ 네트워크 에러
+
+**Repository 로깅 예시**:
+```dart
+// PostCreationRepositoryV2Impl.dart
+class PostCreationRepositoryV2Impl implements IPostCreationRepository {
+  Future<Either<CreationFailure, void>> saveDraftPost(
+    String userId,
+    PostCreation draft, {
+    required String eventId,
+  }) async {
+    try {
+      // 캐시 저장 (L1, L2)
+      await _cacheService.setDraftPost(userId, draft);
+
+      // Firestore 저장 (L3)
+      await _firestore.collection('drafts').doc(userId).set(
+        draft.toFirestore(),
+      );
+
+      CreationLogger.draftSaved(userId: userId, eventId: eventId);  // ✅ 로깅
+      return right(unit);
+    } catch (e) {
+      CreationLogger.draftSaveFailed(error: e);  // ✅ 에러 로깅
+      return left(CreationFailure.firestoreWriteFailed(e.toString()));
+    }
+  }
+}
+```
+
+**도메인 Logger 클래스**: `lib/services/logging/logger_service.dart`
+- `CreationLogger`: Draft 저장, 미디어 업로드, AI 검열
+- `TargetAudienceLogger`: 타겟 오디언스 선택, AI 추천
+- `MediaLogger`: 이미지/비디오 처리, Firebase Storage 업로드
+
+---
+
+#### Presentation Layer: ⚠️ 선택적 로깅
+
+**로깅이 필요한 경우**:
+- ✅ Draft 자동 로드/복원 (비즈니스 로직)
+- ❌ UI 상태 변경 (updateTitle, form inputs 등)
+- ❌ Provider 에러 처리 (Either 패턴으로 자동 처리)
+
+**Notifier 로깅 예시** (create_post_notifier.dart):
+
+```dart
+// ✅ GOOD: 비즈니스 로직만 로깅
+@riverpod
+class CreatePost extends _$CreatePost {
+  Future<void> _loadDraftAsync() async {
+    try {
+      final draft = await repository.getDraftPost(currentUserId);
+      if (draft != null) {
+        state = CreatePostState(...);
+        Logger.debug('Draft restored from cache',
+          tag: 'CreatePostNotifier');  // ✅ 비즈니스 로직 로깅
+      }
+    } catch (e) {
+      Logger.warning('Draft load failed',
+        tag: 'CreatePostNotifier');  // ✅ 에러 로깅
+    }
+  }
+
+  // Draft 저장 로직 - Repository로 위임
+  Future<void> saveDraft() async {
+    try {
+      // Repository가 저장 + 로깅 모두 담당
+      await repository.saveDraftPost(currentUserId, draft, eventId: eventId);
+      // ✅ 로깅 없음 - Repository에서 처리
+    } catch (e) {
+      // Repository logs save failures automatically
+      // ✅ 로깅 없음 - Repository에서 처리
+    }
+  }
+
+  // ❌ BAD: UI 상태 업데이트는 로깅 불필요
+  void updateTitle(String value) {
+    state = state.copyWith(
+      formData: state.formData.copyWith(title: value),
+    );
+    // ❌ Logger.debug('Title updated: $value');  // 불필요
+    saveDraft();  // ✅ Draft 저장은 Repository로 위임
+  }
+}
+```
+
+**Provider는 로깅 불필요**:
+```dart
+// ✅ GOOD: Provider는 Either 패턴만 사용
+@riverpod
+Stream<List<MediaInfo>> mediaUploadQueue(Ref ref) async* {
+  final repository = ref.watch(mediaRepositoryProvider);
+
+  await for (final either in repository.watchUploadQueue()) {
+    yield* either.fold(
+      (failure) => Stream<List<MediaInfo>>.error(failure),  // ✅ Either 패턴
+      (queue) async* { yield queue; },
+    );
+  }
+}
+
+// Widget에서 AsyncValue.when()으로 자동 에러 처리
+final asyncQueue = ref.watch(mediaUploadQueueProvider);
+asyncQueue.when(
+  data: (queue) => UploadQueueWidget(queue: queue),
+  error: (error, stack) => ErrorWidget(error: error),  // ✅ 자동 에러 UI
+  loading: () => CircularProgressIndicator(),
+);
+```
+
+---
+
+### 설계 철학
+
+**Clean Architecture 원칙**:
+1. **Domain Layer**: 로깅 없음 (Pure Dart)
+2. **Data Layer**: 모든 외부 작업 로깅 (Firestore, Cache, AI API)
+3. **Presentation Layer**:
+   - Notifier: 비즈니스 로직만 로깅 (Draft 로드/복원)
+   - Provider: Either 패턴으로 에러 전파
+   - Widget: AsyncValue.when()으로 UI 렌더링
+
+**Single Responsibility**:
+- **Repository**: 데이터 영속성 + 로깅 모두 관리
+- **Notifier**: UI 상태 관리 + 최소한의 비즈니스 로직 로깅
+- **UseCase**: 순수 비즈니스 로직만 담당
+
+---
+
+### 참고 문서
+
+- **로깅 전략 가이드**: `/lib/services/logging/PRINT_TO_LOGGER_MIGRATION.md`
+- **Logger 서비스**: `/lib/services/logging/logger_service.dart`
+- **Data Layer 로깅 예시**: `data/repositories/post_creation_repository_v2_impl.dart`
+- **Presentation Layer 로깅 예시**: `presentation/providers/create_post_notifier.dart`
 
 ---
 

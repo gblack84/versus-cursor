@@ -1,28 +1,26 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:uuid/uuid.dart';
+
+import '/services/logging/dev_logger.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../failures/post_failure.dart';
 
 /// UseCase for updating an existing post
 ///
-/// **Phase 4: Idempotency Integration**
-/// - Generates UUID eventId for duplicate prevention
+/// **Phase 4: Natural Idempotency via Deterministic IDs**
+/// - Uses deterministic postId for natural idempotency
 /// - Validates update data before modification
 /// - Returns Either<PostFailure, Unit> for type-safe error handling
 class UpdatePostUseCase {
   final IPostDisplayRepositoryV2 _postRepository;
-  final Uuid _uuid;
 
   UpdatePostUseCase({
     required IPostDisplayRepositoryV2 postRepository,
-    Uuid? uuid,
-  })  : _postRepository = postRepository,
-        _uuid = uuid ?? const Uuid();
+  }) : _postRepository = postRepository;
 
   /// Execute the use case to update a post
   ///
   /// **Parameters**:
-  /// - [postId] - ID of post to update
+  /// - [postId] - Deterministic ID of post to update
   /// - [updates] - Map of fields to update (e.g., {'titleA': 'New Title'})
   ///
   /// **Allowed Fields**:
@@ -36,31 +34,67 @@ class UpdatePostUseCase {
   /// - Left(PostFailure.updateFailed) - Update operation failed
   /// - Left(PostFailure.invalidInput) - Empty updates map or invalid postId
   ///
-  /// **Idempotency**:
-  /// - Generates unique eventId for each call
-  /// - Same eventId on retry prevents duplicate updates
-  /// - Network retry with same eventId returns success without re-updating
+  /// **Natural Idempotency**:
+  /// - postId provides deterministic document ID
+  /// - Multiple calls with same postId and updates will overwrite (Firestore update)
+  /// - No duplicate updates on network retry
   Future<Either<PostFailure, Unit>> execute({
     required String postId,
     required Map<String, dynamic> updates,
   }) async {
+    DevLogger.params({
+      'postId': postId,
+      'updatesCount': updates.length,
+      'fields': updates.keys.join(', '),
+    }, tag: 'UpdatePost');
+
     // Validate input
     if (postId.trim().isEmpty) {
+      DevLogger.validation(
+        field: 'postId',
+        reason: 'Post ID cannot be empty',
+        tag: 'UpdatePost',
+      );
       return left(const PostFailure.invalidInput(field: 'postId'));
     }
 
     if (updates.isEmpty) {
+      DevLogger.validation(
+        field: 'updates',
+        reason: 'Updates map cannot be empty',
+        tag: 'UpdatePost',
+      );
       return left(const PostFailure.invalidInput(field: 'updates'));
     }
 
-    // Generate eventId for idempotency
-    final eventId = _uuid.v4();
+    DevLogger.checkpoint(
+      'Updating post with postId: $postId',
+      tag: 'UpdatePost',
+    );
 
-    // Call repository with eventId
-    return await _postRepository.updatePost(
+    // Call repository (natural idempotency via deterministic postId)
+    final result = await _postRepository.updatePost(
       postId: postId,
       updates: updates,
-      eventId: eventId,
     );
+
+    result.fold(
+      (failure) {
+        DevLogger.error(
+          'Failed to update post (postId: $postId)',
+          error: failure,
+          tag: 'UpdatePost',
+        );
+      },
+      (_) {
+        DevLogger.result(
+          isSuccess: true,
+          data: 'Post updated successfully (postId: $postId)',
+          tag: 'UpdatePost',
+        );
+      },
+    );
+
+    return result;
   }
 }

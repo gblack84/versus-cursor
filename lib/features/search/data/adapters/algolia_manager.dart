@@ -2,9 +2,8 @@ import 'dart:async';
 
 import 'package:algolia/algolia.dart';
 
-// Migrated from backend.dart - only need LatLng
-import '/core/types/lat_lng.dart';
-import '/core_exports.dart';
+// Migrated from backend.dart
+import '/core_exports.dart'; // Includes LatLng, logger_service
 
 export 'package:algolia/algolia.dart';
 
@@ -108,8 +107,11 @@ class AppAlgoliaManager {
     AlgoliaQuerySnapshot? snapshot;
     try {
       snapshot = await query.getObjects();
-    } catch (error, stackTrace) {
-      print('Algolia error: $error\nStack trace: $stackTrace');
+    } catch (error) {
+      SearchLogger.searchQueryError(
+        query: term ?? '',
+        error: error,
+      );
       snapshot = null;
     }
     return _algoliaCache[params] = snapshot?.hits ?? [];

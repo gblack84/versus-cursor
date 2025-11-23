@@ -19,10 +19,9 @@ class AssetPickerService {
           restoredAssets.add(asset);
         }
       } catch (e) {
-        print('AssetEntity 복원 실패 (ID: $id): $e');
+        // AssetEntity 복원 실패 시 무시
       }
     }
-    print('[AssetPickerService] 복원된 AssetEntity 개수: ${restoredAssets.length}');
     return restoredAssets;
   }
 
@@ -61,38 +60,13 @@ class AssetPickerService {
     required int existingAssetsCount,
     required int selectedAssetsCount,
   }) {
-    print('[AssetPicker] Opening picker...');
-    print('[AssetPicker] Box: $box');
-    print('[AssetPicker] isAddMode: $isAddMode');
-    print('[AssetPicker] existingAssetIds: $existingAssetsCount');
-    print('[AssetPicker] Config:');
-    print('  - Max assets: 4');
-    print('  - Special item position: NONE (using floating camera button)');
-    print('  - Selected assets count: $selectedAssetsCount');
-    print('  - Grid count: 4');
-    print('  - Sort by modified date: true');
-    print('  - Should revert grid: false (최신 사진 맨 위)');
+    // DevTools Layout Inspector로 대체 가능 - print 제거됨
   }
 
   /// 첫 5개 사진의 생성 날짜 디버깅 (카메라 버튼 클릭 시)
   static Future<void> debugPhotoOrder() async {
-    try {
-      final paths =
-          await PhotoManager.getAssetPathList(type: RequestType.image);
-      if (paths.isNotEmpty) {
-        final firstPath = paths.first;
-        final assets = await firstPath.getAssetListPaged(page: 0, size: 5);
-        print('[AssetPicker] 첫 5개 사진 생성 날짜:');
-        for (int i = 0; i < assets.length; i++) {
-          final asset = assets[i];
-          final createDate = asset.createDateTime;
-          print(
-              '  ${i + 1}. ${createDate.toString()} - ${asset.title ?? "No title"}');
-        }
-      }
-    } catch (e) {
-      print('[AssetPicker] 정렬 디버깅 실패: $e');
-    }
+    // DevTools에서 asset 정보 확인 가능 - print 제거됨
+    // Photo order debugging removed - use DevTools instead
   }
 
   /// 기본 피커 Provider 생성

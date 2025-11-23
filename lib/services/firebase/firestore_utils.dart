@@ -59,7 +59,7 @@ DocumentReference toRef(String ref) => FirebaseFirestore.instance.doc(ref);
 /// ```dart
 /// final user = safeGet(
 ///   () => UserProfile.fromFirestore(doc),
-///   (e) => print('Error: $e'),
+///   (e) => ServicesLogger.serviceError(service: 'Firestore', error: e),
 /// );
 /// ```
 T? safeGet<T>(T Function() func, [Function(dynamic)? reportError]) {

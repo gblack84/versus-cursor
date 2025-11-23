@@ -1,4 +1,6 @@
 import 'package:fpdart/fpdart.dart';
+
+import '/services/logging/dev_logger.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';
 import '../failures/post_failure.dart';
@@ -36,9 +38,21 @@ class GetFeedUseCase {
     FeedSortBy sortBy = FeedSortBy.latest,
     FeedFilter? filter,
   }) async {
+    DevLogger.params({
+      'limit': limit,
+      'lastDocumentId': lastDocumentId ?? 'first page',
+      'sortBy': sortBy.name,
+      'filter': filter != null ? 'applied' : 'none',
+    }, tag: 'GetFeed');
+
     try {
       // Validate input
       if (limit <= 0) {
+        DevLogger.validation(
+          field: 'limit',
+          reason: 'Limit must be greater than 0',
+          tag: 'GetFeed',
+        );
         return left(const PostFailure.invalidInput(field: 'limit'));
       }
 
@@ -133,6 +147,7 @@ class GetFeedUseCase {
       }
 
       // Convert stream to future for the first batch
+      DevLogger.checkpoint('Fetching feed from repository', tag: 'GetFeed');
       final posts = await stream.first;
 
       // Get last document ID for pagination
@@ -140,6 +155,12 @@ class GetFeedUseCase {
       if (posts.isNotEmpty) {
         nextLastDocumentId = posts.last.id;
       }
+
+      DevLogger.result(
+        isSuccess: true,
+        data: '${posts.length} posts fetched, hasMore: ${posts.length >= limit}',
+        tag: 'GetFeed',
+      );
 
       return right(
         FeedResult(
@@ -149,8 +170,14 @@ class GetFeedUseCase {
           totalCount: posts.length,
         ),
       );
-    } catch (error) {
+    } catch (error, stackTrace) {
       // Handle stream errors
+      DevLogger.error(
+        'Failed to load feed',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'GetFeed',
+      );
       return left(PostFailure.queryFailed(
         reason: 'Failed to load feed: $error',
       ));
@@ -174,8 +201,19 @@ class GetFeedUseCase {
     FeedSortBy sortBy = FeedSortBy.latest,
     FeedFilter? filter,
   }) {
+    DevLogger.params({
+      'limit': limit,
+      'sortBy': sortBy.name,
+      'filter': filter != null ? 'applied' : 'none',
+    }, tag: 'GetFeedStream');
+
     // Validate input
     if (limit <= 0) {
+      DevLogger.validation(
+        field: 'limit',
+        reason: 'Limit must be greater than 0',
+        tag: 'GetFeedStream',
+      );
       return Stream.error(
         const PostFailure.invalidInput(field: 'limit'),
       );
@@ -226,11 +264,17 @@ class GetFeedUseCase {
       };
 
       // Get stream from repository
+      DevLogger.checkpoint('Starting feed stream', tag: 'GetFeedStream');
       return _postRepository.queryPosts(
         queryBuilder: queryBuilder,
         limit: limit,
       );
     } catch (error) {
+      DevLogger.error(
+        'Failed to create feed stream',
+        error: error,
+        tag: 'GetFeedStream',
+      );
       return Stream.error(
         PostFailure.queryFailed(
           reason: 'Failed to create feed stream: $error',

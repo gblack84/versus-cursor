@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
 // Phase 5: Guard Analytics
-import '/services/analytics/guard_analytics_service.dart';
-import '/services/analytics/guard_analytics_event.dart';
+import '/app/router/analytics/guard_analytics_service.dart';
+import '/app/router/analytics/guard_analytics_event.dart';
 
 /// AuthGuard - 인증 상태 기반 Route 보호
 ///
@@ -222,7 +222,7 @@ class AuthGuard {
   /// ```dart
   /// final pendingRoute = AuthGuard.getPendingRedirectLocation();
   /// if (pendingRoute != null) {
-  ///   print('로그인 후 복귀할 경로: $pendingRoute');
+  ///   Logger.debug('로그인 후 복귀할 경로: $pendingRoute', tag: 'Router/Redirect');
   /// }
   /// ```
   static String? getPendingRedirectLocation() {

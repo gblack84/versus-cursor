@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import 'package:versus_space/gen/assets.gen.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
@@ -11,7 +10,6 @@ import '/testpage_select/testpage_select_widget.dart';
 import '/features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart';
 import '/features/auth/presentation/screens/signup/create_account/create_account_widget.dart';
 import '/core_exports.dart';
-import '/services/error/error_handler_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
@@ -180,7 +178,6 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
           email: email,
           password: password,
           displayName: displayName,
-          eventId: const Uuid().v4(),
         );
 
         signUpResult.fold(

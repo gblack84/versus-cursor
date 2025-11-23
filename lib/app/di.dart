@@ -6,10 +6,11 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // 핵심 서비스
-import '/services/idempotency/idempotency_service.dart';
+import '/services/rate_limit/rate_limit_service.dart';
 import '/services/batch/batch_service.dart';
 import '/services/sharding/shard_utils.dart';
 import '/services/storage/file_size_utils.dart';
+import '/services/cache/unified_cache_service.dart';
 
 // 서비스 DI 모듈
 import '/services/moderation/di/moderation_di_module.dart';
@@ -50,9 +51,15 @@ Future<void> setupDependencyInjection() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
 
-  // IdempotencyService (Auth, Voting 등에서 사용)
-  getIt.registerSingleton<IdempotencyService>(
-    IdempotencyService(),
+  // UnifiedCacheService (이미 main.dart에서 초기화됨)
+  // 모든 Feature에서 사용하는 3-Layer 캐싱 서비스
+  getIt.registerSingleton<UnifiedCacheService>(
+    UnifiedCacheService.instance,
+  );
+
+  // RateLimitService (Auth 보안 - 요청 빈도 제한)
+  getIt.registerSingleton<RateLimitService>(
+    RateLimitService(),
   );
 
   // BatchService (모든 Feature의 원자적 Firestore 작업용)

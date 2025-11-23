@@ -89,7 +89,10 @@ bool responsiveVisibility({
 /// ```dart
 /// final box = getWidgetBoundingBox(context);
 /// if (box != null) {
-///   print('Widget at: ${box.left}, ${box.top}');
+///   UtilsLogger.uiOperation(
+///     operation: 'getWidgetBoundingBox',
+///     details: 'Widget at: ${box.left}, ${box.top}',
+///   );
 /// }
 /// ```
 Rect? getWidgetBoundingBox(BuildContext context) {

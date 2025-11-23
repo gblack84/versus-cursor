@@ -75,7 +75,10 @@ DateTime getCurrentTimestamp() => DateTime.now();
 /// final future = now.add(Duration(hours: 1));
 ///
 /// if (now < future) {
-///   print('now is before future');  // This prints
+///   UtilsLogger.datetimeOperation(
+///     operation: 'comparison',
+///     result: 'now is before future',
+///   );  // This logs
 /// }
 /// ```
 extension DateTimeComparisonOperators on DateTime {

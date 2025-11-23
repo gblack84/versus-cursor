@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:flutter/foundation.dart';
 import '../../domain/repositories/i_profile_repository.dart';
 import '../../domain/entities/profile_info.dart';
 import '../../domain/entities/user_profile_extensions.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/logging/logger_service.dart';
 
 /// ProfileRepository 구현 (Clean Architecture v4.0)
 ///
@@ -45,7 +45,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   @override
   Future<Either<ProfileFailure, ProfileInfo>> getProfileInfo(String userId) async {
     try {
-      debugPrint('[ProfileRepository] Getting profile info for: $userId');
+      ProfileLogger.profileWatching(userId: userId);
 
       // 🔥 3-Layer Cache 조회 (Memory → Hive → Firestore)
       final profileInfoResult = await _cacheService.getProfileInfo(userId);
@@ -55,19 +55,19 @@ class ProfileRepositoryImpl implements IProfileRepository {
       );
 
       if (profileInfo == null) {
-        debugPrint('[ProfileRepository] Profile not found: $userId');
+        ProfileLogger.profileError(errorType: 'notFound', message: 'Profile not found: $userId');
         return left(ProfileFailure.profileNotFound(userId: userId));
       }
 
-      debugPrint('[ProfileRepository] Profile info loaded: ${profileInfo.displayName}');
+      ProfileLogger.profileUpdated(displayName: profileInfo.displayName);
       return right(profileInfo);
     } on FirebaseException catch (e) {
-      debugPrint('[ProfileRepository] Firebase error: ${e.code} - ${e.message}');
+      ProfileLogger.profileError(errorType: e.code, message: e.message, error: e);
       return left(_mapFirebaseException(e));
     } on ProfileFailure catch (e) {
       return left(e);
     } catch (e) {
-      debugPrint('[ProfileRepository] Unexpected error: $e');
+      ProfileLogger.profileError(errorType: 'unexpected', error: e);
       return left(ProfileFailure.firestoreRead('Failed to get profile info: $e'));
     }
   }
@@ -83,7 +83,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   @override
   Future<Either<ProfileFailure, void>> updateLastActive(String userId) async {
     try {
-      debugPrint('[ProfileRepository] Updating last active for: $userId');
+      ProfileLogger.lastActiveUpdating(userId: userId);
 
       // 🔥 Firebase SDK 직접 사용 (lastActive 필드 업데이트)
       await _firestore.collection('users').doc(userId).update({
@@ -93,10 +93,10 @@ class ProfileRepositoryImpl implements IProfileRepository {
       // 🔥 캐시 무효화 (L1 Memory, L2 Hive만 - Firestore는 자동 동기화)
       await _cacheService.clearProfileInfo(userId);
 
-      debugPrint('[ProfileRepository] Last active updated successfully');
+      ProfileLogger.lastActiveUpdated();
       return right(null);
     } on FirebaseException catch (e) {
-      debugPrint('[ProfileRepository] Firebase error: ${e.code} - ${e.message}');
+      ProfileLogger.lastActiveError(error: e);
 
       // 문서가 없으면 ProfileNotFound 반환
       if (e.code == 'not-found') {
@@ -105,7 +105,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
 
       return left(_mapFirebaseException(e));
     } catch (e) {
-      debugPrint('[ProfileRepository] Unexpected error: $e');
+      ProfileLogger.lastActiveError(error: e);
       return left(ProfileFailure.firestoreWrite('Failed to update last active: $e'));
     }
   }
@@ -145,7 +145,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   @override
   Future<Either<ProfileFailure, bool>> isProfileComplete(String userId) async {
     try {
-      debugPrint('[ProfileRepository] Checking profile completion for: $userId');
+      ProfileLogger.profileWatching(userId: userId);
 
       // 직접 Firebase SDK 사용
       final doc = await _firestore
@@ -154,7 +154,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
           .get();
 
       if (!doc.exists) {
-        debugPrint('[ProfileRepository] Profile not found: $userId');
+        ProfileLogger.profileError(errorType: 'notFound', message: 'Profile not found during completion check');
         return left(ProfileFailure.profileNotFound(userId: userId));
       }
 
@@ -163,16 +163,15 @@ class ProfileRepositoryImpl implements IProfileRepository {
 
       // completionRate getter 사용 (0.0 ~ 1.0)
       final isComplete = profile.completionRate >= 0.8; // 80% 이상이면 완성으로 간주
-      debugPrint('[ProfileRepository] Profile completion: $isComplete (${profile.completionRate * 100}%)');
 
       return right(isComplete);
     } on FirebaseException catch (e) {
-      debugPrint('[ProfileRepository] Firebase error: ${e.code} - ${e.message}');
+      ProfileLogger.profileError(errorType: e.code, message: e.message, error: e);
       return left(_mapFirebaseException(e));
     } on ProfileFailure catch (e) {
       return left(e);
     } catch (e) {
-      debugPrint('[ProfileRepository] Unexpected error: $e');
+      ProfileLogger.profileError(errorType: 'unexpected', error: e);
       return left(ProfileFailure.firestoreRead('Failed to check profile completion: $e'));
     }
   }
@@ -180,7 +179,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   @override
   Future<Either<ProfileFailure, double>> getProfileCompletionPercentage(String userId) async {
     try {
-      debugPrint('[ProfileRepository] Getting profile completion percentage for: $userId');
+      ProfileLogger.profileWatching(userId: userId);
 
       // 🔥 3-Layer Cache 조회 (Memory → Hive)
       final cachedResult = await _cacheService.getProfileCompletion(userId);
@@ -190,7 +189,6 @@ class ProfileRepositoryImpl implements IProfileRepository {
       );
 
       if (cached != null) {
-        debugPrint('[ProfileRepository] Profile completion from CACHE: ${cached * 100}%');
         return right(cached);
       }
 
@@ -201,7 +199,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
           .get();
 
       if (!doc.exists) {
-        debugPrint('[ProfileRepository] Profile not found: $userId');
+        ProfileLogger.profileError(errorType: 'notFound', message: 'Profile not found');
         return left(ProfileFailure.profileNotFound(userId: userId));
       }
 
@@ -214,16 +212,14 @@ class ProfileRepositoryImpl implements IProfileRepository {
       // 🔥 캐시에 저장 (30분 TTL - 자주 변할 수 있음)
       await _cacheService.setProfileCompletion(userId, percentage);
 
-      debugPrint('[ProfileRepository] Profile completion from FIRESTORE: ${percentage * 100}%');
-
       return right(percentage);
     } on FirebaseException catch (e) {
-      debugPrint('[ProfileRepository] Firebase error: ${e.code} - ${e.message}');
+      ProfileLogger.profileError(errorType: e.code, message: e.message, error: e);
       return left(_mapFirebaseException(e));
     } on ProfileFailure catch (e) {
       return left(e);
     } catch (e) {
-      debugPrint('[ProfileRepository] Unexpected error: $e');
+      ProfileLogger.profileError(errorType: 'unexpected', error: e);
       return left(ProfileFailure.firestoreRead('Failed to get profile completion percentage: $e'));
     }
   }

@@ -11,8 +11,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// ===== Core Services =====
-import '/services/idempotency/idempotency_service.dart';
+// ===== Infrastructure Services =====
+import '/services/rate_limit/rate_limit_service.dart';
 
 // ===== App Layer - Contracts =====
 // Contract 패턴 완전 폐기 (2025-11-09) - Firebase-Centric Architecture
@@ -22,21 +22,29 @@ import '/services/idempotency/idempotency_service.dart';
 // ===== Domain Layer - Repositories =====
 import '../domain/repositories/i_auth_repository.dart';
 
+// ===== Domain Layer - Services =====
+// Phase 3 Services removed (Dead Code cleanup 2025-11-20)
+
 // ===== Data Layer - Repository Implementation =====
 import '../data/repositories/auth_repository_impl.dart';
 
-// ===== Domain Layer - UseCases (10 total) =====
+// ===== Domain Layer - UseCases (12 total) =====
 // Sign In
 import '../domain/usecases/sign_in/sign_in_with_email_usecase.dart';
 import '../domain/usecases/sign_in/sign_in_with_google_usecase.dart';
 import '../domain/usecases/sign_in/sign_in_with_apple_usecase.dart';
-import '../domain/usecases/sign_in/sign_in_with_phone_usecase.dart';
 // Sign Up
 import '../domain/usecases/sign_up/sign_up_with_email_usecase.dart';
-// Account Management
+// Account Management (Old - Multi-method UseCases)
 import '../domain/usecases/account/password_management_usecase.dart';
 import '../domain/usecases/account/email_verification_usecase.dart';
 import '../domain/usecases/account/account_management_usecase.dart';
+// Account Management (New - SRP UseCases)
+import '../domain/usecases/account/update_password_usecase.dart';
+import '../domain/usecases/account/reset_password_usecase.dart';
+// Phone Authentication (New - SRP UseCases)
+import '../domain/usecases/phone/send_phone_otp_usecase.dart';
+import '../domain/usecases/phone/sign_in_with_phone_usecase.dart';
 // Session
 import '../domain/usecases/session/sign_out_usecase.dart';
 import '../domain/usecases/session/get_current_user_usecase.dart';
@@ -72,27 +80,19 @@ void _registerUseCases(GetIt getIt) {
   getIt.registerFactory<SignInWithEmailUseCase>(
     () => SignInWithEmailUseCase(
       repository: getIt<IAuthRepository>(),
+      rateLimitService: getIt<RateLimitService>(),
     ),
   );
 
   getIt.registerFactory<SignInWithGoogleUseCase>(
     () => SignInWithGoogleUseCase(
       repository: getIt<IAuthRepository>(),
-      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
   getIt.registerFactory<SignInWithAppleUseCase>(
     () => SignInWithAppleUseCase(
       repository: getIt<IAuthRepository>(),
-      idempotencyService: getIt<IdempotencyService>(),
-    ),
-  );
-
-  getIt.registerFactory<SignInWithPhoneUseCase>(
-    () => SignInWithPhoneUseCase(
-      repository: getIt<IAuthRepository>(),
-      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
@@ -100,7 +100,6 @@ void _registerUseCases(GetIt getIt) {
   getIt.registerFactory<SignUpWithEmailUseCase>(
     () => SignUpWithEmailUseCase(
       repository: getIt<IAuthRepository>(),
-      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
@@ -121,21 +120,48 @@ void _registerUseCases(GetIt getIt) {
   getIt.registerFactory<PasswordManagementUseCase>(
     () => PasswordManagementUseCase(
       repository: getIt<IAuthRepository>(),
-      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
   getIt.registerFactory<EmailVerificationUseCase>(
     () => EmailVerificationUseCase(
       repository: getIt<IAuthRepository>(),
-      idempotencyService: getIt<IdempotencyService>(),
+      rateLimitService: getIt<RateLimitService>(),
     ),
   );
 
   getIt.registerFactory<AccountManagementUseCase>(
     () => AccountManagementUseCase(
       repository: getIt<IAuthRepository>(),
-      idempotencyService: getIt<IdempotencyService>(),
+    ),
+  );
+
+  // New SRP UseCases (Phase 1 - Category A)
+  getIt.registerFactory<UpdatePasswordUseCase>(
+    () => UpdatePasswordUseCase(
+      repository: getIt<IAuthRepository>(),
+    ),
+  );
+
+  getIt.registerFactory<ResetPasswordUseCase>(
+    () => ResetPasswordUseCase(
+      repository: getIt<IAuthRepository>(),
+      rateLimitService: getIt<RateLimitService>(),
+    ),
+  );
+
+  getIt.registerFactory<SendPhoneOtpUseCase>(
+    () => SendPhoneOtpUseCase(
+      repository: getIt<IAuthRepository>(),
+      rateLimitService: getIt<RateLimitService>(),
+    ),
+  );
+
+  // NEW SRP version (with RateLimitService)
+  getIt.registerFactory<SignInWithPhoneUseCase>(
+    () => SignInWithPhoneUseCase(
+      repository: getIt<IAuthRepository>(),
+      rateLimitService: getIt<RateLimitService>(),
     ),
   );
 }

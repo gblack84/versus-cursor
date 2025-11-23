@@ -12,7 +12,6 @@ import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // ===== Core Services =====
-import '/services/idempotency/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====
@@ -110,16 +109,13 @@ void _registerRepositories(GetIt getIt) {
     ),
   );
 
-  // ===== Phase 1.2: IdempotencyService Integration =====
-
   // User Repository (Singleton pattern with explicit initialization)
   // IMPORTANT: Initialize BEFORE registering the singleton
   // Contract 패턴 폐기 (2025-11-09): FirebaseAuth 직접 사용
   final auth = FirebaseAuth.instance;
-  final idempotencyService = getIt<IdempotencyService>();
-  final cacheService = UnifiedCacheService.instance;
+  final cacheService = getIt<UnifiedCacheService>();  // GetIt을 통한 안전한 접근
 
-  UserRepositoryImpl.initialize(auth, idempotencyService, cacheService);
+  UserRepositoryImpl.initialize(auth, cacheService);
 
   getIt.registerLazySingleton<IUserRepository>(
     () => UserRepositoryImpl.instance,
@@ -130,11 +126,9 @@ void _registerRepositories(GetIt getIt) {
     () => CharactersRepositoryImpl(),
   );
 
-  // Interests Repository (Firebase-Centric v2.0 + IdempotencyService)
+  // Interests Repository (Firebase-Centric v2.0)
   getIt.registerLazySingleton<IInterestsRepository>(
-    () => InterestsRepositoryImpl(
-      idempotencyService: getIt<IdempotencyService>(),
-    ),
+    () => InterestsRepositoryImpl(),
   );
 
   // Profile Repository (Firebase-Centric v2.0)

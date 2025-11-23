@@ -56,10 +56,16 @@ abstract class IGeminiModerationService {
   /// );
   ///
   /// if (result?.isValid ?? false) {
-  ///   print('Gemini AI 검증 통과');
-  ///   print('예상 투표 비율: A=${result!.expectedRatioA}, B=${result.expectedRatioB}');
+  ///   ModerationLogger.textModerationResult(
+  ///     content: '어떤 영화가 더 재미있나요?',
+  ///     isAppropriate: true,
+  ///   );
   /// } else {
-  ///   print('Gemini AI 검증 실패: ${result?.reason}');
+  ///   ModerationLogger.textModerationResult(
+  ///     content: '어떤 영화가 더 재미있나요?',
+  ///     isAppropriate: false,
+  ///     reason: result?.reason,
+  ///   );
   /// }
   /// ```
   Future<GeminiModerationResult?> validateContent({

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '/core_exports.dart'; // Core utilities and types (includes cloud_firestore)
+import '/core_exports.dart'; // Core utilities and types (includes cloud_firestore, logger_service)
 
 /// SERIALIZATION HELPERS
 
@@ -100,7 +100,10 @@ String? serializeParam(
     }
     return data;
   } catch (e) {
-    print('Error serializing parameter: $e');
+    ServicesLogger.serviceError(
+      service: 'RouterSerialization',
+      error: 'Parameter serialization error - $e',
+    );
     return null;
   }
 }
@@ -212,7 +215,10 @@ dynamic deserializeParam<T>(
         return _deserializeDocumentReference(param, collectionNamePath ?? []);
     }
   } catch (e) {
-    print('Error deserializing parameter: $e');
+    ServicesLogger.serviceError(
+      service: 'RouterDeserialization',
+      error: 'Parameter deserialization error - $e',
+    );
     return null;
   }
 }

@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:uuid/uuid.dart';
-import '/services/error/error_handler_service.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart';
@@ -140,12 +138,10 @@ class _CreateAccountWidgetState extends ConsumerState<CreateAccountWidget> {
     ref.read(authLoadingProvider.notifier).setLoading(true);
 
     // 계정 생성
-    final eventId = const Uuid().v4(); // Generate UUID for idempotency
     final signUpUseCase = ref.read(signUpWithEmailUseCaseProvider);
     final result = await signUpUseCase.execute(
       email: _emailAddressTextController.text,
       password: _passwordTextController.text,
-      eventId: eventId,
     );
 
     // 결과 처리
@@ -166,10 +162,7 @@ class _CreateAccountWidgetState extends ConsumerState<CreateAccountWidget> {
       (user) async {
         // 성공 처리 - 이메일 인증 발송
         final emailVerificationUseCase = ref.read(emailVerificationUseCaseProvider);
-        await emailVerificationUseCase.sendVerificationEmail(
-          userId: user.uid,
-          eventId: const Uuid().v4(),
-        );
+        await emailVerificationUseCase.sendVerificationEmail();
 
         ref.read(authLoadingProvider.notifier).setLoading(false);
 

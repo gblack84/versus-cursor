@@ -57,9 +57,7 @@ extension TargetAudienceFirestore on TargetAudience {
   static TargetAudience fromMap(Map<String, dynamic>? map) {
     if (map == null) {
       // Return default TargetAudience
-      return TargetAudience(
-        createdAt: DateTime.now(),
-      );
+      return TargetAudience(createdAt: DateTime.now());
     }
 
     return TargetAudience.fromMap(map);

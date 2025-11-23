@@ -4,6 +4,7 @@ import '/services/firebase/firestore_utils.dart'; // For safeGet, toRef
 // For fromCssColor
 import '/app/router/navigation/serialization_util.dart'; // For ParamType
 import '../utils/algolia_converters.dart'; // For StructBuilder (exports from_css_color)
+import '/services/logging/logger_service.dart';
 
 dynamic convertAlgoliaParam<T>(
   dynamic data,
@@ -63,7 +64,10 @@ dynamic convertAlgoliaParam<T>(
         return data;
     }
   } catch (e) {
-    print('Error deserializing parameter: $e');
+    ServicesLogger.serviceError(
+      service: 'AlgoliaDeserialization',
+      error: 'Parameter deserialization error - $e',
+    );
     return null;
   }
 }

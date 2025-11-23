@@ -50,10 +50,14 @@ sealed class AuthFailure with _$AuthFailure implements Failure {
   const factory AuthFailure.userNotFound() = UserNotFound;
   const factory AuthFailure.userDisabled() = UserDisabled;
   const factory AuthFailure.emailNotVerified() = EmailNotVerified;
+  const factory AuthFailure.emailAlreadyVerified() = EmailAlreadyVerified;
 
   // Permission errors
   const factory AuthFailure.insufficientPermission() = InsufficientPermission;
   const factory AuthFailure.requiresRecentLogin() = RequiresRecentLogin;
+
+  // Rate limiting errors
+  const factory AuthFailure.tooManyRequests([String? rateLimitMessage]) = TooManyRequests;
 
   // Profile errors
   const factory AuthFailure.userNameAlreadyTaken() = UserNameAlreadyTaken;
@@ -80,8 +84,10 @@ sealed class AuthFailure with _$AuthFailure implements Failure {
       userNotFound: () => '사용자를 찾을 수 없습니다',
       userDisabled: () => '사용자 계정이 비활성화되었습니다',
       emailNotVerified: () => '이메일이 인증되지 않았습니다',
+      emailAlreadyVerified: () => '이메일이 이미 인증되었습니다',
       insufficientPermission: () => '권한이 부족합니다',
       requiresRecentLogin: () => '계속하려면 다시 로그인해주세요',
+      tooManyRequests: (msg) => msg ?? '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요',
       userNameAlreadyTaken: () => '이미 사용 중인 사용자 이름입니다',
       profileIncomplete: () => '프로필이 완성되지 않았습니다',
       unexpected: (errorMessage) => errorMessage ?? '알 수 없는 오류가 발생했습니다',

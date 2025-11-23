@@ -57,15 +57,9 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
 
       return Right(voting);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[VotingChatRepository] Firebase error: ${e.code} - ${e.message}');
-      }
       // ✅ Extension-based error handling
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[VotingChatRepository] Unexpected error: $e');
-      }
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -93,22 +87,13 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
           final voting = PostVotingFirestoreExtension.fromFirestore(data, postId);
           return Right(voting);
         } on FirebaseException catch (e) {
-          if (kDebugMode) {
-            print('[VotingChatRepository] Firebase error: ${e.code}');
-          }
           // ✅ Extension-based error handling
           return Left(e.toVotingFailure());
         } catch (e) {
-          if (kDebugMode) {
-            print('[VotingChatRepository] Unexpected error: $e');
-          }
           return Left(e.toString().toVotingFailure());
         }
       });
     } catch (e) {
-      if (kDebugMode) {
-        print('[VotingChatRepository] Stream error: $e');
-      }
       return Stream.value(Left(e.toString().toVotingFailure()));
     }
   }
@@ -176,23 +161,14 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
           (_) => null,
         );
       } catch (e) {
-        if (kDebugMode) {
-          print('[VotingChatRepository] Failed to cache vote history: $e');
-        }
         // Don't fail the vote if caching fails
       }
 
       return Right(updatedVoting);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[VotingChatRepository] Cast vote error: ${e.code}');
-      }
       // ✅ Extension-based error handling
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[VotingChatRepository] Cast vote unexpected error: $e');
-      }
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -555,9 +531,6 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         ),
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('[VotingChatRepository] Cache error: $e');
-      }
       // Don't throw, caching is optional
     }
   }

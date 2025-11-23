@@ -49,9 +49,7 @@ class _ThumbnailSelectionPageState extends State<ThumbnailSelectionPage> {
         body: Stack(
           children: [
             // 전체 화면 이미지
-            Positioned.fill(
-              child: _buildImagePreview(),
-            ),
+            Positioned.fill(child: _buildImagePreview()),
 
             // UI 요소들을 SafeArea로 감싸기
             SafeArea(
@@ -301,7 +299,9 @@ class _ThumbnailSelectionPageState extends State<ThumbnailSelectionPage> {
                         bottom: 4,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(10),

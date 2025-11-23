@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/app/widgets/debug/providers/guard_analytics_providers.dart';
-import '/services/analytics/guard_analytics_event.dart';
+import '/app/router/analytics/guard_analytics_event.dart';
 
 /// **Guard Analytics Tab (Phase 5 - Day 3 Complete)**
 ///

@@ -6,6 +6,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
+import '/services/logging/logger_service.dart';
 import '/services/storage/file_size_utils.dart';
 import '/app/di.dart';
 
@@ -159,7 +160,11 @@ class ChatMediaUploadService {
 
       return thumbnailPath;
     } catch (e) {
-      print('Thumbnail generation failed: $e');
+      MediaLogger.videoUploadError(
+        errorType: 'thumbnailGenerationFailed',
+        error: e,
+        videoPath: videoFile.path,
+      );
       return null;
     }
   }
@@ -169,7 +174,11 @@ class ChatMediaUploadService {
     try {
       await _storage.ref().child(storagePath).delete();
     } catch (e) {
-      print('Failed to delete media: $e');
+      MediaLogger.mediaDeletionError(
+        errorType: 'deletionFailed',
+        error: e,
+        mediaUrl: storagePath,
+      );
     }
   }
 

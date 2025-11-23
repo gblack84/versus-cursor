@@ -4,13 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'upload_queue_state.freezed.dart';
 
 /// Upload status enum
-enum UploadStatus {
-  pending,
-  uploading,
-  completed,
-  failed,
-  cancelled,
-}
+enum UploadStatus { pending, uploading, completed, failed, cancelled }
 
 /// Individual upload task model
 @freezed
@@ -89,10 +83,12 @@ sealed class UploadQueueState with _$UploadQueueState {
   int get activeTaskCount => activeTasks.length;
 
   /// Get total number of failed tasks
-  int get failedTaskCount => activeTasks.values.where((t) => t.hasFailed).length;
+  int get failedTaskCount =>
+      activeTasks.values.where((t) => t.hasFailed).length;
 
   /// Get total number of completed tasks
-  int get completedTaskCount => activeTasks.values.where((t) => t.isComplete).length;
+  int get completedTaskCount =>
+      activeTasks.values.where((t) => t.isComplete).length;
 
   /// Check if any tasks are in progress
   bool get hasActiveUploads => activeTasks.values.any((t) => t.isInProgress);

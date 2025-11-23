@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:uuid/uuid.dart';
 import 'package:versus_space/gen/assets.gen.dart';
-import '/services/error/error_handler_service.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core_exports.dart';
@@ -387,7 +385,6 @@ Enter the 6-digit code sent t... */
                                 final result = await signInWithPhoneUseCase.execute(
                                   phoneNumber: widget.phoneNumberParam ?? '',
                                   verificationCode: smsCodeVal,
-                                  eventId: const Uuid().v4(),
                                 );
 
                                 // 결과 처리
@@ -559,10 +556,10 @@ Enter the 6-digit code sent t... */
                                             ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                             // OTP 재전송
-                                            final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
-                                            final result = await signInWithPhoneUseCase.resendOtp(
+                                            final sendOtpUseCase = ref.read(sendPhoneOtpUseCaseProvider);
+                                            final result = await sendOtpUseCase.execute(
                                               phoneNumber: phoneNumberVal,
-                                              eventId: const Uuid().v4(),
+                                              userId: phoneNumberVal, // Rate limiting by phone number
                                             );
 
                                             // 결과 처리

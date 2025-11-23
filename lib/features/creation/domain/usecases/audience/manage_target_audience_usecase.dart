@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import '../../failures/creation_failure.dart';
 import '../../entities/target_audience.dart';
 import '../../services/i_target_audience_service.dart';
+import '/services/logging/dev_logger.dart';
 
 /// UseCase for managing target audience
 ///
@@ -28,28 +29,59 @@ class ManageTargetAudienceUseCase {
   Future<Either<CreationFailure, TargetAudience>> createFromProviderMap(
     Map<String, dynamic> providerMap,
   ) async {
+    DevLogger.params({
+      'providerMap_keys': providerMap.keys.toList(),
+      'collectionType': providerMap['collectionType'],
+      'targetCount': providerMap['targetCount'],
+    }, tag: 'CreateFromProviderMap');
+
     try {
+      DevLogger.checkpoint('Step 1: Create target audience from Provider map', tag: 'CreateFromProviderMap');
       // Create target audience from Provider map using Entity factory
       final targetAudience = TargetAudience.fromProviderMap(providerMap);
 
+      DevLogger.checkpoint('Step 2: Validate target audience', tag: 'CreateFromProviderMap');
       // Validate target audience
       final validationResult = validateTargetAudience(targetAudience);
 
       if (!validationResult.isValid) {
+        DevLogger.validation(
+          field: 'targetAudience',
+          reason: validationResult.error ?? 'Invalid target audience configuration',
+          tag: 'CreateFromProviderMap',
+        );
         return left(
           CreationFailure.creationValidationFailed(
             fieldErrors: {
-              'targetAudience': validationResult.error ?? 'Invalid target audience configuration',
+              'targetAudience':
+                  validationResult.error ??
+                  'Invalid target audience configuration',
             },
           ),
         );
       }
 
+      DevLogger.result(
+        isSuccess: true,
+        data: {
+          'collectionType': targetAudience.collectionType,
+          'targetCount': targetAudience.targetCount,
+          'selectedInterests_count': targetAudience.selectedInterests.length,
+        },
+        tag: 'CreateFromProviderMap',
+      );
       return right(targetAudience);
-    } catch (error) {
-      print('createFromProviderMap Error: $error');
+    } catch (error, stackTrace) {
+      DevLogger.error(
+        'Create from provider map failed - Exception caught',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'CreateFromProviderMap',
+      );
       return left(
-        CreationFailure.postCreationRepositoryFailed(operation: 'createFromProviderMap'),
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'createFromProviderMap',
+        ),
       );
     }
   }
@@ -64,7 +96,18 @@ class ManageTargetAudienceUseCase {
     bool activeUserOnly = true,
     bool isPremium = false,
   }) async {
+    DevLogger.params({
+      'collectionType': collectionType,
+      'targetCount': targetCount,
+      'selectedInterests_count': selectedInterests?.length ?? 0,
+      'selectedAgeGroup': selectedAgeGroup ?? '전체',
+      'selectedGender': selectedGender ?? 'all',
+      'activeUserOnly': activeUserOnly,
+      'isPremium': isPremium,
+    }, tag: 'CreateTargetAudience');
+
     try {
+      DevLogger.checkpoint('Step 1: Create target audience model', tag: 'CreateTargetAudience');
       // Create target audience model
       final targetAudience = TargetAudience(
         collectionType: collectionType,
@@ -78,24 +121,48 @@ class ManageTargetAudienceUseCase {
         status: 'pending',
       );
 
+      DevLogger.checkpoint('Step 2: Validate target audience', tag: 'CreateTargetAudience');
       // Validate target audience
       final validationResult = validateTargetAudience(targetAudience);
 
       if (!validationResult.isValid) {
+        DevLogger.validation(
+          field: 'targetAudience',
+          reason: validationResult.error ?? 'Invalid target audience configuration',
+          tag: 'CreateTargetAudience',
+        );
         return left(
           CreationFailure.creationValidationFailed(
             fieldErrors: {
-              'targetAudience': validationResult.error ?? 'Invalid target audience configuration',
+              'targetAudience':
+                  validationResult.error ??
+                  'Invalid target audience configuration',
             },
           ),
         );
       }
 
+      DevLogger.result(
+        isSuccess: true,
+        data: {
+          'collectionType': targetAudience.collectionType,
+          'targetCount': targetAudience.targetCount,
+          'status': targetAudience.status,
+        },
+        tag: 'CreateTargetAudience',
+      );
       return right(targetAudience);
-    } catch (error) {
-      print('ManageTargetAudienceUseCase Error: $error');
+    } catch (error, stackTrace) {
+      DevLogger.error(
+        'Target audience creation failed - Exception caught',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'CreateTargetAudience',
+      );
       return left(
-        CreationFailure.postCreationRepositoryFailed(operation: 'createFromProviderMap'),
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'createTargetAudience',
+        ),
       );
     }
   }
@@ -112,12 +179,21 @@ class ManageTargetAudienceUseCase {
   }
 
   /// Get target audience recommendations based on post content
-  Future<Either<CreationFailure, TargetAudienceRecommendation>> getRecommendations({
+  Future<Either<CreationFailure, TargetAudienceRecommendation>>
+  getRecommendations({
     required String title,
     required String description,
     List<String>? imageTags,
   }) async {
+    DevLogger.params({
+      'title_length': title.length,
+      'title_preview': title.length > 50 ? '${title.substring(0, 50)}...' : title,
+      'description_length': description.length,
+      'imageTags_count': imageTags?.length ?? 0,
+    }, tag: 'GetRecommendations');
+
     try {
+      DevLogger.checkpoint('Step 1: Analyze content for recommendations', tag: 'GetRecommendations');
       // Analyze content and generate recommendations
       final recommendations = await _analyzeContentForRecommendations(
         title: title,
@@ -125,11 +201,28 @@ class ManageTargetAudienceUseCase {
         imageTags: imageTags,
       );
 
+      DevLogger.result(
+        isSuccess: true,
+        data: {
+          'mode': recommendations.mode,
+          'suggestedCount': recommendations.suggestedCount,
+          'suggestedInterests_count': recommendations.suggestedInterests.length,
+          'confidence': recommendations.confidence,
+        },
+        tag: 'GetRecommendations',
+      );
       return right(recommendations);
-    } catch (error) {
-      print('GetRecommendations Error: $error');
+    } catch (error, stackTrace) {
+      DevLogger.error(
+        'Get recommendations failed - Exception caught',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'GetRecommendations',
+      );
       return left(
-        CreationFailure.postCreationRepositoryFailed(operation: 'createFromProviderMap'),
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'getRecommendations',
+        ),
       );
     }
   }
@@ -193,7 +286,6 @@ class ManageTargetAudienceUseCase {
     );
   }
 }
-
 
 /// Target audience recommendations
 class TargetAudienceRecommendation {

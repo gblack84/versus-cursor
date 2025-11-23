@@ -166,7 +166,7 @@ class _EditviedoWidgetState extends ConsumerState<EditviedoWidget> {
                     padding: EdgeInsets.all(12.0),
                     child: AppButtonWidget(
                       onPressed: () {
-                        print('Button pressed ...');
+                        // DevTools로 이벤트 확인 가능
                       },
                       text: AppLocalizations.of(context).getText(
                         'g405hkr8' /* upload */,
@@ -201,7 +201,7 @@ class _EditviedoWidgetState extends ConsumerState<EditviedoWidget> {
                     padding: EdgeInsets.all(12.0),
                     child: AppButtonWidget(
                       onPressed: () {
-                        print('Button pressed ...');
+                        // DevTools로 이벤트 확인 가능
                       },
                       text: AppLocalizations.of(context).getText(
                         'r3qip94t' /* cancle */,

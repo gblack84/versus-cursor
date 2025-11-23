@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '/services/analytics/guard_analytics_service.dart';
-import '/services/analytics/guard_analytics_event.dart';
+import '/app/router/analytics/guard_analytics_service.dart';
+import '/app/router/analytics/guard_analytics_event.dart';
 
 part 'guard_analytics_providers.g.dart';
 

@@ -32,12 +32,8 @@ Future initFirebase() async {
       await Firebase.initializeApp();
     }
   } catch (e) {
-    print('Firebase initialization error: $e');
-    print('Error type: ${e.runtimeType}');
-    if (e is FirebaseException) {
-      print('Firebase error code: ${e.code}');
-      print('Firebase error message: ${e.message}');
-    }
+    // Firebase initialization error - will be visible in crash logs via rethrow
+    // DevTools will show full error details and stack trace
     rethrow;
   }
 }

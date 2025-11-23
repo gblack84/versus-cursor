@@ -35,17 +35,17 @@ class ModerationDialog extends StatelessWidget {
               Text(
                 '안전성 검사 중...',
                 style: AppTheme.of(context).bodyLarge.override(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (totalCount > 1) ...[
                 const SizedBox(height: 8),
                 Text(
                   '$currentIndex/$totalCount 검열 중',
-                  style: AppTheme.of(context).bodyMedium.override(
-                        color: Colors.white70,
-                      ),
+                  style: AppTheme.of(
+                    context,
+                  ).bodyMedium.override(color: Colors.white70),
                 ),
               ],
             ],
@@ -64,10 +64,8 @@ class ModerationDialog extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ModerationDialog(
-        currentIndex: currentIndex,
-        totalCount: totalCount,
-      ),
+      builder: (_) =>
+          ModerationDialog(currentIndex: currentIndex, totalCount: totalCount),
     );
   }
 }

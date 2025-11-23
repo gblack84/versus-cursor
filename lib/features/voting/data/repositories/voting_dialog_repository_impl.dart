@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:flutter/foundation.dart';
-import 'package:uuid/uuid.dart';
 import '../../domain/repositories/i_voting_dialog_repository.dart';
 import '../../domain/failures/voting_failure.dart';
 import '../../domain/entities/dialog/vote_expansion_request.dart';
@@ -10,9 +8,9 @@ import '../extensions/firestore_error_extensions.dart';
 import '../../domain/entities/vote_expansion_request_extensions.dart';
 import '../../domain/entities/weight_extensions.dart';
 import '../../domain/entities/vote_extensions.dart';
-import '/services/idempotency/idempotency_service.dart';
 import '/services/sharding/shard_utils.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/logging/logger_service.dart';
 
 /// Implementation of Dialog voting repository
 ///
@@ -36,16 +34,12 @@ import '/services/cache/unified_cache_service.dart';
 class VotingDialogRepositoryImpl implements IVotingDialogRepository {
   final FirebaseFirestore _firestore;
   final UnifiedCacheService _cacheService = UnifiedCacheService.instance;
-  final IdempotencyService _idempotencyService;
   final ShardUtils _shardUtils;
 
   VotingDialogRepositoryImpl({
     required FirebaseFirestore firestore,
-    IdempotencyService? idempotencyService,
     ShardUtils? shardUtils,
   })  : _firestore = firestore,
-        _idempotencyService =
-            idempotencyService ?? IdempotencyService(firestore: firestore),
         _shardUtils = shardUtils ?? ShardUtils(firestore: firestore);
 
   // ============================================================================
@@ -59,124 +53,102 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
     required String voteOption,
     String? messageId,
     String? chatId,
-    String? eventId, // 🆕 Idempotency를 위한 eventId
   }) async {
     try {
-      // eventId가 없으면 자동 생성
-      final actualEventId = eventId ?? const Uuid().v4();
-
-      if (kDebugMode) {
-        print(
-            '[DialogRepo] castVote started: postId=$postId, choice=$voteOption, eventId=$actualEventId');
-      }
-
-      // ✅ Idempotency + Sharded Counter 적용
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'votes',
-        entityId: postId,
+      VotingLogger.voteCasting(
+        postId: postId,
         userId: userId,
-        eventId: actualEventId,
-        operation: (transaction) async {
-          // 1. Posts 업데이트
-          final postRef = _firestore.collection('posts').doc(postId);
-          final postDoc = await transaction.get(postRef);
-
-          if (!postDoc.exists) {
-            throw Exception('게시물을 찾을 수 없습니다');
-          }
-
-          // 중복 투표 확인 (Transaction 내부에서 안전)
-          // Note: IdempotencyService가 이미 eventId 기반 체크를 했지만,
-          // 배열 중복도 확인 (backward compatibility)
-          final postData = postDoc.data() as Map<String, dynamic>;
-          final votedUsersA =
-              List<String>.from(postData['votedUserIDsA'] ?? []);
-          final votedUsersB =
-              List<String>.from(postData['votedUserIDsB'] ?? []);
-
-          if (votedUsersA.contains(userId) ||
-              votedUsersB.contains(userId)) {
-            throw Exception('이미 투표하셨습니다');
-          }
-
-          // 투표 필드 업데이트 (Backward Compatibility)
-          final updates = <String, dynamic>{
-            'votedUserIDs$voteOption': FieldValue.arrayUnion([userId]),
-            'lastVoteAt': FieldValue.serverTimestamp(),
-          };
-
-          transaction.update(postRef, updates);
-
-          // ✨ Sharded Counter 증가
-          final field = 'votes$voteOption';
-          _shardUtils.incrementShard(
-            transaction,
-            counterType: 'vote',
-            entityId: postId,
-            userId: userId,
-            field: field,
-          );
-          _shardUtils.incrementShard(
-            transaction,
-            counterType: 'vote',
-            entityId: postId,
-            userId: userId,
-            field: 'totalVotes',
-          );
-
-          // 1.5 votes 서브컬렉션에 투표 문서 생성
-          final voteRef = postRef.collection('votes').doc(userId);
-          transaction.set(voteRef, {
-            'user': _firestore.doc('users/$userId'),
-            'option': voteOption,
-            'eventId': actualEventId,
-            'createdAt': FieldValue.serverTimestamp(),
-            'fromChat': messageId != null && chatId != null,
-          });
-
-          // 2. Messages 업데이트 (있는 경우)
-          if (messageId != null && chatId != null) {
-            final messageRef = _firestore
-                .collection('chats')
-                .doc(chatId)
-                .collection('messages')
-                .doc(messageId);
-
-            final messageDoc = await transaction.get(messageRef);
-
-            if (messageDoc.exists) {
-              transaction.update(messageRef, {
-                'userVotes.$userId': {
-                  'option': voteOption,
-                  'votedAt': FieldValue.serverTimestamp(),
-                },
-                'lastVoteUpdate': FieldValue.serverTimestamp(),
-              });
-            }
-          }
-        },
+        voteOption: voteOption,
       );
 
-      if (kDebugMode) {
-        print(
-            '[DialogRepo] castVote success: postId=$postId, choice=$voteOption');
-      }
+      // ✅ Direct Firestore transaction (no IdempotencyService wrapper)
+      // Deterministic vote ID (userId) provides natural idempotency via set()
+      await _firestore.runTransaction((transaction) async {
+        // 1. Posts 업데이트
+        final postRef = _firestore.collection('posts').doc(postId);
+        final postDoc = await transaction.get(postRef);
 
+        if (!postDoc.exists) {
+          throw Exception('게시물을 찾을 수 없습니다');
+        }
+
+        // 중복 투표 확인 (Transaction 내부에서 안전)
+        // Backward compatibility: votedUserIDs arrays provide duplicate check
+        final postData = postDoc.data() as Map<String, dynamic>;
+        final votedUsersA =
+            List<String>.from(postData['votedUserIDsA'] ?? []);
+        final votedUsersB =
+            List<String>.from(postData['votedUserIDsB'] ?? []);
+
+        if (votedUsersA.contains(userId) ||
+            votedUsersB.contains(userId)) {
+          throw Exception('이미 투표하셨습니다');
+        }
+
+        // 투표 필드 업데이트 (Backward Compatibility)
+        final updates = <String, dynamic>{
+          'votedUserIDs$voteOption': FieldValue.arrayUnion([userId]),
+          'lastVoteAt': FieldValue.serverTimestamp(),
+        };
+
+        transaction.update(postRef, updates);
+
+        // ✨ Sharded Counter 증가
+        final field = 'votes$voteOption';
+        _shardUtils.incrementShard(
+          transaction,
+          counterType: 'vote',
+          entityId: postId,
+          userId: userId,
+          field: field,
+        );
+        _shardUtils.incrementShard(
+          transaction,
+          counterType: 'vote',
+          entityId: postId,
+          userId: userId,
+          field: 'totalVotes',
+        );
+
+        // ✅ Deterministic vote document (userId as doc ID)
+        // Firestore set() is idempotent: retry overwrites, no duplicates
+        final voteRef = postRef.collection('votes').doc(userId);
+        transaction.set(voteRef, {
+          'user': _firestore.doc('users/$userId'),
+          'option': voteOption,
+          'createdAt': FieldValue.serverTimestamp(),
+          'fromChat': messageId != null && chatId != null,
+        });
+
+        // 2. Messages 업데이트 (있는 경우)
+        if (messageId != null && chatId != null) {
+          final messageRef = _firestore
+              .collection('chats')
+              .doc(chatId)
+              .collection('messages')
+              .doc(messageId);
+
+          final messageDoc = await transaction.get(messageRef);
+
+          if (messageDoc.exists) {
+            transaction.update(messageRef, {
+              'userVotes.$userId': {
+                'option': voteOption,
+                'votedAt': FieldValue.serverTimestamp(),
+              },
+              'lastVoteUpdate': FieldValue.serverTimestamp(),
+            });
+          }
+        }
+      });
+
+      VotingLogger.voteCasted(postId: postId, voteOption: voteOption);
       return const Right(null);
-    } on IdempotencyViolation catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] Idempotency violation: $e');
-      }
-      return const Left(VotingFailure.alreadyVoted());
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] castVote Firebase error: $e');
-      }
+      VotingLogger.voteError(errorType: e.code, error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] castVote error: $e');
-      }
+      VotingLogger.voteError(errorType: 'unexpected', error: e, postId: postId);
       // Parse error message to determine failure type
       return Left(e.toString().toVotingFailure());
     }
@@ -211,20 +183,13 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
         });
       }
 
-      if (kDebugMode) {
-        print('[DialogRepo] removeVote success: postId=$postId, userId=$userId');
-      }
-
+      VotingLogger.voteRemoved(postId: postId, userId: userId);
       return const Right(null);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] removeVote Firebase error: $e');
-      }
+      VotingLogger.voteError(errorType: e.code, error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] removeVote error: $e');
-      }
+      VotingLogger.voteError(errorType: 'unexpected', error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -235,6 +200,8 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
     required String userId,
   }) async {
     try {
+      VotingLogger.voteLoading(postId: postId, userId: userId);
+
       // Try 3-Layer cache first
       final cachedHistoryResult = await _cacheService.getVoteHistory(userId);
       final cachedHistory = cachedHistoryResult.fold(
@@ -249,9 +216,6 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
         );
 
         if (userVote.isNotEmpty) {
-          if (kDebugMode) {
-            print('[DialogRepo] checkUserVote cache hit: postId=$postId');
-          }
           return Right(userVote);
         }
       }
@@ -282,16 +246,13 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
       // Cache the complete history to 3-Layer cache
       await _cacheService.setVoteHistory(userId, voteHistory);
 
+      VotingLogger.voteLoaded(postId: postId, hasVoted: userVote.isNotEmpty);
       return Right(userVote);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] checkUserVote Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] checkUserVote error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -305,6 +266,8 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
     String postId,
   ) async {
     try {
+      VotingLogger.voteLoading(postId: postId);
+
       final doc = await _firestore.collection('posts').doc(postId).get();
 
       if (doc.exists) {
@@ -314,23 +277,20 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
           'option2': data?['votesB'] ?? 0,
         };
 
-        if (kDebugMode) {
-          print('[DialogRepo] getVoteCounts success: postId=$postId, counts=$counts');
-        }
-
+        VotingLogger.voteCountsLoaded(
+          postId: postId,
+          countA: counts['option1'] as int?,
+          countB: counts['option2'] as int?,
+        );
         return Right(counts);
       }
 
       return const Right(null);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteCounts Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteCounts error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -362,24 +322,14 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
           };
         }).toList();
 
-        if (kDebugMode) {
-          print('[DialogRepo] streamVoteCounts emit: ${result.length} items');
-        }
-
         return Right(result) as Either<VotingFailure, List<Map<String, dynamic>>>;
       }).handleError((e) {
-        if (kDebugMode) {
-          print('[DialogRepo] streamVoteCounts error: $e');
-        }
         if (e is FirebaseException) {
           return Left(e.toVotingFailure());
         }
         return Left(e.toString().toVotingFailure());
       });
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] streamVoteCounts error: $e');
-      }
       if (e is FirebaseException) {
         return Stream.value(Left(e.toVotingFailure()));
       }
@@ -414,20 +364,12 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
         };
       }).toList();
 
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteCountsOnce success: ${result.length} items');
-      }
-
       return Right(result);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteCountsOnce Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteCountsOnce error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -452,20 +394,12 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
       final snapshot = await query.count().get();
       final count = snapshot.count ?? 0;
 
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteCountsCount success: count=$count');
-      }
-
       return Right(count);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteCountsCount Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteCountsCount error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -492,20 +426,12 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
               })
           .toList();
 
-      if (kDebugMode) {
-        print('[DialogRepo] getUserVoteHistory success: ${history.length} votes');
-      }
-
       return Right(history);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getUserVoteHistory Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getUserVoteHistory error: $e');
-      }
+      VotingLogger.loadError(error: e);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -521,6 +447,12 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
     required int additionalTime,
   }) async {
     try {
+      VotingLogger.expansionRequesting(
+        postId: postId,
+        userId: userId,
+        requestedDuration: additionalTime,
+      );
+
       final requestRef = _firestore.collection('voteExpansionRequests').doc();
 
       await requestRef.set({
@@ -532,20 +464,24 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
         'requestedAt': FieldValue.serverTimestamp(),
       });
 
-      if (kDebugMode) {
-        print('[DialogRepo] requestVoteExpansion success: postId=$postId, time=$additionalTime');
-      }
-
+      VotingLogger.expansionRequested(
+        postId: postId,
+        requestedDuration: additionalTime,
+      );
       return const Right(null);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] requestVoteExpansion Firebase error: $e');
-      }
+      VotingLogger.expansionError(
+        errorType: e.code,
+        error: e,
+        postId: postId,
+      );
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] requestVoteExpansion error: $e');
-      }
+      VotingLogger.expansionError(
+        errorType: 'unexpected',
+        error: e,
+        postId: postId,
+      );
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -555,6 +491,7 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
     String requestId,
   ) async {
     try {
+      // Note: postId not available in this method signature, would need to fetch first
       await _firestore
           .collection('voteExpansionRequests')
           .doc(requestId)
@@ -563,20 +500,13 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
         'approvedAt': FieldValue.serverTimestamp(),
       });
 
-      if (kDebugMode) {
-        print('[DialogRepo] approveVoteExpansion success: requestId=$requestId');
-      }
-
+      VotingLogger.expansionApproved(postId: 'unknown', requestId: requestId);
       return const Right(null);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] approveVoteExpansion Firebase error: $e');
-      }
+      VotingLogger.expansionError(errorType: e.code, error: e);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] approveVoteExpansion error: $e');
-      }
+      VotingLogger.expansionError(errorType: 'unexpected', error: e);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -594,20 +524,13 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
         'rejectedAt': FieldValue.serverTimestamp(),
       });
 
-      if (kDebugMode) {
-        print('[DialogRepo] rejectVoteExpansion success: requestId=$requestId');
-      }
-
+      VotingLogger.expansionRejected(postId: 'unknown', requestId: requestId);
       return const Right(null);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] rejectVoteExpansion Firebase error: $e');
-      }
+      VotingLogger.expansionError(errorType: e.code, error: e);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] rejectVoteExpansion error: $e');
-      }
+      VotingLogger.expansionError(errorType: 'unexpected', error: e);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -645,24 +568,14 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
             .map((doc) => VoteExpansionRequestFirestoreX.fromFirestore(doc))
             .toList();
 
-        if (kDebugMode) {
-          print('[DialogRepo] streamVoteExpansionRequests emit: ${requests.length} items');
-        }
-
         return Right(requests) as Either<VotingFailure, List<VoteExpansionRequest>>;
       }).handleError((e) {
-        if (kDebugMode) {
-          print('[DialogRepo] streamVoteExpansionRequests error: $e');
-        }
         if (e is FirebaseException) {
           return Left(e.toVotingFailure());
         }
         return Left(e.toString().toVotingFailure());
       });
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] streamVoteExpansionRequests error: $e');
-      }
       if (e is FirebaseException) {
         return Stream.value(Left(e.toVotingFailure()));
       }
@@ -703,20 +616,12 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
           .map((doc) => VoteExpansionRequestFirestoreX.fromFirestore(doc))
           .toList();
 
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteExpansionRequestsOnce success: ${requests.length} items');
-      }
-
       return Right(requests);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteExpansionRequestsOnce Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteExpansionRequestsOnce error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -750,20 +655,12 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
       final snapshot = await query.count().get();
       final count = snapshot.count ?? 0;
 
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteExpansionRequestsCount success: count=$count');
-      }
-
       return Right(count);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteExpansionRequestsCount Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getVoteExpansionRequestsCount error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -799,24 +696,14 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
             .map((doc) => WeightFirestoreX.fromFirestore(doc))
             .toList();
 
-        if (kDebugMode) {
-          print('[DialogRepo] streamWeights emit: ${weights.length} items');
-        }
-
         return Right(weights) as Either<VotingFailure, List<Weight>>;
       }).handleError((e) {
-        if (kDebugMode) {
-          print('[DialogRepo] streamWeights error: $e');
-        }
         if (e is FirebaseException) {
           return Left(e.toVotingFailure());
         }
         return Left(e.toString().toVotingFailure());
       });
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] streamWeights error: $e');
-      }
       if (e is FirebaseException) {
         return Stream.value(Left(e.toVotingFailure()));
       }
@@ -851,20 +738,12 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
           .map((doc) => WeightFirestoreX.fromFirestore(doc))
           .toList();
 
-      if (kDebugMode) {
-        print('[DialogRepo] getWeightsOnce success: ${weights.length} items');
-      }
-
       return Right(weights);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getWeightsOnce Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getWeightsOnce error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }
@@ -893,20 +772,12 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
       final snapshot = await query.count().get();
       final count = snapshot.count ?? 0;
 
-      if (kDebugMode) {
-        print('[DialogRepo] getWeightsCount success: count=$count');
-      }
-
       return Right(count);
     } on FirebaseException catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getWeightsCount Firebase error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toVotingFailure());
     } catch (e) {
-      if (kDebugMode) {
-        print('[DialogRepo] getWeightsCount error: $e');
-      }
+      VotingLogger.loadError(error: e, postId: postId);
       return Left(e.toString().toVotingFailure());
     }
   }

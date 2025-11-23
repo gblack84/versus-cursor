@@ -25,10 +25,13 @@ extension UserRoleExtension on UserProfile {
   /// ```dart
   /// final profile = await getUserProfileUseCase(userId);
   /// profile.fold(
-  ///   (failure) => print('조회 실패'),
+  ///   (failure) => ProfileLogger.profileError(
+  ///     errorType: 'fetchFailed',
+  ///     message: '조회 실패',
+  ///   ),
   ///   (profile) {
   ///     final role = profile.getRole();  // 'user', 'admin', 'tester'
-  ///     print('User role: $role');
+  ///     Logger.info('User role: $role', tag: 'Profile');
   ///   },
   /// );
   /// ```
@@ -85,7 +88,7 @@ extension UserRoleExtension on UserProfile {
   /// **Usage**:
   /// ```dart
   /// final completeness = profile.calculateCompleteness();
-  /// print('프로필 완성도: ${(completeness * 100).toStringAsFixed(1)}%');
+  /// Logger.info('프로필 완성도: ${(completeness * 100).toStringAsFixed(1)}%', tag: 'Profile');
   /// ```
   double calculateCompleteness() {
     double score = 0.0;

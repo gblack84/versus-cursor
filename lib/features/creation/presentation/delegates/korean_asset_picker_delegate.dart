@@ -44,7 +44,8 @@ class CustomKoreanAssetPickerTextDelegate extends AssetPickerTextDelegate {
   String get changeAccessibleLimitedAssets => '접근 가능한 사진 업데이트';
 
   @override
-  String get accessAllTip => '앱이 일부 사진에만 접근 가능합니다.\n'
+  String get accessAllTip =>
+      '앱이 일부 사진에만 접근 가능합니다.\n'
       '설정에서 모든 사진 접근을 허용해주세요.';
 
   @override

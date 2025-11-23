@@ -42,7 +42,7 @@ const List<NavigationItem> mainNavigationItems = [
     label: '질문작성',
     icon: Icons.add_circle_outline,
     activeIcon: Icons.add_circle,
-    route: '/inPutPostImage',
+    route: '/createPost',  // Fixed: Changed from /inPutPostImage to match actual route
   ),
   NavigationItem(
     label: '채팅',
@@ -76,7 +76,7 @@ const List<NavigationItem> chatNavigationItems = [
     label: '검색',
     icon: Icons.search_outlined,
     activeIcon: Icons.search,
-    route: '/chat/search',
+    route: '/search',  // Fixed: Changed from /chat/search (doesn't exist) to /search
   ),
   NavigationItem(
     label: '홈',

@@ -5,6 +5,8 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 import '/core/config/environment_config.dart';
 import '/app/config/firebase_config.dart';
@@ -24,11 +26,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Firebase 초기화 (background에서도 필요)
   await initFirebase();
 
-  if (kDebugMode) {
-    print('🔔 Background message: ${message.notification?.title}');
-    print('📦 Data: ${message.data}');
-  }
-
   // TODO: Process notification in background
   // This could update local database, show local notification, etc.
 }
@@ -43,8 +40,7 @@ void main() async {
 
   // 환경 변수 검증
   if (!EnvironmentConfig.validateConfiguration()) {
-    print(
-        '❌ Environment configuration is invalid. Please check your .env file.');
+    // Environment configuration is invalid - check .env file
   }
 
   // 개발 환경에서만 상태 출력
@@ -52,9 +48,42 @@ void main() async {
 
   await initFirebase();
 
+  // Firebase Analytics 초기화 - Production Business Metrics Tracking
+  // ✅ Phase 3 Task 1 (2025-11-19): Analytics integration for INFO level logging
+  //
+  // **Purpose**: Track user behavior and business metrics in Production
+  // - User actions: sign_in, create_post, vote_cast, etc.
+  // - Content metrics: post_views, media_uploads, chat_messages
+  // - System metrics: cache_performance, api_latency, feature_usage
+  //
+  // **Production Only**: setAnalyticsCollectionEnabled(!kDebugMode)
+  // - Development: Analytics disabled (avoid polluting Production data)
+  // - Production: Analytics enabled for business insights
+  FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(!kDebugMode);
+
+  // Firebase Crashlytics 초기화 - Production Error Tracking
+  // ✅ Phase 1 (2025-11-18): Crashlytics integration
+  //
+  // FlutterError.onError: Flutter framework errors (위젯 빌드 에러 등)
+  // PlatformDispatcher.instance.onError: Dart runtime errors (미처리 예외)
+  //
+  // **Important**: Only runs in production (!kDebugMode)
+  // Development에서는 console logging으로 처리
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true; // true = handled, prevents app termination
+  };
+
   // FCM Background Message Handler 등록
   // 반드시 Firebase 초기화 이후에 호출해야 함
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // UnifiedCacheService 초기화 - 3-Layer 캐싱
+  // DI 설정 전에 초기화해야 함 (profile_di_module에서 instance 접근)
+  await UnifiedCacheService.initialize();
 
   // Initialize Dependency Injection (Firebase-Centric Architecture)
   await setupDependencyInjection();
@@ -64,9 +93,6 @@ void main() async {
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED, // 무제한 캐시
   );
-
-  // UnifiedCacheService 초기화 - 3-Layer 캐싱
-  await UnifiedCacheService.initialize();
 
   // FCMService 초기화 - Push Notifications
   await FCMService().initialize();

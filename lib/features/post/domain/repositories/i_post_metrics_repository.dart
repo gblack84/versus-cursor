@@ -60,13 +60,15 @@ abstract class IPostMetricsRepository {
 
   /// Record user interaction
   ///
+  /// **Natural Idempotency**: Uses userId as document ID in interactions subcollection
+  /// - Multiple calls with same userId will overwrite, preventing duplicates
+  ///
   /// **Returns**: `Either<PostFailure, Unit>`
   Future<Either<PostFailure, Unit>> recordInteraction(
     String contentId,
     String userId,
-    InteractionType type, {
-    String? eventId, // Idempotency를 위한 eventId (optional)
-  });
+    InteractionType type,
+  );
 
   /// Get interaction history
   ///

@@ -1,29 +1,26 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:uuid/uuid.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';
 import '../failures/post_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// UseCase for creating a new post
 ///
-/// **Phase 4: Idempotency Integration**
-/// - Generates UUID eventId for duplicate prevention
+/// **Phase 4: Natural Idempotency via Deterministic IDs**
+/// - Uses deterministic post.id for natural idempotency
 /// - Validates post data before creation
 /// - Returns Either<PostFailure, Unit> for type-safe error handling
 class CreatePostUseCase {
   final IPostDisplayRepositoryV2 _postRepository;
-  final Uuid _uuid;
 
   CreatePostUseCase({
     required IPostDisplayRepositoryV2 postRepository,
-    Uuid? uuid,
-  })  : _postRepository = postRepository,
-        _uuid = uuid ?? const Uuid();
+  }) : _postRepository = postRepository;
 
   /// Execute the use case to create a new post
   ///
   /// **Parameters**:
-  /// - [post] - PostDisplay object with all post data
+  /// - [post] - PostDisplay object with all post data (with deterministic ID)
   ///
   /// **Returns**:
   /// - Right(unit) - Post created successfully
@@ -31,25 +28,48 @@ class CreatePostUseCase {
   /// - Left(PostFailure.createFailed) - Firestore write failed
   /// - Left(PostFailure.networkError) - Network connection issue
   ///
-  /// **Idempotency**:
-  /// - Generates unique eventId for each call
-  /// - Same eventId on retry prevents duplicate posts
-  /// - Network retry with same eventId returns success without creating duplicate
+  /// **Natural Idempotency**:
+  /// - post.id provides deterministic document ID
+  /// - Multiple calls with same post.id will overwrite (Firestore set operation)
+  /// - No duplicate posts created on network retry
   Future<Either<PostFailure, Unit>> execute({
     required PostDisplay post,
   }) async {
+    DevLogger.params({
+      'postId': post.id,
+      'questionTitle': post.questionTitle,
+    }, tag: 'CreatePost');
+
     // Validate input
     if (post.questionTitle.trim().isEmpty) {
+      DevLogger.result(
+        isSuccess: false,
+        data: 'Empty questionTitle',
+        tag: 'CreatePost',
+      );
       return left(const PostFailure.invalidInput(field: 'questionTitle'));
     }
 
-    // Generate eventId for idempotency
-    final eventId = _uuid.v4();
+    DevLogger.checkpoint('Calling repository.createPost with post.id: ${post.id}', tag: 'CreatePost');
 
-    // Call repository with eventId
-    return await _postRepository.createPost(
+    // Call repository (natural idempotency via deterministic post.id)
+    final result = await _postRepository.createPost(
       post: post,
-      eventId: eventId,
     );
+
+    result.fold(
+      (failure) => DevLogger.result(
+        isSuccess: false,
+        data: failure.toString(),
+        tag: 'CreatePost',
+      ),
+      (_) => DevLogger.result(
+        isSuccess: true,
+        data: {'postId': post.id},
+        tag: 'CreatePost',
+      ),
+    );
+
+    return result;
   }
 }

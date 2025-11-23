@@ -171,8 +171,4 @@ class FieldConfig {
 }
 
 /// 보더 타입 enum
-enum FieldBorderType {
-  underline,
-  outline,
-  none,
-}
+enum FieldBorderType { underline, outline, none }

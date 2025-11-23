@@ -32,7 +32,10 @@ abstract class ICloudImageModerationService {
   /// final status = await service.checkModerationStatus('users/123/posts/image.jpg');
   ///
   /// if (status != null) {
-  ///   print('Status: ${status.moderationStatus}');
+  ///   ModerationLogger.moderationStatusChecked(
+  ///     filePath: 'users/123/posts/image.jpg',
+  ///     status: status.moderationStatus,
+  ///   );
   /// }
   /// ```
   Future<ImageModerationModel?> checkModerationStatus(String filePath);
@@ -58,7 +61,10 @@ abstract class ICloudImageModerationService {
   /// );
   ///
   /// if (result != null && result.moderationStatus == 'approved') {
-  ///   print('Image approved!');
+  ///   ModerationLogger.imageSafetyValidated(
+  ///     filePath: 'users/123/posts/image.jpg',
+  ///     isSafe: true,
+  ///   );
   /// }
   /// ```
   Future<ImageModerationModel?> waitForModeration(
@@ -81,7 +87,10 @@ abstract class ICloudImageModerationService {
   /// final service = getIt<ICloudImageModerationService>();
   /// service.watchModerationStatus('users/123/posts/image.jpg').listen((status) {
   ///   if (status != null) {
-  ///     print('Status changed: ${status.moderationStatus}');
+  ///     ModerationLogger.moderationStatusChanged(
+  ///       filePath: 'users/123/posts/image.jpg',
+  ///       status: status.moderationStatus,
+  ///     );
   ///   }
   /// });
   /// ```
@@ -101,7 +110,10 @@ abstract class ICloudImageModerationService {
   /// final status = await service.checkModerationStatus('path/to/image.jpg');
   ///
   /// if (service.isImageSafe(status)) {
-  ///   print('Image is safe to display');
+  ///   ModerationLogger.imageSafetyValidated(
+  ///     filePath: 'path/to/image.jpg',
+  ///     isSafe: true,
+  ///   );
   /// }
   /// ```
   bool isImageSafe(ImageModerationModel? moderation);
@@ -120,7 +132,10 @@ abstract class ICloudImageModerationService {
   /// final status = await service.checkModerationStatus('path/to/image.jpg');
   ///
   /// if (service.isImageRejected(status)) {
-  ///   print('Image rejected: Community guidelines violation');
+  ///   ModerationLogger.imageRejected(
+  ///     filePath: 'path/to/image.jpg',
+  ///     reason: 'Community guidelines violation',
+  ///   );
   /// }
   /// ```
   bool isImageRejected(ImageModerationModel? moderation);
@@ -147,7 +162,10 @@ abstract class ICloudImageModerationService {
   ///
   /// if (status != null && service.isImageRejected(status)) {
   ///   final reason = service.getRejectionReason(status);
-  ///   print('Rejection reason: $reason');
+  ///   ModerationLogger.imageRejected(
+  ///     filePath: 'path/to/image.jpg',
+  ///     reason: reason,
+  ///   );
   /// }
   /// ```
   String getRejectionReason(ImageModerationModel moderation);

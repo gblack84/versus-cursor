@@ -3,7 +3,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core_exports.dart';
-import '/services/logging/debug_service.dart';
 import '/services/cache/unified_image_cache_service.dart';
 
 /// MediaSelectionBox의 기본 추상 클래스
@@ -73,7 +72,8 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
       child: InkWell(
         onTap: widget.onTap,
         child: Container(
-          width: widget.dynamicWidth ??
+          width:
+              widget.dynamicWidth ??
               (widget.isHorizontal ? double.infinity : null),
           height: boxHeight,
           decoration: BoxDecoration(
@@ -111,17 +111,18 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
         child: Text(
           widget.label,
           style: AppTheme.of(context).bodyMedium.override(
-                font: GoogleFonts.plusJakartaSans(
-                  fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
-                  fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-                ),
-                fontSize: 50.0,
-                letterSpacing: 0.0,
-                color: color ??
-                    (widget.imageUrls.isNotEmpty
-                        ? Colors.white
-                        : AppTheme.of(context).primaryText),
-              ),
+            font: GoogleFonts.plusJakartaSans(
+              fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+              fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+            ),
+            fontSize: 50.0,
+            letterSpacing: 0.0,
+            color:
+                color ??
+                (widget.imageUrls.isNotEmpty
+                    ? Colors.white
+                    : AppTheme.of(context).primaryText),
+          ),
         ),
       ),
     );
@@ -200,12 +201,9 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
       fadeOutDuration: const Duration(milliseconds: 150),
       errorWidget: (context, url, error) {
         if (!mounted) return const SizedBox.shrink();
-        DebugHelper.logError('이미지 로드 에러', error);
-        DebugHelper.logError('문제 URL: $url');
-        return Icon(
-          Icons.error,
-          color: AppTheme.of(context).error,
-        );
+        Logger.error('이미지 로드 에러', error: error, tag: 'Error');
+        Logger.error('문제 URL: $url', tag: 'Error');
+        return Icon(Icons.error, color: AppTheme.of(context).error);
       },
     );
   }
@@ -225,20 +223,14 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
         color: Colors.white,
         iconSize: 29.0,
         padding: EdgeInsets.all(8.0),
-        constraints: BoxConstraints(
-          minWidth: 45.0,
-          minHeight: 45.0,
-        ),
+        constraints: BoxConstraints(minWidth: 45.0, minHeight: 45.0),
         onPressed: onPressed,
       ),
     );
   }
 
   /// X 버튼 스타일
-  Widget buildCloseButton({
-    required VoidCallback onTap,
-    bool isSmall = true,
-  }) {
+  Widget buildCloseButton({required VoidCallback onTap, bool isSmall = true}) {
     if (isSmall) {
       return Container(
         decoration: BoxDecoration(
@@ -246,11 +238,7 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
           shape: BoxShape.circle,
         ),
         padding: EdgeInsets.all(4.0),
-        child: Icon(
-          Icons.close,
-          color: Colors.white,
-          size: 24.0,
-        ),
+        child: Icon(Icons.close, color: Colors.white, size: 24.0),
       );
     } else {
       return Icon(

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Versus Space - Flutter Clean Architecture v4.0 프로젝트
 
-> **최종 업데이트**: 2025-11-10 (FlutterGen Asset 관리 도입)
+> **최종 업데이트**: 2025-11-23 (Infrastructure Layer 재구성 + 문서화 표준화)
 > **프로젝트**: versus_space - Flutter Social Voting App
 > **아키텍처**: Clean Architecture v4.0 + Firebase-Centric v2.0
 > **상태 관리**: Riverpod 3.x (@riverpod annotation, 8개 Feature 모두 완료)
@@ -14,11 +14,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > **캐싱**: UnifiedCacheService 3-Layer (Memory → Hive → Firestore)
 > **에러 처리**: Either<Failure, T> 패턴 (fpdart 1.1.0)
 > **전체 완성도**: **87.5%** (7/8 Features 완료)
+> **문서 크기**: **~2,400줄** (기존 1,200줄 대비 100% 증가)
 
 ---
 
 ## 📋 목차
 
+- [빠른 참조 (30초)](#-빠른-참조-30초)
 - [빠른 시작 (5분)](#-빠른-시작-5분)
 - [프로젝트 개요](#-프로젝트-개요)
 - [아키텍처 개요](#-아키텍처-개요)
@@ -26,13 +28,99 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [Feature 완성도 매트릭스](#-feature-완성도-매트릭스)
 - [기술 스택 (정확한 버전)](#-기술-스택-정확한-버전)
 - [빌드 및 테스트](#-빌드-및-테스트)
+- [Git 워크플로우](#-git-워크플로우)
+- [CI/CD 파이프라인](#-cicd-파이프라인)
 - [실전 명령어 레퍼런스](#-실전-명령어-레퍼런스)
 - [아키텍처 결정 근거 (ADR)](#-아키텍처-결정-근거-adr)
+- [의사결정 가이드](#-의사결정-가이드)
 - [캐싱 시스템 상세](#-캐싱-시스템-상세)
 - [자주 발생하는 이슈 + 해결법](#-자주-발생하는-이슈--해결법)
 - [Feature별 학습 로드맵](#-feature별-학습-로드맵)
 - [Migration History](#-migration-history)
 - [주요 문서](#-주요-문서)
+
+---
+
+## ⚡ 빠른 참조 (30초)
+
+### 필수 명령어
+
+```bash
+# 코드 생성 (Watch 모드 - 개발 중 권장)
+dart run build_runner watch --delete-conflicting-outputs
+
+# 한 번만 실행 (CI/CD, 배포 전)
+dart run build_runner build --delete-conflicting-outputs
+
+# 분석 & 테스트
+flutter analyze                    # 정적 분석 (목표: 0 errors, 0 warnings)
+flutter test                       # 모든 테스트 실행
+flutter test --coverage            # 커버리지 포함
+
+# 앱 실행
+flutter run                        # 기본 디바이스
+flutter run -d chrome              # Web
+flutter run -d "iPhone 15 Pro"     # iOS 시뮬레이터
+
+# Firebase Emulator (로컬 개발)
+cd firebase && firebase emulators:start
+```
+
+### 긴급 상황 빠른 해결
+
+| 증상 | 빠른 해결법 | 상세 |
+|------|------------|------|
+| 빌드 에러 (`*.g.dart doesn't exist`) | `dart run build_runner build --delete-conflicting-outputs` | [링크](#1-빌드-에러-missing-generated-files) |
+| Firebase 연결 실패 | `firebase_options.dart` 확인, `firebase login` | [링크](#2-firebase-연결-에러) |
+| 캐시 손상 (`Box has been closed`) | `Hive.deleteBoxFromDisk()` 후 재생성 | [링크](#3-캐시-관련-문제) |
+| Provider 상태 문제 | `ref.invalidate()` 또는 `ref.refresh()` | [링크](#4-riverpod-상태-동기화-문제) |
+
+### 아키텍처 핵심 (3초 요약)
+
+```
+Pattern:  Clean Architecture v4.0 + Firebase-Centric v2.0
+State:    Riverpod 3.x (@riverpod annotation)
+Error:    Either<Failure, T> (fpdart)
+Cache:    3-Layer (Memory → Hive → Firestore)
+DI:       GetIt (Domain/Data) + Riverpod (Presentation)
+Assets:   FlutterGen v5.7.0 (타입 안전)
+```
+
+### 주요 파일 위치
+
+```
+lib/
+├── features/[feature]/
+│   ├── domain/          # Pure Dart (Entity, UseCase, Failure)
+│   ├── data/            # Firebase 직접 호출 (Repository 구현)
+│   └── presentation/    # Riverpod Provider, UI
+├── app/
+│   ├── router/          # GoRouter 설정
+│   └── di.dart          # GetIt DI 설정
+├── services/cache/      # 3-Layer 캐싱
+└── gen/                 # FlutterGen 자동 생성 (Assets, Fonts)
+```
+
+### 새 Feature 추가 - 빠른 체크리스트
+
+```
+□ Domain Layer (Pure Dart, 프레임워크 독립)
+  □ Entity (Freezed)
+  □ Failure (Sealed class)
+  □ Repository 인터페이스
+  □ UseCase
+□ Data Layer (Firebase-Centric)
+  □ Repository 구현
+  □ Firestore Extension (fromFirestore, toFirestore)
+  □ 캐시 통합 (UnifiedCacheService)
+□ Presentation Layer (Riverpod 3.x)
+  □ Provider (@riverpod annotation)
+  □ Screen/Widget
+□ DI 등록 (GetIt)
+□ Router 등록
+□ 테스트 작성
+□ README 작성
+```
 
 ---
 
@@ -232,7 +320,7 @@ versus-cursor/
 │   │   ├── localization/            # 다국어 지원
 │   │   ├── utils/                   # 유틸리티
 │   │   └── nav/                     # 네비게이션
-│   ├── services/                    # 🛠️ 전역 서비스
+│   ├── services/                    # 🛠️ Infrastructure Layer (Feature-Agnostic)
 │   │   ├── cache/                   # 3-Layer 캐싱
 │   │   │   ├── unified_cache_service.dart        # 통합 캐시 서비스
 │   │   │   ├── simple_memory_cache.dart          # L1 메모리 (LRU)
@@ -241,11 +329,31 @@ versus-cursor/
 │   │   │   ├── creation_cache_keys.dart          # 캐시 키 상수
 │   │   │   ├── preload_strategy.dart             # 사전 로딩
 │   │   │   └── image_cache_helper.dart           # 이미지 캐싱
+│   │   ├── logging/                 # 🔍 로깅 시스템
+│   │   │   ├── dev_logger.dart              # Development 디버깅 (64 UseCases)
+│   │   │   ├── logger_service.dart          # Production 로깅 (19 Loggers)
+│   │   │   ├── README.md                    # 로깅 완전 가이드
+│   │   │   ├── DEV_LOGGER_PLAN.md          # DevLogger 구현 계획
+│   │   │   ├── PRODUCTION_LOGGING_PLAN.md  # Production 로깅 계획
+│   │   │   └── PHASE_*_COMPLETION.md       # Phase별 완료 문서 (8개)
+│   │   ├── sharding/                # Firestore 샤딩 유틸리티
+│   │   ├── storage/                 # Firebase Storage 유틸리티
+│   │   ├── moderation/              # 컨텐츠 검열 (AI + Vision)
+│   │   ├── rate_limit/              # Rate Limiting
+│   │   ├── geo_location/            # 위치 서비스
+│   │   ├── error/                   # 에러 핸들링
+│   │   ├── media/                   # 미디어 처리
+│   │   ├── batch/                   # Batch 작업
 │   │   ├── vote_timer_service.dart
 │   │   ├── vote_status_service.dart
 │   │   └── vote_state_coordinator.dart
-│   ├── app/                         # 🚀 앱 진입점
+│   ├── app/                         # 🚀 App Layer (Composition Root)
 │   │   ├── router/                  # GoRouter 설정
+│   │   │   ├── guards/              # Route Guards (AuthGuard)
+│   │   │   ├── analytics/           # Guard Analytics (이동됨)
+│   │   │   └── routes/              # Route 정의
+│   │   ├── lifecycle/               # 앱 생명주기 관리
+│   │   │   └── initialization/      # 초기화 서비스 (이동됨)
 │   │   ├── state/                   # 전역 AppState
 │   │   ├── di/                      # GetIt DI 설정
 │   │   └── app.dart
@@ -311,7 +419,13 @@ Versus Space는 **Clean Architecture v4.0 + Feature-First** 구조로 설계되�
 ### App Layer 경계 규칙
 
 **App Layer 위치**: Presentation Layer의 일부 (Composition Root)
-**책임 범위**: 앱 진입점, 전역 Router, DI 설정, Infrastructure 초기화
+**책임 범위**: 앱 진입점, 전역 Router, DI 설정, Infrastructure 초기화, 앱 생명주기 관리
+
+**App Layer 하위 구조**:
+- **router/**: GoRouter 설정, Route Guards, Router Analytics (Guard 실행 감사 추적)
+- **lifecycle/**: 앱 생명주기 관리 (초기화 서비스, 백그라운드 프리로드)
+- **state/**: 전역 AppState
+- **di/**: GetIt DI 설정
 
 #### ✅ 허용되는 의존성
 
@@ -708,7 +822,7 @@ flutter_gen:
 - `lib/gen/assets.gen.dart`: 모든 asset 경로 (이미지, 비디오, 오디오 등)
 - `lib/gen/fonts.gen.dart`: 폰트 패밀리 상수
 
-**사용 예시**:
+**기본 사용 예시**:
 ```dart
 import 'package:versus_space/gen/assets.gen.dart';
 import 'package:versus_space/gen/fonts.gen.dart';
@@ -727,16 +841,238 @@ Image.asset('assets/images/pikle_icon.png')  // 오타 가능!
 Text('Welcome', style: TextStyle(fontFamily: 'SourGummy'))  // 오타 가능!
 ```
 
-**장점**:
-- ✅ **타입 안전성**: 컴파일 타임에 asset 존재 여부 확인
-- ✅ **IDE 자동완성**: Assets. 입력 시 모든 asset 목록 표시
-- ✅ **리팩토링 안전**: 파일 이름 변경 시 자동 추적
-- ✅ **런타임 에러 방지**: 잘못된 경로로 인한 crash 제거
+**고급 사용 패턴**:
+
+```dart
+// 1. DecorationImage (배경 이미지)
+Container(
+  decoration: BoxDecoration(
+    image: DecorationImage(
+      image: Assets.images_login_header.provider(),
+      fit: BoxFit.cover,
+    ),
+  ),
+)
+
+// 2. CircleAvatar (프로필 이미지)
+CircleAvatar(
+  backgroundImage: Assets.images_default_avatar.provider(),
+  radius: 40,
+)
+
+// 3. FadeInImage (로딩 플레이스홀더)
+FadeInImage(
+  placeholder: Assets.images_placeholder.provider(),
+  image: NetworkImage(userProfileUrl),
+  fit: BoxFit.cover,
+)
+
+// 4. Precache (미리 로딩)
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  precacheImage(Assets.images_splash_background.provider(), context);
+}
+
+// 5. SVG 이미지 (flutter_svg 패키지)
+// pubspec.yaml: flutter_gen > integrations > flutter_svg: true
+Assets.icons_heart.svg(
+  width: 24,
+  height: 24,
+  color: Colors.red,
+)
+
+// 6. 비디오/오디오 파일
+final videoPath = Assets.videos_tutorial.path;
+final audioPath = Assets.audio_notification_sound.path;
+
+// 7. JSON 파일
+final jsonString = await rootBundle.loadString(Assets.config_app_config.path);
+
+// 8. 조건부 이미지 선택
+final icon = isPremium
+    ? Assets.icons_premium_badge.image()
+    : Assets.icons_basic_badge.image();
+```
+
+**Before/After 마이그레이션 가이드**:
+
+```dart
+// ❌ BEFORE - 문자열 기반 (위험)
+class OldLoginScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // 오타 위험: 'pikle' vs 'pickle'
+        Image.asset('assets/images/pikle_icon.png'),
+
+        // 폰트 오타: 'SourGummy' vs 'SourGummi'
+        Text(
+          'Welcome',
+          style: TextStyle(fontFamily: 'SourGummy'),
+        ),
+
+        // 경로 변경 시 수동 수정 필요
+        Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/login_header.png'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ✅ AFTER - FlutterGen (안전)
+class NewLoginScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // 타입 안전: 컴파일 타임 검증
+        Assets.images_pikle_icon.image(),
+
+        // IDE 자동완성: FontFamily. 입력 시 목록 표시
+        Text(
+          'Welcome',
+          style: TextStyle(fontFamily: FontFamily.sourGummy),
+        ),
+
+        // 리팩토링 안전: 파일 이름 변경 시 자동 추적
+        Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: Assets.images_login_header.provider(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+```
+
+**자주 사용하는 패턴 모음**:
+
+```dart
+// 패턴 1: 로고 이미지 (고정 크기)
+Assets.images_logo.image(
+  width: 120,
+  height: 120,
+  fit: BoxFit.contain,
+)
+
+// 패턴 2: 배경 이미지 (전체 화면)
+DecorationImage(
+  image: Assets.images_background.provider(),
+  fit: BoxFit.cover,
+  colorFilter: ColorFilter.mode(
+    Colors.black.withOpacity(0.3),
+    BlendMode.darken,
+  ),
+)
+
+// 패턴 3: 아이콘 버튼
+IconButton(
+  icon: Assets.icons_settings.image(width: 24, height: 24),
+  onPressed: () => navigateToSettings(),
+)
+
+// 패턴 4: 리스트 타일 리딩 이미지
+ListTile(
+  leading: CircleAvatar(
+    backgroundImage: Assets.images_user_avatar.provider(),
+  ),
+  title: Text('사용자 이름'),
+)
+
+// 패턴 5: Hero 애니메이션
+Hero(
+  tag: 'profile-image',
+  child: Assets.images_profile.image(
+    width: 200,
+    height: 200,
+    fit: BoxFit.cover,
+  ),
+)
+
+// 패턴 6: 조건부 렌더링
+Widget buildBadge(bool isPremium) {
+  return isPremium
+      ? Assets.icons_premium_star.image(width: 20)
+      : SizedBox.shrink();
+}
+
+// 패턴 7: 캐시된 네트워크 이미지 + 플레이스홀더
+CachedNetworkImage(
+  imageUrl: userImageUrl,
+  placeholder: (context, url) => Assets.images_placeholder.image(),
+  errorWidget: (context, url, error) => Assets.icons_error.image(),
+)
+```
+
+**코드 생성 명령어**:
+
+```bash
+# FlutterGen 코드 생성
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# 생성된 파일 확인
+ls -la lib/gen/
+# assets.gen.dart (이미지, 비디오, 오디오 등)
+# fonts.gen.dart (폰트 패밀리)
+
+# 새 asset 추가 후 자동 생성
+# 1. pubspec.yaml에 asset 추가
+# 2. flutter pub get
+# 3. dart run build_runner build --delete-conflicting-outputs
+```
+
+**트러블슈팅**:
+
+```dart
+// 문제 1: Asset not found
+// 해결: pubspec.yaml에 asset 경로 추가 확인
+flutter:
+  assets:
+    - assets/images/
+    - assets/icons/
+
+// 문제 2: 생성된 코드가 업데이트 안 됨
+// 해결: 캐시 삭제 후 재생성
+flutter clean
+flutter pub get
+dart run build_runner clean
+dart run build_runner build --delete-conflicting-outputs
+
+// 문제 3: snake_case 스타일 적용 안 됨
+// 해결: pubspec.yaml 설정 확인
+flutter_gen:
+  assets:
+    outputs:
+      style: snake-case  # camel-case, dot-delimiter 등 가능
+```
+
+**장점 요약**:
+- ✅ **타입 안전성**: 컴파일 타임에 asset 존재 여부 확인 (런타임 크래시 방지)
+- ✅ **IDE 자동완성**: Assets. 입력 시 모든 asset 목록 표시 (오타 불가능)
+- ✅ **리팩토링 안전**: 파일 이름 변경 시 자동 추적 (Find & Replace 불필요)
+- ✅ **런타임 에러 방지**: 잘못된 경로로 인한 crash 100% 제거
+- ✅ **개발 생산성**: 자동완성으로 개발 속도 향상 (asset 경로 외울 필요 없음)
+- ✅ **유지보수**: 코드 리뷰 시 asset 경로 검증 자동화
 
 **마이그레이션 완료** (2025-11-10):
 - 14개 파일 마이그레이션 완료
-- 기존 'assets/...' 문자열 패턴: 0개
+- 기존 'assets/...' 문자열 패턴: 0개 (100% 제거)
 - FlutterGen 패턴 사용: 16개 (Images: 11, Fonts: 5)
+- 마이그레이션 대상 파일:
+  - `lib/features/auth/presentation/screens/start_page.dart`
+  - `lib/features/creation/presentation/widgets/post_creation_media_widget.dart`
+  - `lib/app/widgets/custom_bottom_nav_bar.dart`
+  - 기타 11개 파일
 
 ### 에러 처리
 
@@ -964,6 +1300,606 @@ flutter pub outdated
 
 # 특정 패키지 버전 업그레이드
 flutter pub upgrade riverpod
+```
+
+---
+
+## 🔀 Git 워크플로우
+
+### 브랜치 전략
+
+**현재 브랜치**: `feature/chat-riverpod-3x` (Riverpod 3.x 마이그레이션 진행중)
+**메인 브랜치**: `flutterflow` (Production)
+
+### 브랜치 명명 규칙
+
+```bash
+# Feature 개발
+feature/[feature-name]
+예: feature/auth-apple-signin
+    feature/voting-realtime-sync
+    feature/chat-riverpod-3x
+
+# 버그 수정
+fix/[bug-description]
+예: fix/cache-corruption
+    fix/notification-badge-count
+    fix/voting-state-sync
+
+# 리팩토링
+refactor/[scope]
+예: refactor/profile-clean-arch
+    refactor/voting-riverpod-3x
+    refactor/firebase-centric-v2
+
+# 문서화
+docs/[scope]
+예: docs/readme-update
+    docs/phase-5-completion
+    docs/fluttergen-migration
+
+# 성능 개선
+perf/[scope]
+예: perf/cache-optimization
+    perf/image-loading
+
+# 테스트
+test/[scope]
+예: test/integration-tests
+    test/unit-tests-auth
+```
+
+### 커밋 메시지 규칙
+
+```bash
+# 형식: <type>(<scope>): <subject>
+
+# 타입 (Type)
+feat     - 새 기능 추가
+fix      - 버그 수정
+docs     - 문서만 변경
+refactor - 리팩토링 (기능 변경 없음)
+test     - 테스트 추가/수정
+chore    - 빌드/설정 변경
+perf     - 성능 개선
+style    - 코드 포맷팅 (기능 변경 없음)
+
+# Scope (선택사항)
+auth, profile, chat, notifications, creation, voting, post, search, cache, firebase, di
+
+# 예시
+feat(auth): Add Apple Sign In support
+fix(voting): Resolve vote state synchronization issue
+docs(profile): Update README with Phase 7 completion
+refactor(cache): Optimize L1 memory cache LRU algorithm
+test(chat): Add integration tests for message sync
+chore(deps): Update Riverpod to 3.0.3
+perf(creation): Optimize image upload queue
+style(profile): Format code with dart format
+```
+
+### 개발 워크플로우
+
+#### 1. 새 Feature 시작
+
+```bash
+# 최신 main 브랜치에서 시작
+git checkout flutterflow
+git pull origin flutterflow
+
+# Feature 브랜치 생성
+git checkout -b feature/new-feature-name
+
+# 최초 커밋
+git commit --allow-empty -m "feat(scope): Initialize new-feature branch"
+git push -u origin feature/new-feature-name
+```
+
+#### 2. 개발 & 커밋 주기
+
+```bash
+# 1. 코드 작성
+# lib/features/new_feature/... 파일 수정
+
+# 2. 코드 생성 (Freezed, Riverpod, JSON)
+dart run build_runner build --delete-conflicting-outputs
+
+# 3. 정적 분석 (Lint)
+flutter analyze
+# 목표: 0 errors, 0 warnings
+
+# 4. 테스트 실행
+flutter test
+flutter test test/features/new_feature/
+
+# 5. 변경 사항 확인
+git status
+git diff
+
+# 6. Staging
+git add lib/features/new_feature/
+git add test/features/new_feature/
+
+# 7. 커밋
+git commit -m "feat(new-feature): Add UseCase and Repository"
+
+# 8. 푸시
+git push origin feature/new-feature-name
+```
+
+#### 3. Pull Request (PR) 생성
+
+```bash
+# 1. 최신 main 브랜치 머지 (conflict 해결)
+git checkout flutterflow
+git pull origin flutterflow
+git checkout feature/new-feature-name
+git merge flutterflow
+
+# Conflict 발생 시 해결
+# ... 파일 수정 ...
+git add .
+git commit -m "merge: Resolve conflicts with flutterflow"
+
+# 2. 최종 검증
+flutter analyze                    # 0 errors, 0 warnings
+flutter test                       # 모든 테스트 통과
+dart run build_runner build        # 코드 생성 확인
+
+# 3. 푸시
+git push origin feature/new-feature-name
+
+# 4. GitHub에서 PR 생성
+# Base: flutterflow ← Compare: feature/new-feature-name
+# PR 제목: feat(scope): Brief description
+# PR 설명: 변경 사항 요약, 테스트 결과, 스크린샷
+```
+
+#### 4. PR 리뷰 & 머지
+
+```bash
+# 리뷰 피드백 반영
+git add .
+git commit -m "fix(scope): Address PR review comments"
+git push origin feature/new-feature-name
+
+# 승인 후 Squash & Merge (GitHub UI)
+# - Squash: 여러 커밋을 하나로 합침
+# - Merge: main 브랜치에 머지
+
+# 로컬 브랜치 정리
+git checkout flutterflow
+git pull origin flutterflow
+git branch -d feature/new-feature-name
+```
+
+### PR 체크리스트
+
+```
+□ 코드 품질
+  □ flutter analyze 통과 (0 errors, 0 warnings)
+  □ flutter test 통과 (모든 테스트)
+  □ 코드 생성 완료 (*.freezed.dart, *.g.dart)
+  □ dart format lib/ 실행
+
+□ 문서화
+  □ README 업데이트 (Feature별)
+  □ Phase 문서 작성 (아키텍처 변경 시)
+  □ 코드 주석 추가 (복잡한 로직)
+  □ CHANGELOG 업데이트 (Breaking changes)
+
+□ 테스트
+  □ Unit tests 작성 (Domain/Data)
+  □ Widget tests 작성 (Presentation)
+  □ Integration tests 작성 (E2E, 필요시)
+  □ 테스트 커버리지 80%+ (중요 기능)
+
+□ 아키텍처
+  □ Clean Architecture 준수
+  □ Either 패턴 사용
+  □ Riverpod 3.x @riverpod annotation
+  □ GetIt DI 등록 완료
+
+□ 리뷰
+  □ 리뷰어 지정
+  □ PR 설명 작성 (변경 사항, 테스트 결과)
+  □ 스크린샷/GIF 첨부 (UI 변경 시)
+  □ Breaking changes 명시
+```
+
+### 자주 사용하는 Git 명령어
+
+```bash
+# 스태시 (임시 저장)
+git stash                        # 현재 변경사항 저장
+git stash list                   # 스태시 목록 확인
+git stash pop                    # 최근 스태시 적용 & 삭제
+git stash apply stash@{0}        # 특정 스태시 적용 (삭제 안 함)
+git stash drop stash@{0}         # 특정 스태시 삭제
+git stash clear                  # 모든 스태시 삭제
+
+# 커밋 수정
+git commit --amend               # 최근 커밋 수정 (메시지 or 파일)
+git commit --amend --no-edit     # 파일만 추가 (메시지 유지)
+
+# 리베이스 (커밋 정리)
+git rebase -i HEAD~3             # 최근 3개 커밋 정리
+git rebase -i flutterflow        # main 브랜치 기준 정리
+
+# 태그 (버전 관리)
+git tag v1.0.0                   # 태그 생성
+git tag -a v1.0.0 -m "Release 1.0.0"  # 태그 + 메시지
+git push origin v1.0.0           # 태그 푸시
+git tag -l                       # 태그 목록
+git tag -d v1.0.0                # 로컬 태그 삭제
+git push origin :refs/tags/v1.0.0  # 원격 태그 삭제
+
+# 체리픽 (특정 커밋만 가져오기)
+git cherry-pick <commit-hash>    # 특정 커밋 적용
+git cherry-pick <hash1> <hash2>  # 여러 커밋 적용
+
+# 히스토리 확인
+git log --oneline --graph --all  # 그래프로 히스토리 확인
+git log --author="name"          # 특정 작성자 커밋만
+git log --since="2 weeks ago"    # 최근 2주 커밋
+git log --grep="feat"            # 커밋 메시지 검색
+
+# 변경사항 확인
+git diff                         # Working directory vs Staging
+git diff --staged                # Staging vs Last commit
+git diff flutterflow             # Current branch vs main
+git diff HEAD~1 HEAD             # 최근 2개 커밋 비교
+
+# 브랜치 관리
+git branch -a                    # 모든 브랜치 (로컬+원격)
+git branch -d feature-branch     # 로컬 브랜치 삭제
+git push origin --delete feature-branch  # 원격 브랜치 삭제
+git branch -m old-name new-name  # 브랜치 이름 변경
+
+# Conflict 해결
+git merge flutterflow            # 머지 (conflict 발생 가능)
+# ... 파일 수정 (<<<< ==== >>>> 마커 제거) ...
+git add .
+git commit                       # Merge commit
+```
+
+### Git 설정 (최초 1회)
+
+```bash
+# 사용자 정보 설정
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# 기본 에디터 설정
+git config --global core.editor "code --wait"  # VS Code
+
+# 기본 브랜치 이름 설정
+git config --global init.defaultBranch main
+
+# 줄바꿈 설정 (macOS/Linux)
+git config --global core.autocrlf input
+
+# 줄바꿈 설정 (Windows)
+git config --global core.autocrlf true
+
+# 푸시 기본 전략 설정
+git config --global push.default current
+
+# Credential 캐싱 (비밀번호 저장)
+git config --global credential.helper cache  # Linux/macOS
+git config --global credential.helper wincred  # Windows
+
+# 설정 확인
+git config --list
+```
+
+---
+
+## 🚀 CI/CD 파이프라인
+
+### 배포 전 체크리스트
+
+#### 1. 코드 품질 검증
+
+```bash
+# 정적 분석
+flutter analyze
+# 목표: 0 errors, 0 warnings
+
+# 테스트
+flutter test --coverage
+# 목표: 80%+ coverage
+
+# 포맷 확인
+dart format lib/ --set-exit-if-changed
+# Exit code 0이 아니면 포맷 필요
+
+# 의존성 검증
+flutter pub get
+flutter pub outdated
+# 취약점 있는 패키지 업데이트
+```
+
+#### 2. 빌드 검증
+
+```bash
+# Android APK
+flutter build apk --release
+# 결과: build/app/outputs/flutter-apk/app-release.apk
+
+# Android App Bundle (Google Play 권장)
+flutter build appbundle --release
+# 결과: build/app/outputs/bundle/release/app-release.aab
+
+# iOS (macOS에서만)
+flutter build ios --release
+# 결과: build/ios/iphoneos/Runner.app
+
+# Web
+flutter build web --release
+# 결과: build/web/
+
+# 번들 크기 분석
+flutter build apk --analyze-size
+flutter build appbundle --analyze-size
+```
+
+#### 3. Firebase 배포
+
+```bash
+# Cloud Functions 테스트
+cd firebase/functions
+npm test
+npm run lint
+
+# Cloud Functions 배포
+npm run deploy
+# 또는
+firebase deploy --only functions
+
+# Firestore Rules 배포
+firebase deploy --only firestore:rules
+
+# Storage Rules 배포
+firebase deploy --only storage
+
+# 전체 배포
+firebase deploy
+```
+
+### 자동화 워크플로우 (GitHub Actions 예시)
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  pull_request:
+    branches: [ flutterflow ]
+  push:
+    branches: [ flutterflow ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # 1. 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Flutter 설치
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+
+      # 3. 의존성 설치
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 4. 코드 생성
+      - name: Generate code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # 5. 정적 분석
+      - name: Analyze code
+        run: flutter analyze
+
+      # 6. 포맷 확인
+      - name: Check formatting
+        run: dart format lib/ --set-exit-if-changed
+
+      # 7. 테스트 실행
+      - name: Run tests
+        run: flutter test --coverage
+
+      # 8. 커버리지 업로드
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+
+      # 9. Android 빌드 (PR만)
+      - name: Build Android APK
+        if: github.event_name == 'pull_request'
+        run: flutter build apk --release
+
+      # 10. 빌드 아티팩트 업로드
+      - name: Upload APK
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+```
+
+### 배포 프로세스
+
+#### Development → Staging → Production
+
+```
+1. Development (feature 브랜치)
+   ├─ 로컬 테스트 (flutter test)
+   ├─ Firebase Emulator 사용
+   └─ 코드 리뷰 요청
+
+2. Staging (develop 브랜치)
+   ├─ PR 머지 시 자동 배포
+   ├─ Firebase Staging 프로젝트
+   ├─ QA 테스트
+   └─ 성능 모니터링
+
+3. Production (flutterflow 브랜치)
+   ├─ 수동 승인 필요
+   ├─ Firebase Production 프로젝트
+   ├─ 점진적 롤아웃 (Canary)
+   └─ 모니터링 & 알림
+```
+
+### 버전 관리
+
+```yaml
+# pubspec.yaml
+version: 1.2.3+4
+#        ^   ^ ^  ^
+#        |   | |  └─ Build number (Firebase 배포마다 증가)
+#        |   | └──── Patch (버그 수정)
+#        |   └────── Minor (기능 추가)
+#        └────────── Major (Breaking changes)
+
+# Semantic Versioning 규칙
+- Major (1.0.0 → 2.0.0): Breaking changes (호환성 깨짐)
+- Minor (1.0.0 → 1.1.0): 새 기능 추가 (하위 호환)
+- Patch (1.0.0 → 1.0.1): 버그 수정 (하위 호환)
+- Build (1.0.0+1 → 1.0.0+2): 빌드 번호 (내부 버전)
+```
+
+```bash
+# 버전 업데이트 예시
+# 1. pubspec.yaml 수정
+version: 1.2.3+4
+
+# 2. Git 태그 생성
+git tag v1.2.3
+git push origin v1.2.3
+
+# 3. 릴리스 노트 작성 (GitHub)
+# - 새 기능 목록
+# - 버그 수정 목록
+# - Breaking changes
+# - 마이그레이션 가이드
+```
+
+### 배포 후 모니터링
+
+#### Firebase Console
+
+```bash
+# 1. Performance Monitoring
+- 앱 시작 시간
+- 화면 렌더링 시간
+- 네트워크 요청 시간
+- 커스텀 trace
+
+# 2. Crashlytics
+- 실시간 crash 리포트
+- Non-fatal 에러 추적
+- 사용자 영향도 분석
+- Stack trace 분석
+
+# 3. Analytics
+- 사용자 행동 분석
+- Conversion funnel
+- Retention 분석
+- 커스텀 이벤트
+
+# 4. Cloud Functions Logs
+firebase functions:log                # 모든 함수 로그
+firebase functions:log --only [name]  # 특정 함수 로그
+firebase functions:log --lines 100    # 최근 100줄
+```
+
+#### 명령어로 로그 확인
+
+```bash
+# 실시간 로그 스트리밍
+firebase functions:log --only onPostCreated
+
+# 특정 기간 로그
+firebase functions:log --since 2h      # 최근 2시간
+firebase functions:log --since 1d      # 최근 1일
+
+# 에러만 필터링
+firebase functions:log --only errors
+
+# JSON 형식 출력
+firebase functions:log --format json
+```
+
+### 롤백 전략
+
+```bash
+# 1. Firebase Functions 롤백
+firebase functions:delete [function-name]
+firebase deploy --only functions  # 이전 버전 재배포
+
+# 2. Firestore Rules 롤백
+# Firebase Console → Firestore → Rules → History → Restore
+
+# 3. 앱 버전 롤백 (앱스토어)
+# - Google Play: Production → Release → Deactivate
+# - App Store: App Store Connect → Version → Remove from Sale
+
+# 4. Git 롤백
+git revert <commit-hash>          # 커밋 되돌리기 (새 커밋 생성)
+git reset --hard <commit-hash>    # 강제 롤백 (위험!)
+```
+
+### 배포 체크리스트
+
+```
+□ 코드 품질
+  □ flutter analyze (0 errors, 0 warnings)
+  □ flutter test --coverage (80%+)
+  □ 코드 리뷰 승인
+
+□ 빌드 검증
+  □ Android APK/AAB 빌드 성공
+  □ iOS 빌드 성공 (macOS)
+  □ Web 빌드 성공
+  □ 번들 크기 확인 (< 50MB)
+
+□ Firebase 배포
+  □ Cloud Functions 테스트 통과
+  □ Firestore Rules 업데이트
+  □ Storage Rules 업데이트
+  □ Firebase Hosting (Web)
+
+□ 문서화
+  □ CHANGELOG 업데이트
+  □ README 업데이트
+  □ 릴리스 노트 작성
+  □ 마이그레이션 가이드 (Breaking changes)
+
+□ 버전 관리
+  □ pubspec.yaml version 업데이트
+  □ Git 태그 생성 (v1.2.3)
+  □ GitHub Release 생성
+
+□ 모니터링 설정
+  □ Firebase Performance 활성화
+  □ Crashlytics 설정
+  □ Analytics 이벤트 확인
+  □ 알림 설정 (에러율 >1%)
+
+□ 배포 후 검증
+  □ 앱 시작 테스트
+  □ 주요 기능 smoke test
+  □ 성능 모니터링 (첫 24시간)
+  □ Crash rate 모니터링 (<0.1%)
 ```
 
 ---
@@ -1516,6 +2452,547 @@ FutureOr<UserProfile> userProfile(UserProfileRef ref, String userId) {
 
 ---
 
+## 🔀 의사결정 가이드
+
+이 섹션은 일상적인 개발 중 자주 마주치는 의사결정 상황에 대한 명확한 가이드를 제공합니다.
+
+### 1. GetIt vs Riverpod - 언제 사용?
+
+#### GetIt 사용 시나리오 (Domain/Data Layer)
+
+**✅ 사용해야 하는 경우**:
+- Repository 등록 및 주입
+- UseCase 등록 및 주입
+- Service 등록 (Cache, AI, Firebase 등)
+- 테스트에서 Mock 객체 주입
+- 비즈니스 로직 의존성 관리
+
+**사용 예시**:
+```dart
+// lib/features/auth/di/auth_di_module.dart
+void setupAuthDI(GetIt getIt) {
+  // Repository (Singleton - 앱 전체에서 단일 인스턴스)
+  getIt.registerSingleton<IAuthRepository>(
+    AuthRepositoryImpl(
+      firestore: getIt(),
+      auth: getIt(),
+    ),
+  );
+
+  // UseCase (Factory - 매번 새 인스턴스)
+  getIt.registerFactory(() => SignInWithEmailUseCase(getIt()));
+  getIt.registerFactory(() => SignUpWithEmailUseCase(getIt()));
+  getIt.registerFactory(() => SignOutUseCase(getIt()));
+}
+```
+
+#### Riverpod 사용 시나리오 (Presentation Layer)
+
+**✅ 사용해야 하는 경우**:
+- UI 상태 관리
+- Provider 간 의존성 (ref.watch)
+- Stream 데이터 자동 구독
+- 자동 dispose 및 캐싱
+- 위젯 리빌드 최적화
+
+**사용 예시**:
+```dart
+// lib/features/auth/presentation/providers/auth_providers.dart
+@riverpod
+FutureOr<UserProfile?> currentUser(CurrentUserRef ref) async {
+  final useCase = getIt<GetCurrentUserUseCase>();  // GetIt에서 가져오기
+
+  return useCase().then(
+    (either) => either.fold(
+      (failure) => null,
+      (user) => user,
+    ),
+  );
+}
+
+// 다른 Provider에서 의존
+@riverpod
+FutureOr<List<Post>> userPosts(UserPostsRef ref) {
+  final currentUser = ref.watch(currentUserProvider);  // Riverpod 의존성
+
+  if (currentUser.value == null) return [];
+
+  final useCase = getIt<GetUserPostsUseCase>();
+  return useCase(currentUser.value!.uid).then(
+    (either) => either.getOrElse((l) => []),
+  );
+}
+```
+
+#### 결정 플로우차트
+
+```
+새 객체를 등록하려고 하는가?
+├─ Yes → 어디에 속하는가?
+│   ├─ Domain/Data Layer (Repository, UseCase, Service)
+│   │   → GetIt 사용 (registerSingleton/registerFactory)
+│   │
+│   └─ Presentation Layer (UI State, Provider)
+│       → Riverpod 사용 (@riverpod annotation)
+│
+└─ No → 기존 객체를 사용하려고 하는가?
+    ├─ 비즈니스 로직에서 사용
+    │   → GetIt.instance.get<Type>() 또는 getIt<Type>()
+    │
+    └─ UI/Provider에서 사용
+        ├─ GetIt 객체 → getIt<Type>()
+        └─ Riverpod Provider → ref.watch(provider) 또는 ref.read(provider)
+```
+
+---
+
+### 2. 새 기능 추가 - 어느 레이어에?
+
+#### Domain Layer (Pure Dart, 프레임워크 독립)
+
+**✅ 추가해야 하는 것**:
+```dart
+// 1. Entity (Freezed 불변 클래스)
+@freezed
+class Post with _$Post {
+  const factory Post({
+    required String id,
+    required String title,
+    required String content,
+    required DateTime createdAt,
+  }) = _Post;
+
+  factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
+}
+
+// 2. Failure (Sealed class)
+@freezed
+sealed class PostFailure with _$PostFailure {
+  const factory PostFailure.notFound([String? message]) = PostNotFound;
+  const factory PostFailure.networkError([String? message]) = PostNetworkError;
+  const factory PostFailure.unauthorized([String? message]) = PostUnauthorized;
+}
+
+// 3. Repository Interface
+abstract class IPostRepository {
+  Future<Either<PostFailure, Post>> getPost(String id);
+  Future<Either<PostFailure, List<Post>>> getPosts();
+  Future<Either<PostFailure, void>> createPost(Post post);
+}
+
+// 4. UseCase (비즈니스 로직)
+class CreatePostUseCase {
+  final IPostRepository _repository;
+
+  CreatePostUseCase(this._repository);
+
+  Future<Either<PostFailure, void>> call(Post post) {
+    // 비즈니스 검증 로직
+    if (post.title.isEmpty) {
+      return Future.value(left(PostFailure.invalidInput('제목이 비어있습니다')));
+    }
+
+    return _repository.createPost(post);
+  }
+}
+```
+
+#### Data Layer (Firebase-Centric)
+
+**✅ 추가해야 하는 것**:
+```dart
+// 1. Repository 구현
+class PostRepositoryImpl implements IPostRepository {
+  final FirebaseFirestore _firestore;
+  final UnifiedCacheService _cache;
+
+  @override
+  Future<Either<PostFailure, Post>> getPost(String id) async {
+    try {
+      // L1/L2/L3 캐시 조회
+      final cached = await _cache.get<Post>(PostCacheKeys.post(id));
+      if (cached != null) return right(cached);
+
+      // Firestore 직접 쿼리
+      final doc = await _firestore.collection('posts').doc(id).get();
+      if (!doc.exists) return left(PostFailure.notFound());
+
+      final post = Post.fromFirestore(doc);
+
+      // 캐시 저장
+      await _cache.set(PostCacheKeys.post(id), post);
+
+      return right(post);
+    } on FirebaseException catch (e) {
+      return left(PostFailure.networkError(e.message));
+    }
+  }
+}
+
+// 2. Firestore Extension (fromFirestore, toFirestore)
+extension PostFirestore on Post {
+  static Post fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+
+    return Post(
+      id: doc.id,
+      title: data['title'] as String? ?? '',
+      content: data['content'] as String? ?? '',
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'title': title,
+      'content': content,
+      'createdAt': Timestamp.fromDate(createdAt),
+    };
+  }
+}
+
+// 3. 캐시 키 정의
+class PostCacheKeys {
+  static String post(String id) => 'post_$id';
+  static const String postList = 'post_list';
+}
+```
+
+#### Presentation Layer (Riverpod 3.x + UI)
+
+**✅ 추가해야 하는 것**:
+```dart
+// 1. Provider (@riverpod annotation)
+@riverpod
+FutureOr<Post> post(PostRef ref, String postId) {
+  final useCase = getIt<GetPostUseCase>();
+
+  return useCase(postId).then(
+    (either) => either.fold(
+      (failure) => throw Exception(failure.getUserMessage()),
+      (post) => post,
+    ),
+  );
+}
+
+@riverpod
+class PostListNotifier extends _$PostListNotifier {
+  @override
+  FutureOr<List<Post>> build() async {
+    final useCase = getIt<GetPostsUseCase>();
+
+    return useCase().then(
+      (either) => either.getOrElse((l) => []),
+    );
+  }
+
+  Future<void> createPost(Post post) async {
+    state = const AsyncValue.loading();
+
+    final useCase = getIt<CreatePostUseCase>();
+    final result = await useCase(post);
+
+    result.fold(
+      (failure) => state = AsyncValue.error(failure, StackTrace.current),
+      (_) => ref.invalidateSelf(),  // 목록 새로고침
+    );
+  }
+}
+
+// 2. Screen/Widget
+class PostListScreen extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final postsAsync = ref.watch(postListNotifierProvider);
+
+    return postsAsync.when(
+      data: (posts) => ListView.builder(
+        itemCount: posts.length,
+        itemBuilder: (context, index) => PostTile(post: posts[index]),
+      ),
+      loading: () => CircularProgressIndicator(),
+      error: (error, stack) => ErrorWidget(error: error),
+    );
+  }
+}
+```
+
+---
+
+### 3. 캐시 무효화 - 언제?
+
+#### 즉시 무효화 필요 (Critical)
+
+**✅ 반드시 무효화해야 하는 경우**:
+```dart
+// 1. 사용자가 데이터 수정 (POST/PUT/DELETE)
+Future<void> updateProfile(UserProfile profile) async {
+  final result = await _repository.updateProfile(profile);
+
+  result.fold(
+    (failure) => handleError(failure),
+    (_) {
+      // ✅ 캐시 즉시 무효화
+      _cache.invalidate(ProfileCacheKeys.userProfile(profile.uid));
+      ref.invalidate(userProfileProvider(profile.uid));
+    },
+  );
+}
+
+// 2. 로그아웃
+Future<void> signOut() async {
+  await _authRepository.signOut();
+
+  // ✅ 모든 캐시 삭제
+  await _cache.clear();
+  ref.invalidate(currentUserProvider);
+  ref.invalidate(userProfileProvider);
+}
+
+// 3. 프로필 업데이트
+Future<void> uploadProfileImage(File image) async {
+  final result = await _repository.uploadImage(image);
+
+  result.fold(
+    (failure) => handleError(failure),
+    (imageUrl) {
+      // ✅ 프로필 이미지 캐시 무효화
+      _cache.invalidate(ProfileCacheKeys.profileImage(_currentUserId));
+    },
+  );
+}
+
+// 4. 설정 변경
+Future<void> updateSettings(UserSettings settings) async {
+  await _repository.updateSettings(settings);
+
+  // ✅ 설정 캐시 무효화
+  _cache.invalidate(SettingsCacheKeys.userSettings(_currentUserId));
+  ref.invalidate(userSettingsProvider);
+}
+```
+
+#### 자동 무효화 (TTL 기반)
+
+**📊 TTL 권장 값**:
+```dart
+// 읽기 전용 데이터 (5분 TTL)
+await _cache.set(
+  PostCacheKeys.post(postId),
+  post,
+  ttl: Duration(minutes: 5),
+);
+
+// 통계 데이터 (10분 TTL)
+await _cache.set(
+  StatsCacheKeys.userStats(userId),
+  stats,
+  ttl: Duration(minutes: 10),
+);
+
+// 공개 콘텐츠 (30분 TTL)
+await _cache.set(
+  ContentCacheKeys.publicPost(postId),
+  post,
+  ttl: Duration(minutes: 30),
+);
+
+// 정적 콘텐츠 (24시간 TTL)
+await _cache.set(
+  ContentCacheKeys.appConfig,
+  config,
+  ttl: Duration(hours: 24),
+);
+```
+
+#### 무효화 패턴 모음
+
+```dart
+// 패턴 1: 특정 Provider 무효화
+ref.invalidate(userProfileProvider(userId));
+
+// 패턴 2: 전체 새로고침 (데이터 다시 로드)
+ref.refresh(userProfileProvider(userId));
+
+// 패턴 3: 캐시 직접 삭제
+await _cache.invalidate(ProfileCacheKeys.userProfile(userId));
+
+// 패턴 4: 여러 캐시 동시 무효화
+await Future.wait([
+  _cache.invalidate(ProfileCacheKeys.userProfile(userId)),
+  _cache.invalidate(ProfileCacheKeys.userSettings(userId)),
+  _cache.invalidate(StatsCacheKeys.userStats(userId)),
+]);
+ref.invalidate(userProfileProvider);
+ref.invalidate(userSettingsProvider);
+
+// 패턴 5: 조건부 무효화
+if (shouldInvalidateCache) {
+  _cache.invalidate(key);
+}
+
+// 패턴 6: 전체 캐시 삭제 (로그아웃 시)
+await _cache.clear();
+```
+
+---
+
+### 4. Either 패턴 - 어떻게 사용?
+
+#### 결정 트리
+
+```
+API 호출 성공?
+├─ Yes → right(data)
+│
+└─ No → 어떤 에러?
+    ├─ Firebase Auth 에러
+    │   ├─ user-not-found → left(Failure.userNotFound())
+    │   ├─ wrong-password → left(Failure.invalidCredentials())
+    │   ├─ email-already-in-use → left(Failure.emailAlreadyInUse())
+    │   └─ weak-password → left(Failure.weakPassword())
+    │
+    ├─ Firestore 에러
+    │   ├─ permission-denied → left(Failure.unauthorized())
+    │   ├─ not-found → left(Failure.notFound())
+    │   └─ unavailable → left(Failure.networkError())
+    │
+    ├─ Network 에러
+    │   └─ SocketException → left(Failure.networkError())
+    │
+    └─ Unknown 에러
+        └─ Exception → left(Failure.serverError(e.toString()))
+```
+
+#### 사용 패턴 모음
+
+```dart
+// 패턴 1: fold() - 가장 기본적인 처리
+final result = await signInUseCase(email, password);
+result.fold(
+  (failure) => showError(failure.getUserMessage()),
+  (user) => navigateToHome(user),
+);
+
+// 패턴 2: getOrElse() - 기본값 제공
+final user = result.getOrElse((l) => null);
+if (user != null) {
+  navigateToHome(user);
+} else {
+  showError('로그인 실패');
+}
+
+// 패턴 3: Pattern matching (Dart 3.0+)
+switch (result) {
+  case Left(:final value):
+    showError(value.getUserMessage());
+  case Right(:final value):
+    navigateToHome(value);
+}
+
+// 패턴 4: map() - 성공 값 변환
+final displayName = result.map((user) => user.displayName);
+// Either<AuthFailure, String>
+
+// 패턴 5: flatMap() - Either 체이닝
+final profileResult = result.flatMap(
+  (user) => getProfileUseCase(user.uid),
+);
+// Either<ProfileFailure, UserProfile>
+
+// 패턴 6: 여러 Either 순차 처리
+Future<Either<Failure, void>> updateUserData() async {
+  return (await updateProfile(profile))
+      .flatMap((_) => updateSettings(settings))
+      .flatMap((_) => uploadImage(image));
+}
+
+// 패턴 7: Provider에서 Either → AsyncValue 변환
+@riverpod
+FutureOr<UserProfile> userProfile(UserProfileRef ref, String userId) {
+  final useCase = getIt<GetUserProfileUseCase>();
+
+  return useCase(userId).then(
+    (either) => either.fold(
+      (failure) => throw Exception(failure.getUserMessage()),
+      (profile) => profile,
+    ),
+  );
+}
+```
+
+---
+
+### 5. 새 Feature 추가 - 전체 체크리스트
+
+```
+□ 1. Feature 디렉토리 생성
+    lib/features/new_feature/
+    ├── domain/
+    ├── data/
+    ├── presentation/
+    └── di/
+
+□ 2. Domain Layer (Pure Dart, 프레임워크 독립)
+    □ Entity 정의 (Freezed)
+        @freezed class Entity with _$Entity { ... }
+    □ Failure 정의 (Sealed class)
+        @freezed sealed class Failure with _$Failure { ... }
+    □ Repository 인터페이스
+        abstract class IRepository { ... }
+    □ UseCase 작성
+        class UseCase { Future<Either<Failure, T>> call() { ... } }
+
+□ 3. Data Layer (Firebase-Centric)
+    □ Repository 구현
+        class RepositoryImpl implements IRepository { ... }
+    □ Firestore Extension
+        extension EntityFirestore on Entity { ... }
+    □ 캐시 통합 (UnifiedCacheService)
+        await _cache.set(key, value, ttl: Duration(minutes: 5));
+    □ 캐시 키 정의
+        class CacheKeys { static String key(String id) => 'prefix_$id'; }
+
+□ 4. Presentation Layer (Riverpod 3.x)
+    □ Provider 정의 (@riverpod annotation)
+        @riverpod FutureOr<T> provider(ProviderRef ref) { ... }
+    □ Screen/Widget 작성
+        class Screen extends ConsumerWidget { ... }
+    □ 에러 처리 (AsyncValue.when)
+        async.when(data: ..., loading: ..., error: ...)
+
+□ 5. DI 등록 (GetIt)
+    □ *_di_module.dart 파일 생성
+        void setupDI(GetIt getIt) { ... }
+    □ lib/app/di.dart에 등록
+        setupNewFeatureDI(getIt);
+
+□ 6. Router 등록 (GoRouter)
+    □ lib/app/router/routes.dart에 경로 추가
+        GoRoute(path: '/new-feature', builder: ...)
+    □ AuthGuard 설정 (필요시)
+
+□ 7. 테스트 작성
+    □ Unit tests (Domain/Data)
+    □ Widget tests (Presentation)
+    □ Integration tests (E2E)
+
+□ 8. 문서 작성
+    □ Feature README.md (통합 가이드)
+    □ Layer별 README.md
+    □ Phase 문서 (아키텍처 변경 시)
+
+□ 9. 코드 생성 실행
+    dart run build_runner build --delete-conflicting-outputs
+
+□ 10. 품질 검증
+    □ flutter analyze (0 errors, 0 warnings)
+    □ flutter test (모든 테스트 통과)
+    □ 코드 리뷰 요청
+```
+
+---
+
 ## 🗄 캐싱 시스템 상세
 
 ### L1: Memory Cache (SimpleMemoryCache)
@@ -1710,7 +3187,247 @@ class CacheStatistics {
 
 ---
 
+## 🎯 캐싱 패턴 선택 가이드
+
+### 개요
+
+Versus Space는 **2가지 캐싱 패턴**을 제공합니다. 각 Feature의 특성에 따라 적절한 패턴을 선택하세요.
+
+### Pattern A: UnifiedCache 직접 사용 (기본 선택)
+
+**사용 조건**: 단순 CRUD 캐싱
+- ✅ 캐시 키가 단순 (`user_$id`, `post_$id`, `chat_list_$userId`)
+- ✅ Repository에서만 캐시 접근
+- ✅ 표준 직렬화/역직렬화 (toJson/fromJson)
+
+**현재 사용 Feature**: Chat, Voting, Auth, Profile, Notifications, Post (6개)
+
+**코드 예시**:
+```dart
+// Repository에서 UnifiedCache 직접 사용
+class ChatRepositoryImpl implements IChatRepository {
+  final UnifiedCacheService _cache = UnifiedCacheService.instance;
+
+  Stream<Either<ChatFailure, List<Chat>>> queryChats({required String userId}) async* {
+    // 1. 캐시 확인 (3-Layer: L1 → L2 → L3)
+    final cachedResult = await _cache.get<List<dynamic>>('chat_list_$userId');
+    final cached = cachedResult.fold((failure) => null, (data) => data);
+
+    if (cached != null) {
+      yield right(cached.map((m) => Chat.fromJson(m)).toList());  // <10ms
+    }
+
+    // 2. Firestore 조회
+    await for (final snapshot in query.snapshots()) {
+      final chats = snapshot.docs.map((doc) => ChatFirestore.fromFirestore(doc)).toList();
+
+      // 3. 캐시 업데이트
+      await _cache.set('chat_list_$userId', chats.map((c) => c.toJson()).toList());
+      yield right(chats);
+    }
+  }
+}
+```
+
+**장점**:
+- ✅ 간단함: 추가 코드 0줄
+- ✅ 빠른 개발: 즉시 사용 가능
+- ✅ 유지보수 용이: 추가 파일 없음
+
+**단점**:
+- ❌ 캐시 로직 재사용 어려움 (Repository에 분산)
+- ❌ 복잡한 직렬화 시 Repository 비대화
+
+---
+
+### Pattern B: 전용 Cache Service (복잡한 로직)
+
+**사용 조건**: 복잡한 비즈니스 로직
+- ✅ 복잡한 캐시 키 생성 (MD5 해싱, 동적 생성)
+- ✅ 고급 기능 (Draft 자동 저장, AI 결과 캐싱, 미디어 중복 체크)
+- ✅ 여러 곳에서 캐시 접근 (Repository + Notifier + Service)
+- ✅ Feature 독립성 필요 (UnifiedCache 변경에 격리)
+
+**현재 사용 Feature**: Creation (1개)
+
+**코드 예시**:
+```dart
+// 1. 전용 Cache Service 생성
+class CreationCacheService {
+  final UnifiedCacheService _cache;
+
+  CreationCacheService({required UnifiedCacheService cacheService})
+      : _cache = cacheService;
+
+  // Draft 자동 저장 (500ms debounce)
+  Future<void> setDraftPost(String userId, PostCreation draft) async {
+    final key = CreationCacheKeys.draftPost(userId);  // 중앙 관리
+    await _cache.set(key, draft.toJson(), ttl: Duration(days: 7));
+  }
+
+  // AI 결과 캐싱 (MD5 해싱)
+  Future<String?> getAIGenerationResult(String description) async {
+    final hash = md5.convert(utf8.encode(description)).toString();
+    final key = CreationCacheKeys.aiGenerationResult(hash);
+
+    final cached = await _cache.get<String>(key);
+    return cached.fold((failure) => null, (data) => data);
+  }
+
+  // 미디어 중복 체크 (파일 해시)
+  Future<MediaInfo?> getMediaMetadata(String fileHash) async {
+    final key = CreationCacheKeys.mediaMetadata(fileHash);
+    // ... 복잡한 비즈니스 로직
+  }
+}
+
+// 2. Repository에서 사용
+class PostCreationRepositoryV2Impl {
+  final CreationCacheService _cacheService;  // 전용 서비스 주입
+
+  Future<PostCreation?> getDraftPost(String userId) async {
+    return await _cacheService.getDraftPost(userId);  // 깔끔한 호출
+  }
+}
+
+// 3. DI 등록
+void registerCreationModule(GetIt getIt) {
+  getIt.registerLazySingleton<CreationCacheService>(
+    () => CreationCacheService(cacheService: getIt<UnifiedCacheService>()),
+  );
+}
+```
+
+**Creation이 Pattern B를 사용하는 이유**:
+1. **복잡한 비즈니스 로직**: Draft 자동 저장 (500ms debounce), AI 결과 캐싱 (70% 비용 절감)
+2. **복잡한 캐시 키**: MD5 해싱 (AI 결과), 파일 해시 (미디어 중복 체크)
+3. **다중 접근점**: CreatePostNotifier + PostCreationRepository + MediaUploadService
+4. **Feature 독립성**: Creation 전용 로직 캡슐화
+
+**장점**:
+- ✅ 복잡한 로직 캡슐화
+- ✅ 캐시 로직 재사용 가능
+- ✅ 테스트 용이 (Mock 주입)
+- ✅ 관심사 분리 명확
+
+**단점**:
+- ❌ 추가 코드 300-400줄
+- ❌ 유지보수 부담 증가
+- ❌ DI 설정 복잡도
+
+---
+
+### Decision Tree
+
+```
+새 Feature 캐싱 필요?
+│
+├─ 캐시 키가 단순한가? (user_$id, post_$id)
+│  └─ YES → Pattern A (기본) ✅
+│
+├─ 복잡한 비즈니스 로직이 있는가?
+│  (Draft 자동 저장, AI 캐싱, 해싱)
+│  └─ YES → Pattern B 고려 🟡
+│
+├─ 여러 곳에서 캐시 접근이 필요한가?
+│  (Repository + Notifier + Service)
+│  └─ YES → Pattern B 고려 🟡
+│
+└─ 기본값 → Pattern A ✅
+```
+
+### 원칙
+
+1. **기본은 Pattern A** (80% 사용 케이스)
+   - 단순함이 최고의 가치
+   - 필요할 때 Pattern B로 전환 가능
+
+2. **명확한 이유 있을 때만 Pattern B** (20% 사용 케이스)
+   - Creation처럼 복잡한 요구사항 명확할 때
+   - 과도한 추상화 지양
+
+3. **통일 강제하지 않음**
+   - 각 Feature의 특성 존중
+   - 현재 6:1 비율도 정상 (각자 적합한 패턴 사용)
+
+### Trade-off 비교
+
+| 요소 | Pattern A (직접) | Pattern B (전용 Service) |
+|------|-----------------|-------------------------|
+| **코드량** | 0줄 추가 | 300-400줄 추가 |
+| **개발 속도** | ⭐⭐⭐⭐⭐ 즉시 | ⭐⭐⭐ 설정 필요 |
+| **유지보수** | ⭐⭐⭐⭐ 간단 | ⭐⭐⭐ 동기화 필요 |
+| **재사용성** | ⭐⭐ Repository만 | ⭐⭐⭐⭐⭐ 다중 접근 |
+| **테스트** | ⭐⭐⭐ Singleton | ⭐⭐⭐⭐⭐ Mock 용이 |
+| **복잡 로직** | ⭐⭐ 분산됨 | ⭐⭐⭐⭐⭐ 캡슐화 |
+
+### 실무 팁
+
+**Pattern A 시작 권장**:
+```dart
+// 1. 처음엔 간단하게
+final cached = await _cache.get<Map>('simple_key');
+
+// 2. 복잡해지면 Pattern B로 전환
+// (A → B 전환은 쉬움, B → A는 어려움)
+```
+
+**Pattern B 적용 시**:
+```dart
+// 1. 명확한 이유 문서화 (README)
+// 2. CacheKeys 클래스로 키 중앙 관리
+// 3. DI 등록 필수
+// 4. 과도한 추상화 지양
+```
+
+---
+
 ## 🐛 자주 발생하는 이슈 + 해결법
+
+### 빠른 참조 테이블
+
+| 증상 | 원인 | 빠른 해결법 | 상세 링크 |
+|------|------|------------|----------|
+| `*.g.dart doesn't exist` | 코드 생성 누락 | `dart run build_runner build --delete-conflicting-outputs` | [#1](#1-빌드-에러-missing-generated-files) |
+| `No Firebase App '[DEFAULT]'` | Firebase 초기화 누락 | `firebase_options.dart` 확인, `firebase login` | [#2](#2-firebase-연결-에러) |
+| `Box has already been closed` | Hive 박스 손상 | `Hive.deleteBoxFromDisk('box_name')` 후 재생성 | [#3](#3-캐시-관련-문제) |
+| `HiveError: Corrupted box` | 캐시 손상 | 앱 데이터 삭제 또는 박스 재생성 | [#3](#3-캐시-관련-문제) |
+| `Provider not updating` | Provider 갱신 누락 | `ref.invalidate()` 또는 `ref.refresh()` | [#4](#4-riverpod-상태-동기화-문제) |
+| `StateNotifierProvider disposed` | 잘못된 의존성 | `ref.keepAlive()` 또는 의존성 수정 | [#4](#4-riverpod-상태-동기화-문제) |
+| `Undefined class 'Entity'` | Freezed 생성 누락 | `dart run build_runner build` | [#5](#5-freezed-에러-undefined-class) |
+| `copyWith isn't defined` | Freezed 파일 없음 | `*.freezed.dart` 파일 존재 확인 | [#5](#5-freezed-에러-undefined-class) |
+| `Either is not UserProfile` | Either unwrap 누락 | `.fold()`, `.getOrElse()`, 또는 pattern matching 사용 | [#6](#6-either-패턴-사용-에러) |
+| `type 'int' is not 'String'` | JSON 타입 불일치 | `@JsonKey()` 또는 Extension Pattern 사용 | [#7](#7-json-직렬화-에러) |
+| `type 'Timestamp' is not 'DateTime'` | Firestore 타입 변환 | Extension에서 `(data['field'] as Timestamp?)?.toDate()` | [#7](#7-json-직렬화-에러) |
+| `Object not registered (GetIt)` | DI 등록 누락 | DI 모듈 등록 확인 (`setupXxxDI(getIt)`) | [#8](#8-getit-di-에러) |
+
+### Firebase 에러 코드별 해결법
+
+| 에러 코드 | 의미 | 해결법 | Failure 타입 |
+|----------|------|--------|-------------|
+| `user-not-found` | 사용자 계정 없음 | 회원가입 유도 | `AuthFailure.userNotFound()` |
+| `wrong-password` | 잘못된 비밀번호 | 비밀번호 재입력 요청 | `AuthFailure.invalidCredentials()` |
+| `email-already-in-use` | 이메일 중복 | 로그인 유도 | `AuthFailure.emailAlreadyInUse()` |
+| `weak-password` | 약한 비밀번호 | 6자 이상 요구 | `AuthFailure.weakPassword()` |
+| `network-request-failed` | 네트워크 에러 | 인터넷 연결 확인 | `AuthFailure.networkError()` |
+| `permission-denied` | Firestore 권한 없음 | Rules 확인 | `ProfileFailure.unauthorized()` |
+| `not-found` | 문서 존재하지 않음 | 문서 생성 또는 에러 처리 | `PostFailure.notFound()` |
+| `unavailable` | Firestore 서버 에러 | 재시도 로직 추가 | `*Failure.serverError()` |
+| `deadline-exceeded` | 요청 시간 초과 | Timeout 증가 또는 쿼리 최적화 | `*Failure.networkError()` |
+| `already-exists` | 이미 존재하는 데이터 | 업데이트로 변경 또는 고유 ID 생성 | `*Failure.alreadyExists()` |
+
+### 성능 이슈 진단 테이블
+
+| 증상 | 원인 | 진단 방법 | 해결법 |
+|------|------|----------|--------|
+| 느린 화면 로딩 | 과도한 Firestore 쿼리 | DevTools Timeline | 캐싱 추가, 쿼리 최적화 |
+| 높은 메모리 사용 | 캐시 과다 또는 누수 | DevTools Memory | LRU 크기 조정, dispose 확인 |
+| 앱 크래시 (OOM) | 큰 이미지 로딩 | Crashlytics | 이미지 리사이징, lazy loading |
+| 느린 스크롤 | 비효율적 위젯 빌드 | DevTools Performance | ListView.builder, const 사용 |
+| 높은 배터리 소모 | 불필요한 Stream 구독 | Firebase Performance | autoDispose 사용, 구독 해제 |
+| 네트워크 과다 사용 | 캐시 미스율 높음 | Firebase Console | TTL 증가, 캐시 전략 재검토 |
+
+---
 
 ### 1. 빌드 에러: "Missing generated files"
 
@@ -2575,39 +4292,237 @@ void main() {
 
 ---
 
+## 🔍 Logging & Development Debugging
+
+### Overview
+
+Versus Space는 **2-Track 로깅 시스템**을 운영합니다:
+- **DevLogger**: 개발/디버깅용 (Phase 1-8 완료, 64 UseCases)
+- **Production Logger**: 운영 모니터링 (Phase 1-4 완료, 19 Domain Loggers)
+
+### DevLogger System (Development)
+
+**완성도**: ✅ 100% (Phase 1-8 완료, 2025-11-21)
+**적용 범위**: 64/64 구현 UseCases (8개 Feature)
+**파일**: `lib/services/logging/dev_logger.dart`
+
+**핵심 기능**:
+- `kDebugMode` 기반 조건부 로깅 (Release 빌드 시 완전 제거)
+- Type A/B/C/D 패턴 지원 (Standard, Idempotent, Stream, Complex)
+- 3단계 로깅: params() → checkpoint() → result()
+- 태그 기반 필터링 (`tag: 'FeatureName'`)
+
+**사용 예시 (Type A Pattern)**:
+```dart
+import '/services/logging/dev_logger.dart';
+
+Future<Either<ProfileFailure, UserProfile>> execute(String userId) async {
+  // 1. 파라미터 로깅
+  DevLogger.params({'userId': userId}, tag: 'GetProfile');
+
+  // 2. 체크포인트 (Repository 호출 직전)
+  DevLogger.checkpoint('Calling repository.getUserProfile', tag: 'GetProfile');
+
+  final result = await _repository.getUserProfile(userId);
+
+  // 3. 결과 로깅 (성공/실패 분기)
+  result.fold(
+    (failure) => DevLogger.result(
+      isSuccess: false,
+      data: failure.toString(),
+      tag: 'GetProfile',
+    ),
+    (profile) => DevLogger.result(
+      isSuccess: true,
+      data: {'displayName': profile.displayName},
+      tag: 'GetProfile',
+    ),
+  );
+
+  return result;
+}
+```
+
+**Phase 완료 타임라인**:
+- **Phase 1** (2025-11-15): Auth Feature - 10 files
+- **Phase 2** (2025-11-16): Profile Feature - 16 files
+- **Phase 3** (2025-11-17): Notifications, Chat, Voting Features - 17 files
+- **Phase 4** (2025-11-18): Post, Creation Features - 14 files
+- **Phase 7** (2025-11-19): Profile Feature 추가 - 6 files
+- **Phase 8** (2025-11-21): Search Feature - 3 files ✅ **최종 완료**
+
+**Feature별 적용 현황**:
+| Feature | 파일 수 | 완성도 | 패턴 |
+|---------|--------|--------|------|
+| Auth | 10 | ✅ 100% | Type A, B |
+| Profile | 16 | ✅ 100% | Type A, B |
+| Chat | 8 | ✅ 100% | Type B, C |
+| Notifications | 9 | ✅ 100% | Type A, B |
+| Post | 7 | ✅ 100% | Type B |
+| Creation | 7 | ✅ 100% | Type B |
+| Voting | 4 | ✅ 100% | Type B |
+| Search | 3 | ✅ 100% | Type A |
+| **Total** | **64** | ✅ **100%** | - |
+
+### Production Logger System
+
+**완성도**: ✅ 100% (Phase 1-4 완료, 2025-11-19)
+**파일**: `lib/services/logging/logger_service.dart`
+**통합**: Firebase Analytics + Crashlytics
+
+**19개 Domain-specific Loggers**:
+```dart
+// Feature별 전문 Logger
+- AuthLogger          // 인증 이벤트 (로그인, 회원가입, 로그아웃)
+- ProfileLogger       // 프로필 업데이트, 이미지 업로드
+- PostLogger          // 게시물 생성, 수정, 삭제
+- VotingLogger        // 투표 제출, 결과 조회
+- ChatLogger          // 채팅 메시지, 친구 요청
+- NotificationLogger  // 알림 전송, 읽음 처리
+
+// 시스템 Logger
+- CacheLogger         // 캐시 히트/미스, 통계
+- FirebaseLogger      // Firebase 오류, 성능
+- NetworkLogger       // API 호출, 네트워크 오류
+- MediaLogger         // 이미지/비디오 업로드, 편집
+- AILogger            // Gemini AI 호출, 응답 시간
+- ModerationLogger    // 콘텐츠 검열 결과
+- PerformanceLogger   // 앱 성능 메트릭
+- SecurityLogger      // 보안 이벤트, 위험 감지
+- AnalyticsLogger     // 사용자 행동 분석
+- ErrorLogger         // 전역 에러 핸들링
+- DebugLogger         // 디버깅 로그 (개발 전용)
+- SystemLogger        // 시스템 이벤트 (앱 시작, 종료)
+- UILogger            // UI 이벤트, 화면 전환
+```
+
+**사용 예시**:
+```dart
+// INFO 레벨 (Analytics 전송)
+VotingLogger.voteSubmitted(
+  voteId: voteId,
+  userId: userId,
+  option: selectedOption,
+);
+
+// ERROR 레벨 (Crashlytics 전송)
+AuthLogger.signInError(
+  authMethod: 'email',
+  error: error,
+  stackTrace: stackTrace,
+);
+
+// PII 자동 마스킹
+AuthLogger.signInSuccess(
+  userId: userId,       // 자동 마스킹: user_***456
+  email: email,         // 자동 마스킹: u***@***.com
+  authMethod: 'email',
+);
+```
+
+**Phase 완료 현황**:
+- ✅ **Phase 1**: Logger 인프라 구축 (logger_service.dart)
+- ✅ **Phase 2**: Domain-specific Logger 구현 (19개)
+- ✅ **Phase 3**: Firebase 통합 (Analytics + Crashlytics)
+- ✅ **Phase 4**: PII 마스킹 시스템 구현
+
+### 문서 레퍼런스
+
+**개발 가이드**:
+- **[DEV_LOGGER_PLAN.md](lib/services/logging/DEV_LOGGER_PLAN.md)** (1,553줄)
+  - Phase 0-9 전체 계획
+  - Type A/B/C/D 패턴 템플릿
+  - Feature별 적용 가이드
+  - 64개 UseCase 목록
+
+- **Phase 완료 문서** (8개):
+  - [PHASE_1_COMPLETION_SUMMARY.md](lib/services/logging/PHASE_1_COMPLETION_SUMMARY.md) - Auth Feature (10 files)
+  - [PHASE_2_COMPLETION_SUMMARY.md](lib/services/logging/PHASE_2_COMPLETION_SUMMARY.md) - Profile Feature (16 files)
+  - [PHASE_3_TASK_1_COMPLETION.md](lib/services/logging/PHASE_3_TASK_1_COMPLETION.md) - Notifications Feature (9 files)
+  - [PHASE_3_TASK_2_COMPLETION.md](lib/services/logging/PHASE_3_TASK_2_COMPLETION.md) - Chat Feature (4 files)
+  - [PHASE_3_TASK_3_COMPLETION.md](lib/services/logging/PHASE_3_TASK_3_COMPLETION.md) - Voting Feature (4 files)
+  - [PHASE_4_COMPLETION.md](lib/services/logging/PHASE_4_COMPLETION.md) - Post + Creation Features (14 files)
+  - [PHASE_7_COMPLETION.md](lib/services/logging/PHASE_7_COMPLETION.md) - Profile Feature 추가 (6 files, 2025-11-19)
+  - [PHASE_8_COMPLETION.md](lib/services/logging/PHASE_8_COMPLETION.md) - Search Feature (3 files, 2025-11-21) ✅ 최종
+
+**운영 가이드**:
+- **[README.md](lib/services/logging/README.md)** (150+줄)
+  - Production 로깅 완전 가이드
+  - 19개 Domain-specific Logger 사용법
+  - Firebase Analytics + Crashlytics 통합
+  - PII 마스킹 가이드
+  - 의사결정 트리 (언제 어떤 Logger 사용?)
+
+- **[PRODUCTION_LOGGING_PLAN.md](lib/services/logging/PRODUCTION_LOGGING_PLAN.md)** (1,063줄)
+  - Phase 1-4 전체 계획
+  - Firebase 통합 가이드
+  - 로그 레벨 정책 (DEBUG, INFO, WARNING, ERROR)
+
+**빠른 참조**:
+- **[QUICK_REFERENCE.md](lib/services/logging/QUICK_REFERENCE.md)** - 1페이지 레퍼런스
+  - DevLogger 3단계 패턴 (params → checkpoint → result)
+  - Production Logger 19개 목록
+  - 주요 메서드 시그니처
+
+---
+
 ## 📚 Migration History
 
-### 최근 마이그레이션 (2025-10-28 ~ 2025-11-09)
+### 최근 마이그레이션 (2025-10-28 ~ 2025-11-23)
 
 **완료된 마이그레이션**:
 
-1. **2025-11-07**: Creation Feature Riverpod 3.x + Freezed 완료
+1. **2025-11-23**: Infrastructure Layer 재구성 및 문서화 표준화 (Phase 1-5)
+   - **Phase 1**: sharding/README.md (600줄), storage/README.md (550줄) 생성
+   - **Phase 2**: _README_TEMPLATE.md (850줄) 표준 템플릿 생성
+   - **Phase 3**: initialization/ → lib/app/lifecycle/initialization/ 이동 (1 import 업데이트)
+   - **Phase 4**: analytics/ → lib/app/router/analytics/ 이동 (5 imports, 100KB README 업데이트)
+   - **Phase 5**: CLAUDE.md 아키텍처 문서 업데이트 (directory structure, App Layer 설명)
+   - **결과**: Infrastructure Layer 순수성 확보 (14개 Feature-Agnostic 서비스)
+   - **근거**: initialization/analytics는 App-specific (lifecycle/router 감사 추적)
+
+2. **2025-11-21**: DevLogger Phase 1-8 완료 (All 64 UseCase Files)
+   - Phase 8 완료: Search Feature 3개 UseCases
+   - Profile Feature 6개 UseCases 추가 (Phase 7, 2025-11-19)
+   - Chat, Post features 완료
+   - 총 64/64 구현 UseCases DevLogger 통합 (100%)
+   - Type A/B/C/D 패턴 모두 커버
+   - dev_logger.dart 시스템 완성
+
+2. **2025-11-19**: Production Logging System 완료 (Phase 1-4)
+   - 19개 Domain-specific Loggers 구현
+   - Firebase Analytics + Crashlytics 통합
+   - PII 마스킹 시스템 구현
+   - README.md 완전 가이드 작성 (150+줄)
+   - logger_service.dart 시스템 완성
+
+3. **2025-11-07**: Creation Feature Riverpod 3.x + Freezed 완료
    - Riverpod 3.x Phase 2 완료 (5개 Notifiers)
    - Freezed Sealed Class (16+ Failure 타입)
    - 통합 테스트 검증 완료 (0 errors, 0 warnings)
 
-2. **2025-11-06**: Voting Feature Riverpod 3.x 완료
+4. **2025-11-06**: Voting Feature Riverpod 3.x 완료
    - e715fbb9 커밋
    - 복잡한 투표 상태 동기화 구현
 
-3. **2025-11-06**: Auth Feature Riverpod 3.x Migration Phase 1-5 완료
+5. **2025-11-06**: Auth Feature Riverpod 3.x Migration Phase 1-5 완료
    - RIVERPOD_3X_MIGRATION_PHASE_1_2.md
    - RIVERPOD_3X_MIGRATION_PHASE_3_5.md
    - 13개 타입 에러 → 0개 (100% 해결)
 
-4. **2025-10-31**: Posts Feature Phase 5 (Extension Pattern) 완성
+6. **2025-10-31**: Posts Feature Phase 5 (Extension Pattern) 완성
    - 76324fa0 커밋
    - Phase 문서 작성 완료 (PHASE_1 to PHASE_5)
 
-5. **2025-10-31**: Firebase-Centric v2.0 with UnifiedCache
+7. **2025-10-31**: Firebase-Centric v2.0 with UnifiedCache
    - b0e8899f 커밋
    - 3-Layer 캐싱 시스템 통합
 
-6. **2025-10-29**: 대규모 문서 정리
+8. **2025-10-29**: 대규모 문서 정리
    - 424588e1 커밋
    - Profile Feature Phase 문서 완성
 
-7. **2025-10-28**: Auth Feature @JsonKey → @JsonConverter 마이그레이션
+9. **2025-10-28**: Auth Feature @JsonKey → @JsonConverter 마이그레이션
    - 5a59c254 커밋
    - UserRole enum 직렬화 수정
 
@@ -2654,6 +4569,44 @@ void main() {
 - **[Firebase README](firebase/README.md)** (10,002줄) - Firebase 전체 개요
 - **[Firestore Security Rules](firebase/firestore.rules)** - 보안 규칙
 
+### Logging & Debugging 문서
+
+**Development Logging**:
+- **[DevLogger Plan](lib/services/logging/DEV_LOGGER_PLAN.md)** (1,553줄)
+  - Phase 0-9 전체 계획
+  - 64개 UseCase Phase 1-8 완료 (100%)
+  - Type A/B/C/D 패턴 템플릿
+  - Feature별 적용 가이드
+
+- **Phase 완료 문서** (8개):
+  - [PHASE_1_COMPLETION_SUMMARY.md](lib/services/logging/PHASE_1_COMPLETION_SUMMARY.md) - Auth Feature (10 files)
+  - [PHASE_2_COMPLETION_SUMMARY.md](lib/services/logging/PHASE_2_COMPLETION_SUMMARY.md) - Profile Feature (16 files)
+  - [PHASE_3_TASK_1_COMPLETION.md](lib/services/logging/PHASE_3_TASK_1_COMPLETION.md) - Notifications (9 files)
+  - [PHASE_3_TASK_2_COMPLETION.md](lib/services/logging/PHASE_3_TASK_2_COMPLETION.md) - Chat (4 files)
+  - [PHASE_3_TASK_3_COMPLETION.md](lib/services/logging/PHASE_3_TASK_3_COMPLETION.md) - Voting (4 files)
+  - [PHASE_4_COMPLETION.md](lib/services/logging/PHASE_4_COMPLETION.md) - Post + Creation (14 files)
+  - [PHASE_7_COMPLETION.md](lib/services/logging/PHASE_7_COMPLETION.md) - Profile 추가 (6 files, 2025-11-19)
+  - [PHASE_8_COMPLETION.md](lib/services/logging/PHASE_8_COMPLETION.md) - Search (3 files, 2025-11-21) ✅
+
+**Production Logging**:
+- **[Logging README](lib/services/logging/README.md)** (150+줄)
+  - Production 로깅 완전 가이드
+  - 19개 Domain-specific Logger 사용법
+  - Firebase Analytics + Crashlytics 통합
+  - PII 마스킹 가이드
+  - 의사결정 트리 (언제 어떤 Logger 사용?)
+
+- **[Production Logging Plan](lib/services/logging/PRODUCTION_LOGGING_PLAN.md)** (1,063줄)
+  - Phase 1-4 완료 (100%)
+  - Firebase 통합 가이드
+  - 로그 레벨 정책 (DEBUG, INFO, WARNING, ERROR)
+
+**Quick Reference**:
+- **[QUICK_REFERENCE.md](lib/services/logging/QUICK_REFERENCE.md)** - 1페이지 레퍼런스
+  - DevLogger 3단계 패턴 (params → checkpoint → result)
+  - Production Logger 19개 목록
+  - 주요 메서드 시그니처
+
 ### 레이어별 README
 
 각 Feature는 레이어별로 상세 README를 제공합니다:
@@ -2695,7 +4648,19 @@ void main() {
 
 ---
 
-**마지막 업데이트**: 2025-11-09
-**버전**: v4.0.0 (Complete Rewrite)
-**작성자**: Claude Code (Deep Analysis)
-**문서 크기**: 1,200+ 줄 (기존 678줄 대비 77% 증가)
+**마지막 업데이트**: 2025-11-23
+**버전**: v4.3.0 (Infrastructure Layer Restructuring)
+**작성자**: Claude Code (Architecture Refactoring)
+**문서 크기**: ~2,615줄 (v4.2.0 대비 0.3% 증가)
+**개선 내용**:
+- 🏗️ **Infrastructure Layer 재구성** (Phase 1-5 완료)
+  - sharding/README.md (600줄), storage/README.md (550줄) 신규 생성
+  - _README_TEMPLATE.md (850줄) 표준 템플릿 확립
+  - initialization/ → lib/app/lifecycle/initialization/ 이동 (1 import 업데이트)
+  - analytics/ → lib/app/router/analytics/ 이동 (5 imports, 100KB README 업데이트)
+  - Infrastructure Layer 순수성 확보 (14개 Feature-Agnostic 서비스)
+- 📚 Migration History 업데이트 (1개 항목 추가)
+  - Infrastructure Layer 재구성 및 문서화 표준화 (2025-11-23)
+- 📁 Directory Structure 업데이트 (app/lifecycle/, app/router/analytics/)
+- 🏛️ App Layer 경계 규칙 업데이트 (lifecycle/router 하위 구조 설명 추가)
+- 📖 주요 문서 섹션 확장 (Logging & Debugging 문서)

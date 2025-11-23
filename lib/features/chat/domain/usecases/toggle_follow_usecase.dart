@@ -1,7 +1,7 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:uuid/uuid.dart';
 import '../repositories/i_chat_repository.dart';
 import '../failures/chat_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// UseCase: 팔로우/언팔로우 토글 (Clean Architecture v4.0 + Phase 1: Either Pattern)
 ///
@@ -38,21 +38,38 @@ class ToggleFollowUseCase {
   /// 1. Validation: 본인 팔로우 불가
   /// 2. Validation: 필수 파라미터 확인
   /// 3. Repository의 isFollowing() 호출하여 현재 상태 확인 (Either 반환)
-  /// 4. 상태에 따라 followUser() 또는 unfollowUser() 호출 (각각 eventId 필요)
+  /// 4. 상태에 따라 followUser() 또는 unfollowUser() 호출
   /// 5. 변경 후 상태 반환
   Future<Either<ChatFailure, bool>> execute({
     required String userId,
     required String targetUserId,
   }) async {
+    DevLogger.params({
+      'userId': userId,
+      'targetUserId': targetUserId,
+    }, tag: 'ToggleFollow');
+
     // Validation: 필수 파라미터
     if (userId.isEmpty || targetUserId.isEmpty) {
+      DevLogger.result(
+        isSuccess: false,
+        data: 'Empty userId or targetUserId',
+        tag: 'ToggleFollow',
+      );
       return left(const FollowToggleFailed());
     }
 
     // Validation: 본인 팔로우 불가
     if (userId == targetUserId) {
+      DevLogger.result(
+        isSuccess: false,
+        data: 'Cannot follow self',
+        tag: 'ToggleFollow',
+      );
       return left(const FollowToggleFailed());
     }
+
+    DevLogger.checkpoint('Calling repository.isFollowing', tag: 'ToggleFollow');
 
     // 1. 현재 팔로우 상태 확인 (Either 반환)
     final isFollowingEither = await _chatRepository.isFollowing(
@@ -62,33 +79,67 @@ class ToggleFollowUseCase {
 
     // 2. isFollowing 결과 처리
     return await isFollowingEither.fold(
-      (failure) => left(failure), // 조회 실패 시 바로 반환
+      (failure) {
+        DevLogger.result(
+          isSuccess: false,
+          data: failure.toString(),
+          tag: 'ToggleFollow',
+        );
+        return left(failure); // 조회 실패 시 바로 반환
+      },
       (isFollowing) async {
-        // eventId 생성 (중복 방지용)
-        final eventId = const Uuid().v4();
-
         // 3. 팔로우 상태에 따라 토글
         if (isFollowing) {
           // 이미 팔로우 중 → 언팔로우
+          DevLogger.checkpoint('Calling repository.unfollowUser', tag: 'ToggleFollow');
+
           final result = await _chatRepository.unfollowUser(
             userId: userId,
             targetUserId: targetUserId,
-            eventId: eventId,
           );
           return result.fold(
-            (failure) => left(failure),
-            (_) => right(false), // 언팔로우 완료
+            (failure) {
+              DevLogger.result(
+                isSuccess: false,
+                data: failure.toString(),
+                tag: 'ToggleFollow',
+              );
+              return left(failure);
+            },
+            (_) {
+              DevLogger.result(
+                isSuccess: true,
+                data: {'action': 'unfollowed', 'newState': false},
+                tag: 'ToggleFollow',
+              );
+              return right(false); // 언팔로우 완료
+            },
           );
         } else {
           // 팔로우 안 함 → 팔로우
+          DevLogger.checkpoint('Calling repository.followUser', tag: 'ToggleFollow');
+
           final result = await _chatRepository.followUser(
             userId: userId,
             targetUserId: targetUserId,
-            eventId: eventId,
           );
           return result.fold(
-            (failure) => left(failure),
-            (_) => right(true), // 팔로우 완료
+            (failure) {
+              DevLogger.result(
+                isSuccess: false,
+                data: failure.toString(),
+                tag: 'ToggleFollow',
+              );
+              return left(failure);
+            },
+            (_) {
+              DevLogger.result(
+                isSuccess: true,
+                data: {'action': 'followed', 'newState': true},
+                tag: 'ToggleFollow',
+              );
+              return right(true); // 팔로우 완료
+            },
           );
         }
       },

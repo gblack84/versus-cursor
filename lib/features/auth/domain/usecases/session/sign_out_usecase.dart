@@ -2,7 +2,7 @@
 // Clean Architecture - Domain Layer
 
 import 'package:fpdart/fpdart.dart';
-import 'package:flutter/foundation.dart';
+import '/services/logging/dev_logger.dart';
 import '../../repositories/i_auth_repository.dart';
 import '../../failures/auth_failure.dart';
 
@@ -26,7 +26,8 @@ class SignOutUseCase {
   /// Returns Either<AuthFailure, Unit> with automatic Korean error messages
   /// Clears all user-related data and terminates session
   Future<Either<AuthFailure, Unit>> execute() async {
-    debugPrint('Executing Sign Out...');
+    DevLogger.params({}, tag: 'SignOut');
+    DevLogger.checkpoint('Starting sign-out', tag: 'SignOut');
 
     // Additional business logic before sign out
     // For example:
@@ -35,12 +36,13 @@ class SignOutUseCase {
     // - Clear navigation stack
 
     // Repository call (already returns Either<AuthFailure, void>)
+    DevLogger.checkpoint('Calling repository.signOut', tag: 'SignOut');
     final result = await _repository.signOut();
 
     // Process result
     return result.fold(
       (failure) {
-        debugPrint('Sign Out failed with AuthFailure: ${failure.message}');
+        DevLogger.error('Sign-out failed', error: failure, tag: 'SignOut');
         return left(failure);
       },
       (_) {
@@ -50,7 +52,7 @@ class SignOutUseCase {
         // - Reset app state
         // - Navigate to login screen
 
-        debugPrint('Sign Out successful');
+        DevLogger.result(isSuccess: true, data: 'User signed out', tag: 'SignOut');
         return right(unit);
       },
     );

@@ -25,7 +25,9 @@ abstract class IContentVisibilityRepository {
   /// Get target audience settings
   ///
   /// **Returns**: `Either<CreationFailure, TargetAudience>`
-  Future<Either<CreationFailure, TargetAudience>> getTargetAudience(String contentId);
+  Future<Either<CreationFailure, TargetAudience>> getTargetAudience(
+    String contentId,
+  );
 
   /// Update target audience
   ///
@@ -68,7 +70,9 @@ abstract class IContentVisibilityRepository {
   /// Get user's accessible content
   ///
   /// **Returns**: Stream of `Either<CreationFailure, List<String>>`
-  Stream<Either<CreationFailure, List<String>>> getUserAccessibleContent(String userId);
+  Stream<Either<CreationFailure, List<String>>> getUserAccessibleContent(
+    String userId,
+  );
 
   /// Grant user access to content
   ///
@@ -101,16 +105,16 @@ abstract class IContentVisibilityRepository {
 
 /// Visibility levels
 enum VisibilityLevel {
-  public,      // Anyone can view
-  friends,     // Only friends can view
-  private,     // Only creator can view
-  custom,      // Custom target audience
-  premium,     // Premium users only
+  public, // Anyone can view
+  friends, // Only friends can view
+  private, // Only creator can view
+  custom, // Custom target audience
+  premium, // Premium users only
 }
 
 /// Target audience configuration
 class TargetAudience {
-  final String mode;  // 'quick', 'public', 'custom'
+  final String mode; // 'quick', 'public', 'custom'
   final List<String>? interests;
   final AgeRange? ageRange;
   final String? gender;
@@ -152,8 +156,8 @@ class AccessControl {
 
 /// Access levels
 enum AccessLevel {
-  view,       // Can view only
-  comment,    // Can view and comment
-  vote,       // Can view, comment, and vote
-  full,       // All permissions
+  view, // Can view only
+  comment, // Can view and comment
+  vote, // Can view, comment, and vote
+  full, // All permissions
 }

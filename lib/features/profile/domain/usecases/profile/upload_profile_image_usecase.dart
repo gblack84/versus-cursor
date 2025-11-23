@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_profile_storage_repository.dart';
 
@@ -33,29 +34,47 @@ class UploadProfileImageUseCase {
     required String userId,
     required File imageFile,
   }) async {
+    DevLogger.params({
+      'userId': userId,
+      'imageFilePath': imageFile.path,
+    }, tag: 'UploadProfileImage');
+
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
+        DevLogger.validation(field: 'userId', reason: 'Empty userId', tag: 'UploadProfileImage');
         return left(ProfileFailure.validation('userId'));
       }
       if (!imageFile.existsSync()) {
+        DevLogger.validation(field: 'imageFile', reason: 'File does not exist', tag: 'UploadProfileImage');
         return left(ProfileFailure.validation('imageFile'));
       }
 
       // 2. 파일 크기 검증 (10MB 제한)
       final fileSize = imageFile.lengthSync();
       if (fileSize > 10 * 1024 * 1024) {
+        DevLogger.validation(field: 'imageFile.size', reason: 'File too large (>10MB)', tag: 'UploadProfileImage');
         return left(ProfileFailure.validation('imageFile.size'));
       }
 
       // 3. Storage 업로드 실행 (Repository가 이미 Either 반환)
-      return await _storageRepository.uploadProfileImage(
+      DevLogger.checkpoint('Calling repository.uploadProfileImage', tag: 'UploadProfileImage');
+      final result = await _storageRepository.uploadProfileImage(
         userId: userId,
         imageFile: imageFile,
       );
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'UploadProfileImage'),
+        (url) => DevLogger.result(isSuccess: true, data: url, tag: 'UploadProfileImage'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'UploadProfileImage');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'UploadProfileImage');
       return left(ProfileFailure.storage(e.toString()));
     }
   }

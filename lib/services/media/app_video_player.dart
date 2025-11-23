@@ -7,6 +7,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:video_player/video_player.dart';
 
 import '/core_exports.dart' show routeObserver;
+import '/services/logging/logger_service.dart';
 
 const kDefaultAspectRatio = 16 / 9;
 
@@ -149,8 +150,11 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> with RouteAware {
     _videoPlayers.add(_videoPlayerController!);
     _videoPlayerController!.addListener(() {
       if (_videoPlayerController!.value.hasError && !_loggedError) {
-        print(
-            'Error playing video: ${_videoPlayerController!.value.errorDescription}');
+        MediaLogger.videoUploadError(
+          errorType: 'videoPlaybackError',
+          error: _videoPlayerController!.value.errorDescription,
+          videoPath: widget.path,
+        );
         _loggedError = true;
       }
       // Stop all other players when one video is playing.

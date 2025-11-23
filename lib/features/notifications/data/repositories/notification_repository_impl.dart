@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:fpdart/fpdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/repositories/i_notification_repository.dart';
@@ -11,8 +10,9 @@ import '../../domain/failures/notification_failure.dart';
 import '../../domain/entities/social_notification_extensions.dart';
 import '../../domain/entities/system_notification_extensions.dart';
 import '../../domain/entities/voting_notification_extensions.dart';
+import '/services/batch/batch_service.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/services/idempotency/idempotency_service.dart';
+import '/services/logging/logger_service.dart';
 
 /// Clean Architecture 준수 Repository 구현체
 ///
@@ -40,18 +40,25 @@ import '/services/idempotency/idempotency_service.dart';
 /// - Firestore 직접 접근 (DataSource 제거)
 /// - Extension Pattern으로 변환 (DTO/Mapper 제거)
 /// - 817줄 코드 감소 달성
+///
+/// **Phase 6 Complete**: IdempotencyService 제거
+/// - Natural idempotency via deterministic IDs
+/// - Firestore operations are inherently idempotent
 class NotificationRepositoryImpl implements INotificationRepository {
   final FirebaseFirestore _firestore;
-  final IdempotencyService _idempotencyService;
+  final BatchService _batchService;
+  final UnifiedCacheService _cacheService;
 
   // 3-Layer 캐싱 설정
   static const int _maxCacheSize = 100;
 
   NotificationRepositoryImpl({
     required FirebaseFirestore firestore,
-    required IdempotencyService idempotencyService,
+    required BatchService batchService,
+    UnifiedCacheService? cacheService,
   })  : _firestore = firestore,
-        _idempotencyService = idempotencyService;
+        _batchService = batchService,
+        _cacheService = cacheService ?? UnifiedCacheService.instance;
 
   /// notifications 컬렉션 참조
   CollectionReference<Map<String, dynamic>> get _notificationsCollection =>
@@ -67,7 +74,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       final cacheKey = 'notification_$id';
 
       // L1 Memory Cache (즉시 응답: <10ms)
-      final cachedResult = await UnifiedCacheService.instance.get<Map<String, dynamic>>(cacheKey);
+      final cachedResult = await _cacheService.get<Map<String, dynamic>>(cacheKey);
       final cached = cachedResult.fold(
         (failure) => null,  // Cache miss or error
         (data) => data,
@@ -91,7 +98,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       final notification = _parseNotificationFromDoc(doc);
 
       // L1 + L2 캐시에 저장 (Map으로 저장)
-      await UnifiedCacheService.instance.set(cacheKey, doc.data()!);
+      await _cacheService.set(cacheKey, doc.data()!);
 
       return right(notification);
     } on FirebaseException catch (e) {
@@ -113,7 +120,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       final cacheKey = 'notifications_$userId';
 
       // L1 Memory Cache (즉시 응답: <10ms)
-      final cachedListResult = await UnifiedCacheService.instance.get<List>(cacheKey);
+      final cachedListResult = await _cacheService.get<List>(cacheKey);
       final cachedList = cachedListResult.fold(
         (failure) => null,  // Cache miss or error
         (data) => data,
@@ -142,15 +149,23 @@ class NotificationRepositoryImpl implements INotificationRepository {
       final dataList = querySnapshot.docs
           .map((doc) => doc.data())
           .toList();
-      await UnifiedCacheService.instance.set(cacheKey, dataList);
+      await _cacheService.set(cacheKey, dataList);
 
       return right(notifications);
     } on FirebaseException catch (e) {
+      NotificationsLogger.notificationQueryError(
+        userId: userId,
+        error: e,
+      );
       if (e.code == 'permission-denied') {
         return left(const NotificationFailure.permissionDenied());
       }
       return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
+      NotificationsLogger.notificationQueryError(
+        userId: userId,
+        error: e,
+      );
       return left(NotificationFailure.unexpected('Failed to get user notifications: ${e.toString()}'));
     }
   }
@@ -161,33 +176,34 @@ class NotificationRepositoryImpl implements INotificationRepository {
     String eventId,
   ) async {
     try {
-      // executeIdempotent로 중복 방지 (새 알림 생성)
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'notification',
-        entityId: eventId, // 생성 작업이므로 eventId를 entityId로 사용
-        userId: notification.userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Extension으로 변환
-          final data = notification.map(
-            social: (n) => n.toFirestore(),
-            system: (n) => n.toFirestore(),
-            voting: (n) => n.toFirestore(),
-          );
-
-          // Transaction 내에서 Firestore에 직접 생성
-          final notifRef = _notificationsCollection.doc(); // 자동 생성 ID
-
-          transaction.set(notifRef, {
-            ...data,
-            'id': notifRef.id,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        },
+      // Extension으로 변환
+      final data = notification.map(
+        social: (n) => n.toFirestore(),
+        system: (n) => n.toFirestore(),
+        voting: (n) => n.toFirestore(),
       );
 
-      // 캐시 무효화 (Transaction 후)
-      await UnifiedCacheService.instance.invalidate('notifications_${notification.userId}');
+      // Direct Firestore write (naturally idempotent via auto-generated ID)
+      final notifRef = _notificationsCollection.doc();
+      await notifRef.set({
+        ...data,
+        'id': notifRef.id,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 캐시 무효화
+      await _cacheService.invalidate('notifications_${notification.userId}');
+
+      // ✅ Logger 추가
+      NotificationsLogger.notificationCreated(
+        notificationId: notifRef.id,
+        type: notification.map(
+          social: (_) => 'social',
+          system: (_) => 'system',
+          voting: (_) => 'voting',
+        ),
+        recipientId: notification.userId,
+      );
 
       return right(unit);
     } on FirebaseException catch (e) {
@@ -209,7 +225,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
     String eventId,
   ) async {
     try {
-      // 1. userId 조회 (Transaction 밖에서)
+      // 1. userId 조회 (로깅용)
       final notificationDoc = await _notificationsCollection
           .doc(notificationId)
           .get();
@@ -223,27 +239,27 @@ class NotificationRepositoryImpl implements INotificationRepository {
         return left(const NotificationFailure.unexpected('Notification missing userId'));
       }
 
-      // 2. executeIdempotent로 중복 방지
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'notification',
-        entityId: notificationId,
-        userId: userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Transaction 내에서 직접 Firestore 업데이트
-          final notifRef = _notificationsCollection.doc(notificationId);
-          transaction.update(notifRef, {
-            'isRead': true,
-            'readAt': FieldValue.serverTimestamp(),
-          });
-        },
-      );
+      // 2. Direct Firestore update (naturally idempotent - same input = same result)
+      await _notificationsCollection.doc(notificationId).update({
+        'isRead': true,
+        'readAt': FieldValue.serverTimestamp(),
+      });
 
-      // 3. 캐시 무효화 (Transaction 후)
-      await UnifiedCacheService.instance.invalidate('notification');
+      // 3. 캐시 무효화
+      await _cacheService.invalidate('notification');
+
+      // ✅ Logger 추가
+      NotificationsLogger.notificationMarkedAsRead(
+        notificationId: notificationId,
+        userId: userId,
+      );
 
       return right(unit);
     } on FirebaseException catch (e) {
+      NotificationsLogger.markAsReadError(
+        notificationId: notificationId,
+        error: e,
+      );
       if (e.code == 'permission-denied') {
         return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
@@ -254,6 +270,10 @@ class NotificationRepositoryImpl implements INotificationRepository {
         return left(const NotificationFailure.serverError());
       }
     } catch (e) {
+      NotificationsLogger.markAsReadError(
+        notificationId: notificationId,
+        error: e,
+      );
       return left(NotificationFailure.unexpected('Failed to mark as read: ${e.toString()}'));
     }
   }
@@ -264,7 +284,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
     String eventId,
   ) async {
     try {
-      // 1. userId 조회 (Transaction 밖에서)
+      // 1. userId 조회 (로깅용)
       final notificationDoc = await _notificationsCollection
           .doc(notificationId)
           .get();
@@ -278,24 +298,24 @@ class NotificationRepositoryImpl implements INotificationRepository {
         return left(const NotificationFailure.unexpected('Notification missing userId'));
       }
 
-      // 2. executeIdempotent로 중복 방지
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'notification',
-        entityId: notificationId,
-        userId: userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Transaction 내에서 직접 Firestore 삭제
-          final notifRef = _notificationsCollection.doc(notificationId);
-          transaction.delete(notifRef);
-        },
-      );
+      // 2. Direct Firestore delete (naturally idempotent - deleting same doc twice has same effect)
+      await _notificationsCollection.doc(notificationId).delete();
 
-      // 3. 캐시 무효화 (Transaction 후)
-      await UnifiedCacheService.instance.invalidate('notification');
+      // 3. 캐시 무효화
+      await _cacheService.invalidate('notification');
+
+      // ✅ Logger 추가
+      NotificationsLogger.notificationDeleted(
+        notificationId: notificationId,
+        userId: userId,
+      );
 
       return right(unit);
     } on FirebaseException catch (e) {
+      NotificationsLogger.notificationDeletionError(
+        notificationId: notificationId,
+        error: e,
+      );
       if (e.code == 'permission-denied') {
         return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
@@ -306,6 +326,10 @@ class NotificationRepositoryImpl implements INotificationRepository {
         return left(const NotificationFailure.serverError());
       }
     } catch (e) {
+      NotificationsLogger.notificationDeletionError(
+        notificationId: notificationId,
+        error: e,
+      );
       return left(NotificationFailure.unexpected('Failed to delete notification: ${e.toString()}'));
     }
   }
@@ -316,32 +340,32 @@ class NotificationRepositoryImpl implements INotificationRepository {
     String eventId,
   ) async {
     try {
-      // executeIdempotent로 중복 방지 (Batch 작업)
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'notifications_batch',
-        entityId: 'markAllAsRead_$userId',
+      // 1. Query unread notifications
+      final unreadSnapshot = await _notificationsCollection
+          .where('userId', isEqualTo: userId)
+          .where('isRead', isEqualTo: false)
+          .get();
+
+      // 2. Build batch operations
+      final operations = <BatchOperation>[];
+      for (final doc in unreadSnapshot.docs) {
+        operations.add(BatchOperation.update(doc.reference, {
+          'isRead': true,
+          'readAt': FieldValue.serverTimestamp(),
+        }));
+      }
+
+      // 3. Execute via BatchService (auto-chunks at 500 operations)
+      await _batchService.executeBatch(operations: operations);
+
+      // 4. 캐시 무효화
+      await _cacheService.invalidate('notifications_$userId');
+
+      // 5. Logger 추가
+      NotificationsLogger.allNotificationsMarkedAsRead(
         userId: userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Transaction 내에서 사용자의 모든 알림 조회 및 업데이트
-          final notificationsRef = _notificationsCollection
-              .where('userId', isEqualTo: userId)
-              .where('isRead', isEqualTo: false);
-
-          final snapshot = await notificationsRef.get();
-
-          // Batch 업데이트
-          for (final doc in snapshot.docs) {
-            transaction.update(doc.reference, {
-              'isRead': true,
-              'readAt': FieldValue.serverTimestamp(),
-            });
-          }
-        },
+        count: unreadSnapshot.docs.length,
       );
-
-      // 캐시 무효화 (Transaction 후)
-      await UnifiedCacheService.instance.invalidate('notifications_$userId');
 
       return right(unit);
     } on FirebaseException catch (e) {
@@ -363,33 +387,28 @@ class NotificationRepositoryImpl implements INotificationRepository {
     String eventId,
   ) async {
     try {
-      // executeIdempotent로 중복 방지 (Batch 작업)
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'notifications_batch',
-        entityId: 'deleteAll_$userId',
+      // 1. Query all notifications
+      final allNotifications = await _notificationsCollection
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      // 2. Build batch operations
+      final operations = <BatchOperation>[];
+      for (final doc in allNotifications.docs) {
+        operations.add(BatchOperation.delete(doc.reference));
+      }
+
+      // 3. Execute via BatchService (auto-chunks at 500 operations)
+      await _batchService.executeBatch(operations: operations);
+
+      // 4. 캐시 무효화
+      await _cacheService.invalidate('notifications_$userId');
+
+      // 5. Logger 추가
+      NotificationsLogger.allNotificationsDeleted(
         userId: userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Transaction 내에서 사용자의 모든 알림 조회 및 삭제
-          final notificationsRef = _notificationsCollection
-              .where('userId', isEqualTo: userId);
-
-          final snapshot = await notificationsRef.get();
-
-          // Batch 삭제
-          for (final doc in snapshot.docs) {
-            transaction.delete(doc.reference);
-          }
-
-          if (kDebugMode) {
-            print(
-                '[NotificationRepository] Deleted ${snapshot.docs.length} notifications for user: $userId');
-          }
-        },
+        count: allNotifications.docs.length,
       );
-
-      // 캐시 무효화 (Transaction 후)
-      await UnifiedCacheService.instance.invalidate('notifications_$userId');
 
       return right(unit);
     } on FirebaseException catch (e) {
@@ -411,24 +430,24 @@ class NotificationRepositoryImpl implements INotificationRepository {
     required DateTime before,
   }) async {
     try {
-      // Firestore 직접 접근으로 날짜 기반 삭제
+      // 1. Query old notifications
       final querySnapshot = await _notificationsCollection
           .where('userId', isEqualTo: userId)
           .where('createdAt', isLessThan: Timestamp.fromDate(before))
           .get();
 
-      // Batch 삭제
-      final batch = _firestore.batch();
+      // 2. Build batch operations
+      final operations = <BatchOperation>[];
       for (final doc in querySnapshot.docs) {
-        batch.delete(doc.reference);
+        operations.add(BatchOperation.delete(doc.reference));
       }
-      await batch.commit();
 
-      // 캐시 무효화
-      await UnifiedCacheService.instance.invalidate('notifications_$userId');
+      // 3. Execute via BatchService (auto-chunks at 500 operations)
+      await _batchService.executeBatch(operations: operations);
 
-      print(
-          '[NotificationRepository] Deleted ${querySnapshot.docs.length} notifications before $before for user: $userId');
+      // 4. 캐시 무효화
+      await _cacheService.invalidate('notifications_$userId');
+
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
@@ -445,25 +464,25 @@ class NotificationRepositoryImpl implements INotificationRepository {
     String userId,
   ) async {
     try {
-      // Firestore 직접 접근으로 만료된 알림 삭제
+      // 1. Query expired notifications
       final now = DateTime.now();
       final querySnapshot = await _notificationsCollection
           .where('userId', isEqualTo: userId)
           .where('expiryTime', isLessThan: Timestamp.fromDate(now))
           .get();
 
-      // Batch 삭제
-      final batch = _firestore.batch();
+      // 2. Build batch operations
+      final operations = <BatchOperation>[];
       for (final doc in querySnapshot.docs) {
-        batch.delete(doc.reference);
+        operations.add(BatchOperation.delete(doc.reference));
       }
-      await batch.commit();
 
-      // 캐시 무효화
-      await UnifiedCacheService.instance.invalidate('notifications_$userId');
+      // 3. Execute via BatchService (auto-chunks at 500 operations)
+      await _batchService.executeBatch(operations: operations);
 
-      print(
-          '[NotificationRepository] Deleted ${querySnapshot.docs.length} expired notifications for user: $userId');
+      // 4. 캐시 무효화
+      await _cacheService.invalidate('notifications_$userId');
+
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
@@ -535,7 +554,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
             notifications.add(notification);
           }
         } catch (e) {
-          print('Failed to map notification: $e');
+          // Failed to map notification - skipping
         }
       }
 
@@ -556,41 +575,41 @@ class NotificationRepositoryImpl implements INotificationRepository {
     String eventId,
   ) async {
     try {
-      // executeIdempotent로 중복 방지 (새 알림 생성)
-      final notificationId = await _idempotencyService.executeIdempotent<String>(
-        entityType: 'notification',
-        entityId: eventId, // 생성 작업이므로 eventId를 entityId로 사용
-        userId: notification.userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Extension으로 변환
-          final data = notification.map(
-            social: (n) => n.toFirestore(),
-            system: (n) => n.toFirestore(),
-            voting: (n) => n.toFirestore(),
-          );
-
-          // Transaction 내에서 Firestore에 직접 생성
-          final notifRef = _notificationsCollection.doc(); // 자동 생성 ID
-
-          transaction.set(notifRef, {
-            ...data,
-            'id': notifRef.id,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-
-          return notifRef.id; // ID 반환
-        },
+      // Extension으로 변환
+      final data = notification.map(
+        social: (n) => n.toFirestore(),
+        system: (n) => n.toFirestore(),
+        voting: (n) => n.toFirestore(),
       );
 
-      // 캐시 무효화 (Transaction 후)
-      await UnifiedCacheService.instance.invalidate('notifications_${notification.userId}');
+      // Direct Firestore write (naturally idempotent via auto-generated ID)
+      final notifRef = _notificationsCollection.doc();
+      await notifRef.set({
+        ...data,
+        'id': notifRef.id,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-      if (kDebugMode) {
-        print('Notification created with id: $notificationId');
-      }
-      return right(notificationId);
+      // 캐시 무효화
+      await _cacheService.invalidate('notifications_${notification.userId}');
+
+      // ✅ Logger 추가
+      NotificationsLogger.notificationCreated(
+        notificationId: notifRef.id,
+        type: notification.map(
+          social: (_) => 'social',
+          system: (_) => 'system',
+          voting: (_) => 'voting',
+        ),
+        recipientId: notification.userId,
+      );
+
+      return right(notifRef.id);
     } on FirebaseException catch (e) {
+      NotificationsLogger.notificationCreationError(
+        recipientId: notification.userId,
+        error: e,
+      );
       if (e.code == 'permission-denied') {
         return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
@@ -599,6 +618,10 @@ class NotificationRepositoryImpl implements INotificationRepository {
         return left(const NotificationFailure.serverError());
       }
     } catch (e) {
+      NotificationsLogger.notificationCreationError(
+        recipientId: notification.userId,
+        error: e,
+      );
       return left(NotificationFailure.unexpected('Failed to create notification: ${e.toString()}'));
     }
   }
@@ -613,7 +636,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       await _notificationsCollection.doc(notificationId).update(updates);
 
       // 캐시 무효화 - notificationId로부터 userId를 추출할 수 없으므로 전체 캐시 무효화
-      await UnifiedCacheService.instance.invalidate('notification');
+      await _cacheService.invalidate('notification');
 
       return right(unit);
     } on FirebaseException catch (e) {
@@ -675,9 +698,6 @@ class NotificationRepositoryImpl implements INotificationRepository {
         final userIds = usersSnapshot.docs
             .map((doc) => doc.id)
             .toList();
-
-        print(
-            '[NotificationRepository] Broadcasting to ${userIds.length} active users');
 
         for (final userId in userIds) {
           final userNotification = Notification.system(
@@ -795,7 +815,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       }
 
       // 5. 캐시 업데이트
-      await UnifiedCacheService.instance.invalidate('notifications_$userId');
+      await _cacheService.invalidate('notifications_$userId');
 
       return right(unit);
     } on FirebaseException catch (e) {
@@ -918,9 +938,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
     try {
       // Initialize notification system
       // For now, we'll just clear the cache and prepare for listening
-      await UnifiedCacheService.instance.invalidate('notifications_$userId');
-      print(
-          '[NotificationRepository] Notification system initialized for user: $userId');
+      await _cacheService.invalidate('notifications_$userId');
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
@@ -939,8 +957,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
     try {
       // Stop listening to notifications
       // For now, just clear cache
-      await UnifiedCacheService.instance.invalidate('notifications_$userId');
-      print('[NotificationRepository] Stopped listening for user: $userId');
+      await _cacheService.invalidate('notifications_$userId');
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
@@ -988,7 +1005,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       // 캐시 업데이트 (List<Map>으로 저장)
       final cacheKey = 'notifications_$userId';
       final dataList = snapshot.docs.map((doc) => doc.data()).toList();
-      await UnifiedCacheService.instance.set(cacheKey, dataList);
+      await _cacheService.set(cacheKey, dataList);
 
       // Extension으로 변환
       final notifications = <Notification>[];
@@ -998,9 +1015,14 @@ class NotificationRepositoryImpl implements INotificationRepository {
           notifications.add(notification);
         } catch (e) {
           // 변환 실패한 항목은 건너뛰기
-          print('Failed to map notification: $e');
         }
       }
+
+      // ✅ Logger 추가
+      NotificationsLogger.notificationsReceived(
+        count: notifications.length,
+        userId: userId,
+      );
 
       // 필터 적용 (추가 필터링이 필요한 경우)
       return _applyFilter(notifications, filter);
@@ -1014,7 +1036,17 @@ class NotificationRepositoryImpl implements INotificationRepository {
         .where('userId', isEqualTo: userId)
         .where('isRead', isEqualTo: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs.length);
+        .map((snapshot) {
+          final count = snapshot.docs.length;
+
+          // ✅ Logger 추가
+          NotificationsLogger.badgeCountUpdated(
+            userId: userId,
+            count: count,
+          );
+
+          return count;
+        });
   }
 
   @override
@@ -1023,10 +1055,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
     return Stream.periodic(const Duration(seconds: 30), (_) async {
       final result = await getUserNotifications(userId);
       return result.fold(
-        (failure) {
-          print('[NotificationRepository] Error getting unread count: $failure');
-          return 0;
-        },
+        (failure) => 0,
         (notifications) =>
             notifications.where((n) => !n.isRead).toList().length,
       );

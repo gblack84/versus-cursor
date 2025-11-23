@@ -73,18 +73,11 @@ class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
         _serverTimeOffset = estimatedServerTime.difference(localTimeAfter);
         _lastSyncTime = DateTime.now();
 
-        if (kDebugMode) {
-          print(
-              '[VoteTimerService] Server time synced. Offset: ${_serverTimeOffset?.inSeconds} seconds');
-        }
-
         // 문서 정리
         await docRef.delete();
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('[VoteTimerService] Failed to sync server time: $e');
-      }
+      // Failed to sync server time
     } finally {
       _isSyncing = false;
     }
@@ -122,10 +115,6 @@ class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
     // (이미 만료된 투표의 경우 _createTimerStream에서 즉시 cleanup 호출)
     if (!_streamControllers.containsKey(postId)) {
       // 만료된 투표에 대해 즉시 Duration.zero 스트림 반환
-      if (kDebugMode) {
-        print(
-            '[VoteTimerService] Vote already expired for postId: $postId, returning zero duration stream');
-      }
       return Stream.value(Duration.zero);
     }
 
@@ -177,6 +166,10 @@ class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
           controller.add(Duration.zero);
         }
         timer.cancel();
+
+        // ✅ Phase 3-4: Log timer expiration
+        ServiceLogger.voteTimerExpired(voteId: postId);
+
         _cleanup(postId);
       } else {
         // 남은 시간 업데이트
@@ -188,35 +181,17 @@ class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
     });
 
     _timers[postId] = timer;
-
-    if (kDebugMode) {
-      print('[VoteTimerService] Timer created for postId: $postId');
-      print(
-          '[VoteTimerService] Initial remaining time: ${initialRemaining.inSeconds} seconds');
-      print(
-          '[VoteTimerService] Using synchronized time (offset: ${_serverTimeOffset?.inSeconds ?? 0} seconds)');
-    }
   }
 
   /// 리스너 수 증가
   void _incrementListenerCount(String postId) {
     _listenerCounts[postId] = (_listenerCounts[postId] ?? 0) + 1;
-
-    if (kDebugMode) {
-      print(
-          '[VoteTimerService] Listener added for $postId. Total: ${_listenerCounts[postId]}');
-    }
   }
 
   /// 리스너 수 감소
   void _decrementListenerCount(String postId) {
     if (_listenerCounts.containsKey(postId)) {
       _listenerCounts[postId] = _listenerCounts[postId]! - 1;
-
-      if (kDebugMode) {
-        print(
-            '[VoteTimerService] Listener removed for $postId. Remaining: ${_listenerCounts[postId]}');
-      }
 
       // 모든 리스너가 해제되면 정리
       if (_listenerCounts[postId]! <= 0) {
@@ -232,10 +207,6 @@ class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
 
   /// 특정 투표의 Timer 및 관련 리소스 정리
   void _cleanup(String postId) {
-    if (kDebugMode) {
-      print('[VoteTimerService] Cleaning up resources for postId: $postId');
-    }
-
     // Timer 정리
     _timers[postId]?.cancel();
     _timers.remove(postId);
@@ -257,6 +228,12 @@ class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
 
   /// 모든 Timer 정리 (앱 종료 시)
   void disposeAll() {
+    // ✅ Phase 3-4: Log cleanup of all timers
+    ServiceLogger.voteTimerStopped(
+      voteId: 'ALL_TIMERS',
+      reason: 'Service disposal - ${_timers.length} active timers',
+    );
+
     for (final timer in _timers.values) {
       timer.cancel();
     }
@@ -269,10 +246,6 @@ class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
 
     _lastRemainingTimes.clear();
     _listenerCounts.clear();
-
-    if (kDebugMode) {
-      print('[VoteTimerService] All timers and resources disposed');
-    }
   }
 
   /// 현재 활성 Timer 수 (디버깅용)
@@ -282,38 +255,42 @@ class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
   int get activeStreamCount => _streamControllers.length;
 
   /// 타이머 시작 (VoteStateAdapter 호환용)
-  /// 
+  ///
   /// VoteStateAdapter에서 사용하기 위한 인터페이스 메서드
   void startTimer({required String postId, required DateTime voteEndTime}) {
+    // ✅ Phase 3-4: Log timer start
+    ServiceLogger.voteTimerStarted(
+      voteId: postId,
+      endTime: voteEndTime,
+    );
+
     // 기존 타이머가 있으면 정리
     stopTimer(postId);
-    
+
     // 새 타이머 스트림 생성
     _createTimerStream(postId, voteEndTime);
-    
-    if (kDebugMode) {
-      print('[VoteTimerService] Timer started for postId: $postId until $voteEndTime');
-    }
   }
 
   /// 타이머 중지 (VoteStateAdapter 호환용)
-  /// 
+  ///
   /// VoteStateAdapter에서 사용하기 위한 인터페이스 메서드
   void stopTimer(String postId) {
+    // ✅ Phase 3-4: Log timer stop
+    ServiceLogger.voteTimerStopped(
+      voteId: postId,
+      reason: 'Manual stop',
+    );
+
     // Timer 정리
     _timers[postId]?.cancel();
     _timers.remove(postId);
-    
+
     // Stream Controller 정리
     _streamControllers[postId]?.close();
     _streamControllers.remove(postId);
-    
+
     // 캐시 정리
     _lastRemainingTimes.remove(postId);
     _listenerCounts.remove(postId);
-    
-    if (kDebugMode) {
-      print('[VoteTimerService] Timer stopped for postId: $postId');
-    }
   }
 }

@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import '../../repositories/i_voting_chat_repository.dart';
 import '../../entities/chat/post_voting.dart';
 import '../../failures/voting_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// **VoteStateCoordinator.submitVote() 대체**
 ///
@@ -44,16 +45,31 @@ class SubmitVoteUseCase {
     required String postId,
     required String userId,
     required String voteOption, // 'A' or 'B'
-  }) {
+  }) async {
+    DevLogger.params({
+      'postId': postId,
+      'userId': userId,
+      'voteOption': voteOption,
+    }, tag: 'SubmitVote');
+
+    DevLogger.checkpoint('Converting voteOption to VoteOption enum', tag: 'SubmitVote');
     // ✅ String → VoteOption 변환 (Coordinator line 276)
     final option = voteOption == 'A' ? VoteOption.A : VoteOption.B;
 
+    DevLogger.checkpoint('Calling repository.castVote', tag: 'SubmitVote');
     // ✅ Repository 호출 (Coordinator line 278-282)
-    return _repository.castVote(
+    final result = await _repository.castVote(
       postId: postId,
       userId: userId,
       option: option,
     );
+
+    result.fold(
+      (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'SubmitVote'),
+      (postVoting) => DevLogger.result(isSuccess: true, data: {'postId': postVoting.postId, 'option': option.name}, tag: 'SubmitVote'),
+    );
+
     // Either<Failure, T> 반환 - 호출자가 fold()로 처리
+    return result;
   }
 }

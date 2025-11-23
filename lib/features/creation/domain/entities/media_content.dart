@@ -19,7 +19,8 @@ sealed class MediaContent with _$MediaContent {
     @Default('') String videoUrl,
     @Default('') String youtubeUrl,
     double? aspectRatio, // Single aspect ratio (backward compatibility)
-    @Default([]) List<double> aspectRatios, // Multiple aspect ratios for multi-image support
+    @Default([])
+    List<double> aspectRatios, // Multiple aspect ratios for multi-image support
     @Default('') String layoutType,
     @Default('') String thumbnailUrl,
     @Default('text') String mediaType,

@@ -159,9 +159,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                   clipBehavior: Clip.none,
                                   children: [
                                     AppButtonWidget(
-                                      onPressed: () {
-                                        print('Button pressed ...');
-                                      },
+                                      onPressed: () {},
                                       text:
                                           AppLocalizations.of(context).getText(
                                         'x79ae4w2' /* Button */,
@@ -563,9 +561,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                 clipBehavior: Clip.none,
                                 children: [
                                   AppButtonWidget(
-                                    onPressed: () {
-                                      print('phonelogin pressed ...');
-                                    },
+                                    onPressed: () {},
                                     text: AppLocalizations.of(context).getText(
                                       'oadbd0gy' /* phonelogin */,
                                     ),
@@ -642,9 +638,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                     ),
                                   ),
                                   AppButtonWidget(
-                                    onPressed: () {
-                                      print('Button pressed ...');
-                                    },
+                                    onPressed: () {},
                                     text: AppLocalizations.of(context).getText(
                                       'ln1qokjg' /* Button */,
                                     ),

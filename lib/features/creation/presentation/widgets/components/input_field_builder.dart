@@ -25,7 +25,8 @@ class InputFieldBuilder {
     required BuildContext context,
     required TextEditingController controller,
     required FocusNode focusNode,
-    required Function(String value, String fieldName, bool isBlocked) onFieldChanged,
+    required Function(String value, String fieldName, bool isBlocked)
+    onFieldChanged,
     required Function() onFieldCleared,
     required Function() onRequiredFieldsCheck,
     PerspectiveResult? validationResult,
@@ -54,7 +55,8 @@ class InputFieldBuilder {
     required BuildContext context,
     required TextEditingController controller,
     required FocusNode focusNode,
-    required Function(String value, String fieldName, bool isBlocked) onFieldChanged,
+    required Function(String value, String fieldName, bool isBlocked)
+    onFieldChanged,
     required Function() onFieldCleared,
     required Function() onRequiredFieldsCheck,
     PerspectiveResult? validationResult,
@@ -81,12 +83,7 @@ class InputFieldBuilder {
   }) {
     return Padding(
       padding: padding ?? EdgeInsetsDirectional.fromSTEB(10.0, 3.0, 10.0, 0.0),
-      child: width != null
-          ? Container(
-              width: width,
-              child: child,
-            )
-          : child,
+      child: width != null ? Container(width: width, child: child) : child,
     );
   }
 
@@ -103,10 +100,14 @@ class InputFieldBuilder {
     // Step 9: Perspective API 점수를 AIModerationFailure 카테고리로 매핑
     // ✅ Phase 3: 하드코딩 제거 (0.8 → ModerationConfig.severeThreshold)
     List<String> detectedCategories = [];
-    if (validationResult.toxicityScore > ModerationConfig.severeThreshold) detectedCategories.add('toxicity');
-    if (validationResult.profanityScore > ModerationConfig.severeThreshold) detectedCategories.add('profanity');
-    if (validationResult.threatScore > ModerationConfig.severeThreshold) detectedCategories.add('harassment');
-    if (validationResult.insultScore > ModerationConfig.severeThreshold) detectedCategories.add('hate');
+    if (validationResult.toxicityScore > ModerationConfig.severeThreshold)
+      detectedCategories.add('toxicity');
+    if (validationResult.profanityScore > ModerationConfig.severeThreshold)
+      detectedCategories.add('profanity');
+    if (validationResult.threatScore > ModerationConfig.severeThreshold)
+      detectedCategories.add('harassment');
+    if (validationResult.insultScore > ModerationConfig.severeThreshold)
+      detectedCategories.add('hate');
 
     // Step 9: detectedCategories가 비어있으면 generic 카테고리 사용
     if (detectedCategories.isEmpty) {
@@ -134,10 +135,7 @@ class InputFieldBuilder {
       padding: const EdgeInsets.only(top: 4.0, left: 12.0, right: 12.0),
       child: Text(
         errorMessage,
-        style: TextStyle(
-          color: Colors.red,
-          fontSize: 12.0,
-        ),
+        style: TextStyle(color: Colors.red, fontSize: 12.0),
       ),
     );
   }
@@ -155,7 +153,8 @@ class InputFieldBuilder {
     required BuildContext context,
     required TextEditingController controller,
     required FocusNode focusNode,
-    required Function(String value, String fieldName, bool isBlocked) onFieldChanged,
+    required Function(String value, String fieldName, bool isBlocked)
+    onFieldChanged,
     required Function() onFieldCleared,
     required Function() onRequiredFieldsCheck,
     PerspectiveResult? validationResult,
@@ -185,49 +184,37 @@ class InputFieldBuilder {
       contentPadding: const EdgeInsets.only(bottom: 8.0),
       labelText: AppLocalizations.of(context).getText(labelKey),
       labelStyle: AppTheme.of(context).bodyMedium.override(
-            font: GoogleFonts.plusJakartaSans(
-              fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
-              fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-            ),
-            fontSize: fontSize,
-            letterSpacing: 0.0,
-          ),
+        font: GoogleFonts.plusJakartaSans(
+          fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+        ),
+        fontSize: fontSize,
+        letterSpacing: 0.0,
+      ),
       alignLabelWithHint: false,
       hintText: AppLocalizations.of(context).getText(hintKey),
       hintStyle: AppTheme.of(context).labelMedium.override(
-            font: GoogleFonts.plusJakartaSans(
-              fontWeight: AppTheme.of(context).labelMedium.fontWeight,
-              fontStyle: AppTheme.of(context).labelMedium.fontStyle,
-            ),
-            fontSize: fontSize * 0.9,
-            letterSpacing: 0.0,
-          ),
-      enabledBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: Colors.black,
-          width: 2.0,
+        font: GoogleFonts.plusJakartaSans(
+          fontWeight: AppTheme.of(context).labelMedium.fontWeight,
+          fontStyle: AppTheme.of(context).labelMedium.fontStyle,
         ),
+        fontSize: fontSize * 0.9,
+        letterSpacing: 0.0,
+      ),
+      enabledBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.black, width: 2.0),
         borderRadius: BorderRadius.circular(12.0),
       ),
       focusedBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: Colors.black,
-          width: 2.0,
-        ),
+        borderSide: BorderSide(color: Colors.black, width: 2.0),
         borderRadius: BorderRadius.circular(12.0),
       ),
       errorBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: Colors.black,
-          width: 2.0,
-        ),
+        borderSide: BorderSide(color: Colors.black, width: 2.0),
         borderRadius: BorderRadius.circular(12.0),
       ),
       focusedErrorBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: Colors.black,
-          width: 2.0,
-        ),
+        borderSide: BorderSide(color: Colors.black, width: 2.0),
         borderRadius: BorderRadius.circular(12.0),
       ),
       filled: true,
@@ -242,12 +229,12 @@ class InputFieldBuilder {
     double fontSize = 14.0,
   }) {
     return AppTheme.of(context).bodyMedium.override(
-          font: GoogleFonts.plusJakartaSans(
-            fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
-            fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-          ),
-          fontSize: fontSize,
-          letterSpacing: 0.0,
-        );
+      font: GoogleFonts.plusJakartaSans(
+        fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+        fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+      ),
+      fontSize: fontSize,
+      letterSpacing: 0.0,
+    );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
+import '/services/logging/dev_logger.dart';
 import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/message.dart';
@@ -17,8 +18,8 @@ import '../entities/message.dart';
 ///
 /// stream.listen((either) {
 ///   either.fold(
-///     (failure) => print('에러: $failure'),
-///     (messages) => print('받은 메시지: ${messages.length}개'),
+///     (failure) => ChatLogger.messageError(errorType: 'receiveFailed', error: failure),
+///     (messages) => ChatLogger.messagesReceived(count: messages.length, chatId: 'chat123'),
 ///   );
 /// });
 /// ```
@@ -51,11 +52,21 @@ class GetChatMessagesUseCase {
     required String chatId,
     int limit = 30,
   }) async* {
+    DevLogger.params({'chatId': chatId, 'limit': limit}, tag: 'GetChatMessages');
+    DevLogger.checkpoint('Starting chat messages stream', tag: 'GetChatMessages');
+
     // ✅ 입력 검증
     if (chatId.isEmpty) {
+      DevLogger.validation(
+        field: 'chatId',
+        reason: 'Chat ID cannot be empty',
+        tag: 'GetChatMessages',
+      );
       yield left(const InvalidMessageContent());
       return;
     }
+
+    DevLogger.checkpoint('Querying repository for chat messages', tag: 'GetChatMessages');
 
     // ✅ Repository에서 이미 Either 반환하므로 그대로 전달 (패스스루)
     await for (final either in _chatRepository.queryMessagesByChatId(
@@ -64,7 +75,25 @@ class GetChatMessagesUseCase {
       orderBy: 'timeStamp',
       descending: false,
     )) {
+      either.fold(
+        (failure) {
+          DevLogger.error(
+            'Chat messages stream error',
+            error: failure,
+            tag: 'GetChatMessages',
+          );
+        },
+        (messages) {
+          DevLogger.result(
+            isSuccess: true,
+            data: '${messages.length} messages emitted',
+            tag: 'GetChatMessages',
+          );
+        },
+      );
       yield either; // 패스스루: Repository → UseCase → Provider
     }
+
+    DevLogger.checkpoint('Chat messages stream ended', tag: 'GetChatMessages');
   }
 }

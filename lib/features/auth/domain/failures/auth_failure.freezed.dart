@@ -55,7 +55,7 @@ extension AuthFailurePatterns on AuthFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( InvalidEmail value)?  invalidEmail,TResult Function( WeakPassword value)?  weakPassword,TResult Function( EmailAlreadyInUse value)?  emailAlreadyInUse,TResult Function( InvalidCredentials value)?  invalidCredentials,TResult Function( InvalidPhoneNumber value)?  invalidPhoneNumber,TResult Function( InvalidSmsCode value)?  invalidSmsCode,TResult Function( SmsCodeExpired value)?  smsCodeExpired,TResult Function( CancelledByUser value)?  cancelledByUser,TResult Function( SocialSignInFailed value)?  socialSignInFailed,TResult Function( NetworkError value)?  networkError,TResult Function( ServerError value)?  serverError,TResult Function( UserNotFound value)?  userNotFound,TResult Function( UserDisabled value)?  userDisabled,TResult Function( EmailNotVerified value)?  emailNotVerified,TResult Function( InsufficientPermission value)?  insufficientPermission,TResult Function( RequiresRecentLogin value)?  requiresRecentLogin,TResult Function( UserNameAlreadyTaken value)?  userNameAlreadyTaken,TResult Function( ProfileIncomplete value)?  profileIncomplete,TResult Function( Unexpected value)?  unexpected,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( InvalidEmail value)?  invalidEmail,TResult Function( WeakPassword value)?  weakPassword,TResult Function( EmailAlreadyInUse value)?  emailAlreadyInUse,TResult Function( InvalidCredentials value)?  invalidCredentials,TResult Function( InvalidPhoneNumber value)?  invalidPhoneNumber,TResult Function( InvalidSmsCode value)?  invalidSmsCode,TResult Function( SmsCodeExpired value)?  smsCodeExpired,TResult Function( CancelledByUser value)?  cancelledByUser,TResult Function( SocialSignInFailed value)?  socialSignInFailed,TResult Function( NetworkError value)?  networkError,TResult Function( ServerError value)?  serverError,TResult Function( UserNotFound value)?  userNotFound,TResult Function( UserDisabled value)?  userDisabled,TResult Function( EmailNotVerified value)?  emailNotVerified,TResult Function( EmailAlreadyVerified value)?  emailAlreadyVerified,TResult Function( InsufficientPermission value)?  insufficientPermission,TResult Function( RequiresRecentLogin value)?  requiresRecentLogin,TResult Function( TooManyRequests value)?  tooManyRequests,TResult Function( UserNameAlreadyTaken value)?  userNameAlreadyTaken,TResult Function( ProfileIncomplete value)?  profileIncomplete,TResult Function( Unexpected value)?  unexpected,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case InvalidEmail() when invalidEmail != null:
@@ -72,9 +72,11 @@ return networkError(_that);case ServerError() when serverError != null:
 return serverError(_that);case UserNotFound() when userNotFound != null:
 return userNotFound(_that);case UserDisabled() when userDisabled != null:
 return userDisabled(_that);case EmailNotVerified() when emailNotVerified != null:
-return emailNotVerified(_that);case InsufficientPermission() when insufficientPermission != null:
+return emailNotVerified(_that);case EmailAlreadyVerified() when emailAlreadyVerified != null:
+return emailAlreadyVerified(_that);case InsufficientPermission() when insufficientPermission != null:
 return insufficientPermission(_that);case RequiresRecentLogin() when requiresRecentLogin != null:
-return requiresRecentLogin(_that);case UserNameAlreadyTaken() when userNameAlreadyTaken != null:
+return requiresRecentLogin(_that);case TooManyRequests() when tooManyRequests != null:
+return tooManyRequests(_that);case UserNameAlreadyTaken() when userNameAlreadyTaken != null:
 return userNameAlreadyTaken(_that);case ProfileIncomplete() when profileIncomplete != null:
 return profileIncomplete(_that);case Unexpected() when unexpected != null:
 return unexpected(_that);case _:
@@ -95,7 +97,7 @@ return unexpected(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( InvalidEmail value)  invalidEmail,required TResult Function( WeakPassword value)  weakPassword,required TResult Function( EmailAlreadyInUse value)  emailAlreadyInUse,required TResult Function( InvalidCredentials value)  invalidCredentials,required TResult Function( InvalidPhoneNumber value)  invalidPhoneNumber,required TResult Function( InvalidSmsCode value)  invalidSmsCode,required TResult Function( SmsCodeExpired value)  smsCodeExpired,required TResult Function( CancelledByUser value)  cancelledByUser,required TResult Function( SocialSignInFailed value)  socialSignInFailed,required TResult Function( NetworkError value)  networkError,required TResult Function( ServerError value)  serverError,required TResult Function( UserNotFound value)  userNotFound,required TResult Function( UserDisabled value)  userDisabled,required TResult Function( EmailNotVerified value)  emailNotVerified,required TResult Function( InsufficientPermission value)  insufficientPermission,required TResult Function( RequiresRecentLogin value)  requiresRecentLogin,required TResult Function( UserNameAlreadyTaken value)  userNameAlreadyTaken,required TResult Function( ProfileIncomplete value)  profileIncomplete,required TResult Function( Unexpected value)  unexpected,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( InvalidEmail value)  invalidEmail,required TResult Function( WeakPassword value)  weakPassword,required TResult Function( EmailAlreadyInUse value)  emailAlreadyInUse,required TResult Function( InvalidCredentials value)  invalidCredentials,required TResult Function( InvalidPhoneNumber value)  invalidPhoneNumber,required TResult Function( InvalidSmsCode value)  invalidSmsCode,required TResult Function( SmsCodeExpired value)  smsCodeExpired,required TResult Function( CancelledByUser value)  cancelledByUser,required TResult Function( SocialSignInFailed value)  socialSignInFailed,required TResult Function( NetworkError value)  networkError,required TResult Function( ServerError value)  serverError,required TResult Function( UserNotFound value)  userNotFound,required TResult Function( UserDisabled value)  userDisabled,required TResult Function( EmailNotVerified value)  emailNotVerified,required TResult Function( EmailAlreadyVerified value)  emailAlreadyVerified,required TResult Function( InsufficientPermission value)  insufficientPermission,required TResult Function( RequiresRecentLogin value)  requiresRecentLogin,required TResult Function( TooManyRequests value)  tooManyRequests,required TResult Function( UserNameAlreadyTaken value)  userNameAlreadyTaken,required TResult Function( ProfileIncomplete value)  profileIncomplete,required TResult Function( Unexpected value)  unexpected,}){
 final _that = this;
 switch (_that) {
 case InvalidEmail():
@@ -112,9 +114,11 @@ return networkError(_that);case ServerError():
 return serverError(_that);case UserNotFound():
 return userNotFound(_that);case UserDisabled():
 return userDisabled(_that);case EmailNotVerified():
-return emailNotVerified(_that);case InsufficientPermission():
+return emailNotVerified(_that);case EmailAlreadyVerified():
+return emailAlreadyVerified(_that);case InsufficientPermission():
 return insufficientPermission(_that);case RequiresRecentLogin():
-return requiresRecentLogin(_that);case UserNameAlreadyTaken():
+return requiresRecentLogin(_that);case TooManyRequests():
+return tooManyRequests(_that);case UserNameAlreadyTaken():
 return userNameAlreadyTaken(_that);case ProfileIncomplete():
 return profileIncomplete(_that);case Unexpected():
 return unexpected(_that);}
@@ -131,7 +135,7 @@ return unexpected(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( InvalidEmail value)?  invalidEmail,TResult? Function( WeakPassword value)?  weakPassword,TResult? Function( EmailAlreadyInUse value)?  emailAlreadyInUse,TResult? Function( InvalidCredentials value)?  invalidCredentials,TResult? Function( InvalidPhoneNumber value)?  invalidPhoneNumber,TResult? Function( InvalidSmsCode value)?  invalidSmsCode,TResult? Function( SmsCodeExpired value)?  smsCodeExpired,TResult? Function( CancelledByUser value)?  cancelledByUser,TResult? Function( SocialSignInFailed value)?  socialSignInFailed,TResult? Function( NetworkError value)?  networkError,TResult? Function( ServerError value)?  serverError,TResult? Function( UserNotFound value)?  userNotFound,TResult? Function( UserDisabled value)?  userDisabled,TResult? Function( EmailNotVerified value)?  emailNotVerified,TResult? Function( InsufficientPermission value)?  insufficientPermission,TResult? Function( RequiresRecentLogin value)?  requiresRecentLogin,TResult? Function( UserNameAlreadyTaken value)?  userNameAlreadyTaken,TResult? Function( ProfileIncomplete value)?  profileIncomplete,TResult? Function( Unexpected value)?  unexpected,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( InvalidEmail value)?  invalidEmail,TResult? Function( WeakPassword value)?  weakPassword,TResult? Function( EmailAlreadyInUse value)?  emailAlreadyInUse,TResult? Function( InvalidCredentials value)?  invalidCredentials,TResult? Function( InvalidPhoneNumber value)?  invalidPhoneNumber,TResult? Function( InvalidSmsCode value)?  invalidSmsCode,TResult? Function( SmsCodeExpired value)?  smsCodeExpired,TResult? Function( CancelledByUser value)?  cancelledByUser,TResult? Function( SocialSignInFailed value)?  socialSignInFailed,TResult? Function( NetworkError value)?  networkError,TResult? Function( ServerError value)?  serverError,TResult? Function( UserNotFound value)?  userNotFound,TResult? Function( UserDisabled value)?  userDisabled,TResult? Function( EmailNotVerified value)?  emailNotVerified,TResult? Function( EmailAlreadyVerified value)?  emailAlreadyVerified,TResult? Function( InsufficientPermission value)?  insufficientPermission,TResult? Function( RequiresRecentLogin value)?  requiresRecentLogin,TResult? Function( TooManyRequests value)?  tooManyRequests,TResult? Function( UserNameAlreadyTaken value)?  userNameAlreadyTaken,TResult? Function( ProfileIncomplete value)?  profileIncomplete,TResult? Function( Unexpected value)?  unexpected,}){
 final _that = this;
 switch (_that) {
 case InvalidEmail() when invalidEmail != null:
@@ -148,9 +152,11 @@ return networkError(_that);case ServerError() when serverError != null:
 return serverError(_that);case UserNotFound() when userNotFound != null:
 return userNotFound(_that);case UserDisabled() when userDisabled != null:
 return userDisabled(_that);case EmailNotVerified() when emailNotVerified != null:
-return emailNotVerified(_that);case InsufficientPermission() when insufficientPermission != null:
+return emailNotVerified(_that);case EmailAlreadyVerified() when emailAlreadyVerified != null:
+return emailAlreadyVerified(_that);case InsufficientPermission() when insufficientPermission != null:
 return insufficientPermission(_that);case RequiresRecentLogin() when requiresRecentLogin != null:
-return requiresRecentLogin(_that);case UserNameAlreadyTaken() when userNameAlreadyTaken != null:
+return requiresRecentLogin(_that);case TooManyRequests() when tooManyRequests != null:
+return tooManyRequests(_that);case UserNameAlreadyTaken() when userNameAlreadyTaken != null:
 return userNameAlreadyTaken(_that);case ProfileIncomplete() when profileIncomplete != null:
 return profileIncomplete(_that);case Unexpected() when unexpected != null:
 return unexpected(_that);case _:
@@ -170,7 +176,7 @@ return unexpected(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  invalidEmail,TResult Function()?  weakPassword,TResult Function()?  emailAlreadyInUse,TResult Function()?  invalidCredentials,TResult Function()?  invalidPhoneNumber,TResult Function()?  invalidSmsCode,TResult Function()?  smsCodeExpired,TResult Function()?  cancelledByUser,TResult Function()?  socialSignInFailed,TResult Function()?  networkError,TResult Function()?  serverError,TResult Function()?  userNotFound,TResult Function()?  userDisabled,TResult Function()?  emailNotVerified,TResult Function()?  insufficientPermission,TResult Function()?  requiresRecentLogin,TResult Function()?  userNameAlreadyTaken,TResult Function()?  profileIncomplete,TResult Function( String? errorMessage)?  unexpected,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  invalidEmail,TResult Function()?  weakPassword,TResult Function()?  emailAlreadyInUse,TResult Function()?  invalidCredentials,TResult Function()?  invalidPhoneNumber,TResult Function()?  invalidSmsCode,TResult Function()?  smsCodeExpired,TResult Function()?  cancelledByUser,TResult Function()?  socialSignInFailed,TResult Function()?  networkError,TResult Function()?  serverError,TResult Function()?  userNotFound,TResult Function()?  userDisabled,TResult Function()?  emailNotVerified,TResult Function()?  emailAlreadyVerified,TResult Function()?  insufficientPermission,TResult Function()?  requiresRecentLogin,TResult Function( String? rateLimitMessage)?  tooManyRequests,TResult Function()?  userNameAlreadyTaken,TResult Function()?  profileIncomplete,TResult Function( String? errorMessage)?  unexpected,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case InvalidEmail() when invalidEmail != null:
 return invalidEmail();case WeakPassword() when weakPassword != null:
@@ -186,9 +192,11 @@ return networkError();case ServerError() when serverError != null:
 return serverError();case UserNotFound() when userNotFound != null:
 return userNotFound();case UserDisabled() when userDisabled != null:
 return userDisabled();case EmailNotVerified() when emailNotVerified != null:
-return emailNotVerified();case InsufficientPermission() when insufficientPermission != null:
+return emailNotVerified();case EmailAlreadyVerified() when emailAlreadyVerified != null:
+return emailAlreadyVerified();case InsufficientPermission() when insufficientPermission != null:
 return insufficientPermission();case RequiresRecentLogin() when requiresRecentLogin != null:
-return requiresRecentLogin();case UserNameAlreadyTaken() when userNameAlreadyTaken != null:
+return requiresRecentLogin();case TooManyRequests() when tooManyRequests != null:
+return tooManyRequests(_that.rateLimitMessage);case UserNameAlreadyTaken() when userNameAlreadyTaken != null:
 return userNameAlreadyTaken();case ProfileIncomplete() when profileIncomplete != null:
 return profileIncomplete();case Unexpected() when unexpected != null:
 return unexpected(_that.errorMessage);case _:
@@ -209,7 +217,7 @@ return unexpected(_that.errorMessage);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  invalidEmail,required TResult Function()  weakPassword,required TResult Function()  emailAlreadyInUse,required TResult Function()  invalidCredentials,required TResult Function()  invalidPhoneNumber,required TResult Function()  invalidSmsCode,required TResult Function()  smsCodeExpired,required TResult Function()  cancelledByUser,required TResult Function()  socialSignInFailed,required TResult Function()  networkError,required TResult Function()  serverError,required TResult Function()  userNotFound,required TResult Function()  userDisabled,required TResult Function()  emailNotVerified,required TResult Function()  insufficientPermission,required TResult Function()  requiresRecentLogin,required TResult Function()  userNameAlreadyTaken,required TResult Function()  profileIncomplete,required TResult Function( String? errorMessage)  unexpected,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  invalidEmail,required TResult Function()  weakPassword,required TResult Function()  emailAlreadyInUse,required TResult Function()  invalidCredentials,required TResult Function()  invalidPhoneNumber,required TResult Function()  invalidSmsCode,required TResult Function()  smsCodeExpired,required TResult Function()  cancelledByUser,required TResult Function()  socialSignInFailed,required TResult Function()  networkError,required TResult Function()  serverError,required TResult Function()  userNotFound,required TResult Function()  userDisabled,required TResult Function()  emailNotVerified,required TResult Function()  emailAlreadyVerified,required TResult Function()  insufficientPermission,required TResult Function()  requiresRecentLogin,required TResult Function( String? rateLimitMessage)  tooManyRequests,required TResult Function()  userNameAlreadyTaken,required TResult Function()  profileIncomplete,required TResult Function( String? errorMessage)  unexpected,}) {final _that = this;
 switch (_that) {
 case InvalidEmail():
 return invalidEmail();case WeakPassword():
@@ -225,9 +233,11 @@ return networkError();case ServerError():
 return serverError();case UserNotFound():
 return userNotFound();case UserDisabled():
 return userDisabled();case EmailNotVerified():
-return emailNotVerified();case InsufficientPermission():
+return emailNotVerified();case EmailAlreadyVerified():
+return emailAlreadyVerified();case InsufficientPermission():
 return insufficientPermission();case RequiresRecentLogin():
-return requiresRecentLogin();case UserNameAlreadyTaken():
+return requiresRecentLogin();case TooManyRequests():
+return tooManyRequests(_that.rateLimitMessage);case UserNameAlreadyTaken():
 return userNameAlreadyTaken();case ProfileIncomplete():
 return profileIncomplete();case Unexpected():
 return unexpected(_that.errorMessage);}
@@ -244,7 +254,7 @@ return unexpected(_that.errorMessage);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  invalidEmail,TResult? Function()?  weakPassword,TResult? Function()?  emailAlreadyInUse,TResult? Function()?  invalidCredentials,TResult? Function()?  invalidPhoneNumber,TResult? Function()?  invalidSmsCode,TResult? Function()?  smsCodeExpired,TResult? Function()?  cancelledByUser,TResult? Function()?  socialSignInFailed,TResult? Function()?  networkError,TResult? Function()?  serverError,TResult? Function()?  userNotFound,TResult? Function()?  userDisabled,TResult? Function()?  emailNotVerified,TResult? Function()?  insufficientPermission,TResult? Function()?  requiresRecentLogin,TResult? Function()?  userNameAlreadyTaken,TResult? Function()?  profileIncomplete,TResult? Function( String? errorMessage)?  unexpected,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  invalidEmail,TResult? Function()?  weakPassword,TResult? Function()?  emailAlreadyInUse,TResult? Function()?  invalidCredentials,TResult? Function()?  invalidPhoneNumber,TResult? Function()?  invalidSmsCode,TResult? Function()?  smsCodeExpired,TResult? Function()?  cancelledByUser,TResult? Function()?  socialSignInFailed,TResult? Function()?  networkError,TResult? Function()?  serverError,TResult? Function()?  userNotFound,TResult? Function()?  userDisabled,TResult? Function()?  emailNotVerified,TResult? Function()?  emailAlreadyVerified,TResult? Function()?  insufficientPermission,TResult? Function()?  requiresRecentLogin,TResult? Function( String? rateLimitMessage)?  tooManyRequests,TResult? Function()?  userNameAlreadyTaken,TResult? Function()?  profileIncomplete,TResult? Function( String? errorMessage)?  unexpected,}) {final _that = this;
 switch (_that) {
 case InvalidEmail() when invalidEmail != null:
 return invalidEmail();case WeakPassword() when weakPassword != null:
@@ -260,9 +270,11 @@ return networkError();case ServerError() when serverError != null:
 return serverError();case UserNotFound() when userNotFound != null:
 return userNotFound();case UserDisabled() when userDisabled != null:
 return userDisabled();case EmailNotVerified() when emailNotVerified != null:
-return emailNotVerified();case InsufficientPermission() when insufficientPermission != null:
+return emailNotVerified();case EmailAlreadyVerified() when emailAlreadyVerified != null:
+return emailAlreadyVerified();case InsufficientPermission() when insufficientPermission != null:
 return insufficientPermission();case RequiresRecentLogin() when requiresRecentLogin != null:
-return requiresRecentLogin();case UserNameAlreadyTaken() when userNameAlreadyTaken != null:
+return requiresRecentLogin();case TooManyRequests() when tooManyRequests != null:
+return tooManyRequests(_that.rateLimitMessage);case UserNameAlreadyTaken() when userNameAlreadyTaken != null:
 return userNameAlreadyTaken();case ProfileIncomplete() when profileIncomplete != null:
 return profileIncomplete();case Unexpected() when unexpected != null:
 return unexpected(_that.errorMessage);case _:
@@ -724,6 +736,38 @@ String toString() {
 /// @nodoc
 
 
+class EmailAlreadyVerified extends AuthFailure {
+  const EmailAlreadyVerified(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmailAlreadyVerified);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'AuthFailure.emailAlreadyVerified()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
 class InsufficientPermission extends AuthFailure {
   const InsufficientPermission(): super._();
   
@@ -784,6 +828,72 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class TooManyRequests extends AuthFailure {
+  const TooManyRequests([this.rateLimitMessage]): super._();
+  
+
+ final  String? rateLimitMessage;
+
+/// Create a copy of AuthFailure
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TooManyRequestsCopyWith<TooManyRequests> get copyWith => _$TooManyRequestsCopyWithImpl<TooManyRequests>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TooManyRequests&&(identical(other.rateLimitMessage, rateLimitMessage) || other.rateLimitMessage == rateLimitMessage));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,rateLimitMessage);
+
+@override
+String toString() {
+  return 'AuthFailure.tooManyRequests(rateLimitMessage: $rateLimitMessage)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TooManyRequestsCopyWith<$Res> implements $AuthFailureCopyWith<$Res> {
+  factory $TooManyRequestsCopyWith(TooManyRequests value, $Res Function(TooManyRequests) _then) = _$TooManyRequestsCopyWithImpl;
+@useResult
+$Res call({
+ String? rateLimitMessage
+});
+
+
+
+
+}
+/// @nodoc
+class _$TooManyRequestsCopyWithImpl<$Res>
+    implements $TooManyRequestsCopyWith<$Res> {
+  _$TooManyRequestsCopyWithImpl(this._self, this._then);
+
+  final TooManyRequests _self;
+  final $Res Function(TooManyRequests) _then;
+
+/// Create a copy of AuthFailure
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? rateLimitMessage = freezed,}) {
+  return _then(TooManyRequests(
+freezed == rateLimitMessage ? _self.rateLimitMessage : rateLimitMessage // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
 
 /// @nodoc
 

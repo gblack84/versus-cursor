@@ -1,4 +1,6 @@
 import 'package:fpdart/fpdart.dart';
+
+import '/services/logging/dev_logger.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';
 import '../failures/post_failure.dart';
@@ -33,21 +35,44 @@ class GetUserPostsUseCase {
     required String userId,
     int limit = -1,
   }) async {
+    DevLogger.params({
+      'userId': userId,
+      'limit': limit == -1 ? 'unlimited' : limit,
+    }, tag: 'GetUserPosts');
+
     // Validate input
     if (userId.trim().isEmpty) {
+      DevLogger.validation(
+        field: 'userId',
+        reason: 'User ID cannot be empty',
+        tag: 'GetUserPosts',
+      );
       return left(const PostFailure.invalidInput(field: 'userId'));
     }
 
     try {
       // Get user posts from repository
+      DevLogger.checkpoint('Fetching user posts from repository', tag: 'GetUserPosts');
       final stream = _postRepository.getUserPosts(
         userId: userId,
         limit: limit,
       );
       final posts = await stream.first;
 
+      DevLogger.result(
+        isSuccess: true,
+        data: '${posts.length} posts fetched for user',
+        tag: 'GetUserPosts',
+      );
+
       return right(posts);
-    } catch (error) {
+    } catch (error, stackTrace) {
+      DevLogger.error(
+        'Failed to load user posts',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'GetUserPosts',
+      );
       return left(PostFailure.queryFailed(
         reason: 'Failed to load user posts: $error',
       ));
@@ -70,19 +95,35 @@ class GetUserPostsUseCase {
     required String userId,
     int limit = -1,
   }) {
+    DevLogger.params({
+      'userId': userId,
+      'limit': limit == -1 ? 'unlimited' : limit,
+    }, tag: 'GetUserPostsStream');
+
     // Validate input
     if (userId.trim().isEmpty) {
+      DevLogger.validation(
+        field: 'userId',
+        reason: 'User ID cannot be empty',
+        tag: 'GetUserPostsStream',
+      );
       return Stream.error(
         const PostFailure.invalidInput(field: 'userId'),
       );
     }
 
     try {
+      DevLogger.checkpoint('Starting user posts stream', tag: 'GetUserPostsStream');
       return _postRepository.getUserPosts(
         userId: userId,
         limit: limit,
       );
     } catch (error) {
+      DevLogger.error(
+        'Failed to create user posts stream',
+        error: error,
+        tag: 'GetUserPostsStream',
+      );
       return Stream.error(
         PostFailure.queryFailed(
           reason: 'Failed to create user posts stream: $error',

@@ -16,12 +16,17 @@ abstract class IContentModerationRepository {
   /// Moderate content using AI
   ///
   /// **Returns**: `Either<CreationFailure, ContentModerationResult>`
-  Future<Either<CreationFailure, ContentModerationResult>> moderateContent(String contentId);
+  Future<Either<CreationFailure, ContentModerationResult>> moderateContent(
+    String contentId,
+  );
 
   /// Block/hide content
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreationFailure, Unit>> blockContent(String contentId, String reason);
+  Future<Either<CreationFailure, Unit>> blockContent(
+    String contentId,
+    String reason,
+  );
 
   /// Unblock content
   ///

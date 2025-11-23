@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'interfaces/i_storage_datasource.dart';
+import '/services/logging/logger_service.dart';
 
 /// Firebase implementation of Storage DataSource
 ///
@@ -9,9 +10,8 @@ import 'interfaces/i_storage_datasource.dart';
 class FirebaseStorageDataSource implements IStorageDataSource {
   final FirebaseStorage _storage;
 
-  FirebaseStorageDataSource({
-    FirebaseStorage? storage,
-  }) : _storage = storage ?? FirebaseStorage.instance;
+  FirebaseStorageDataSource({FirebaseStorage? storage})
+    : _storage = storage ?? FirebaseStorage.instance;
 
   @override
   Future<String> uploadImage(File file, String path) async {
@@ -27,13 +27,20 @@ class FirebaseStorageDataSource implements IStorageDataSource {
 
       return downloadUrl;
     } catch (e) {
-      print('Error uploading image to Firebase Storage: $e');
+      Logger.error(
+        'Error uploading image to Firebase Storage',
+        error: e,
+        tag: 'StorageDataSource',
+      );
       throw Exception('Failed to upload image: $e');
     }
   }
 
   @override
-  Future<List<String>> uploadMultipleImages(List<File> files, String basePath) async {
+  Future<List<String>> uploadMultipleImages(
+    List<File> files,
+    String basePath,
+  ) async {
     try {
       final uploadFutures = <Future<String>>[];
 
@@ -47,7 +54,11 @@ class FirebaseStorageDataSource implements IStorageDataSource {
       final urls = await Future.wait(uploadFutures);
       return urls;
     } catch (e) {
-      print('Error uploading multiple images: $e');
+      Logger.error(
+        'Error uploading multiple images',
+        error: e,
+        tag: 'StorageDataSource',
+      );
       throw Exception('Failed to upload multiple images: $e');
     }
   }
@@ -61,7 +72,11 @@ class FirebaseStorageDataSource implements IStorageDataSource {
       // Delete the file
       await ref.delete();
     } catch (e) {
-      print('Error deleting image from Firebase Storage: $e');
+      Logger.error(
+        'Error deleting image from Firebase Storage',
+        error: e,
+        tag: 'StorageDataSource',
+      );
       // Don't throw error for delete operations - log and continue
       // This prevents issues when the file doesn't exist
     }
@@ -79,7 +94,11 @@ class FirebaseStorageDataSource implements IStorageDataSource {
       // Delete all images in parallel
       await Future.wait(deleteFutures);
     } catch (e) {
-      print('Error deleting multiple images: $e');
+      Logger.error(
+        'Error deleting multiple images',
+        error: e,
+        tag: 'StorageDataSource',
+      );
       // Don't throw error for delete operations
     }
   }
@@ -91,7 +110,11 @@ class FirebaseStorageDataSource implements IStorageDataSource {
       final url = await ref.getDownloadURL();
       return url;
     } catch (e) {
-      print('Error getting download URL: $e');
+      Logger.error(
+        'Error getting download URL',
+        error: e,
+        tag: 'StorageDataSource',
+      );
       throw Exception('Failed to get download URL: $e');
     }
   }
@@ -123,7 +146,11 @@ class FirebaseStorageDataSource implements IStorageDataSource {
         'customMetadata': metadata.customMetadata,
       };
     } catch (e) {
-      print('Error getting metadata: $e');
+      Logger.error(
+        'Error getting metadata',
+        error: e,
+        tag: 'StorageDataSource',
+      );
       throw Exception('Failed to get metadata: $e');
     }
   }

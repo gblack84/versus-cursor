@@ -8,20 +8,19 @@ import '/features/post/domain/repositories/i_post_display_repository_v2.dart';
 import '/features/post/domain/failures/post_failure.dart';
 import '/features/post/domain/usecases/get_feed_usecase.dart';  // FeedSortBy enum
 import '/features/post/data/services/post_cache_service.dart';
-import '/services/idempotency/idempotency_service.dart';
 import '/services/logging/logger_service.dart';
 
 /// Post Repository Implementation - Firebase-Centric v2.0 + 3-Layer Caching
 ///
 /// **Phase 3: Cache Integration**
-/// **Phase 4: Idempotency Service Integration**
+/// **Phase 4: Natural Idempotency via Deterministic IDs**
 ///
 /// **Architecture**:
 /// - Direct Firestore SDK usage (no DataSource/DTO/Mapper)
 /// - 3-Layer caching (Memory → Hive → Firestore)
 /// - Extension pattern for Firestore conversion
 /// - Cache-First strategy with background revalidation
-/// - IdempotencyService for duplicate prevention (Phase 4)
+/// - Natural idempotency through deterministic document IDs
 ///
 /// **Performance**:
 /// - Cache hit: <10ms response time
@@ -33,15 +32,14 @@ import '/services/logging/logger_service.dart';
 /// - Future methods: Check cache → Firestore → Update cache
 /// - Write methods: Update Firestore → Invalidate cache
 ///
-/// **Idempotency (Phase 4)**:
-/// - createPost: Prevents duplicate posts on network retry
-/// - updatePost: Ensures single update per eventId
-/// - deletePost: Complete deletion with subcollections (atomic)
-/// - incrementViewCount: Prevents duplicate increments
+/// **Idempotency via Deterministic IDs**:
+/// - createPost: post.id deterministic → Firestore set() idempotent
+/// - updatePost: postId deterministic → Firestore update() idempotent
+/// - deletePost: postId deterministic → Firestore delete() idempotent
+/// - incrementViewCount: FieldValue.increment() atomic operation
 class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
   final FirebaseFirestore _firestore;
   final PostCacheService _cacheService;
-  final IdempotencyService _idempotencyService;
 
   // Collection reference
   late final CollectionReference<Map<String, dynamic>> _postsRef;
@@ -49,10 +47,8 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
   PostRepositoryImpl({
     required FirebaseFirestore firestore,
     required PostCacheService cacheService,
-    required IdempotencyService idempotencyService,
   })  : _firestore = firestore,
-        _cacheService = cacheService,
-        _idempotencyService = idempotencyService {
+        _cacheService = cacheService {
     _postsRef = _firestore.collection('posts');
   }
 
@@ -523,72 +519,61 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
   @override
   Future<Either<PostFailure, Unit>> createPost({
     required PostDisplay post,
-    required String eventId,
   }) async {
     try {
-      return await _idempotencyService.executeIdempotent<Either<PostFailure, Unit>>(
-        entityType: 'post_create',
-        entityId: post.id,
-        userId: post.userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          try {
-            final postRef = _postsRef.doc(post.id);
+      // post.id provides natural idempotency via Firestore set()
+      // Multiple calls with same post.id will overwrite, not create duplicates
+      await _firestore.runTransaction((transaction) async {
+        final postRef = _postsRef.doc(post.id);
 
-            // Create post document with all fields
-            transaction.set(postRef, {
-              'id': post.id,
-              'userId': post.userId,
-              'displayName': post.displayName,
-              'photoUrl': post.photoUrl,
-              'questionTitle': post.questionTitle,
-              'description': post.description,
-              'optionAText': post.optionAText,
-              'optionBText': post.optionBText,
-              'optionAImageUrl': post.optionAImageUrl,
-              'optionBImageUrl': post.optionBImageUrl,
-              'optionAImages': post.optionAImages ?? [],
-              'optionAAspectRatios': post.optionAAspectRatios ?? [],
-              'optionBImages': post.optionBImages ?? [],
-              'optionBAspectRatios': post.optionBAspectRatios ?? [],
-              'layoutType': post.layoutType,
-              'votesA': post.votesA,
-              'votesB': post.votesB,
-              'voteStatus': post.voteStatus,
-              'voteCompleted': post.voteCompleted,
-              'voteStartTime': post.voteStartTime,
-              'voteEndTime': post.voteEndTime,
-              'commentCount': post.commentCount,
-              'likeCount': post.likeCount,
-              'shareCount': post.shareCount,
-              'createdAt': post.createdAt,
-              'isAnonymous': post.isAnonymous,
-              'status': post.status,
-              'targetAudience': post.targetAudience,
-            });
+        // Create post document with all fields
+        transaction.set(postRef, {
+          'id': post.id,
+          'userId': post.userId,
+          'displayName': post.displayName,
+          'photoUrl': post.photoUrl,
+          'questionTitle': post.questionTitle,
+          'description': post.description,
+          'optionAText': post.optionAText,
+          'optionBText': post.optionBText,
+          'optionAImageUrl': post.optionAImageUrl,
+          'optionBImageUrl': post.optionBImageUrl,
+          'optionAImages': post.optionAImages ?? [],
+          'optionAAspectRatios': post.optionAAspectRatios ?? [],
+          'optionBImages': post.optionBImages ?? [],
+          'optionBAspectRatios': post.optionBAspectRatios ?? [],
+          'layoutType': post.layoutType,
+          'votesA': post.votesA,
+          'votesB': post.votesB,
+          'voteStatus': post.voteStatus,
+          'voteCompleted': post.voteCompleted,
+          'voteStartTime': post.voteStartTime,
+          'voteEndTime': post.voteEndTime,
+          'commentCount': post.commentCount,
+          'likeCount': post.likeCount,
+          'shareCount': post.shareCount,
+          'createdAt': post.createdAt,
+          'isAnonymous': post.isAnonymous,
+          'status': post.status,
+          'targetAudience': post.targetAudience,
+        });
+      });
 
-            // ✅ Selective cache invalidation (Posts only, not other Features)
-            Future.microtask(() async {
-              // Invalidate all feed caches (latest, popular, trending)
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
-            });
+      // ✅ Selective cache invalidation (Posts only, not other Features)
+      Future.microtask(() async {
+        // Invalidate all feed caches (latest, popular, trending)
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
+      });
 
-            // ✅ Logger 추가
-            PostLogger.postCreated(
-              postId: post.id,
-              authorId: post.userId,
-            );
-
-            return right(unit);
-          } catch (e) {
-            return left(PostFailure.createFailed(
-              reason: 'Failed to create post in transaction: ${e.toString()}',
-            ));
-          }
-        },
+      // ✅ Logger 추가
+      PostLogger.postCreated(
+        postId: post.id,
+        authorId: post.userId,
       );
+
+      return right(unit);
     } on FirebaseException catch (e) {
       return left(_mapFirebaseException(e, postId: post.id));
     } catch (e) {
@@ -602,7 +587,6 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
   Future<Either<PostFailure, Unit>> updatePost({
     required String postId,
     required Map<String, dynamic> updates,
-    required String eventId,
   }) async {
     try {
       // Phase 4: Get current user ID from Firebase Auth (Firebase-Centric v2.0)
@@ -611,42 +595,32 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
         return left(const PostFailure.unauthorized());
       }
 
-      return await _idempotencyService.executeIdempotent<Either<PostFailure, Unit>>(
-        entityType: 'post_update',
-        entityId: postId,
-        userId: userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          try {
-            final postRef = _postsRef.doc(postId);
+      // postId provides natural idempotency via Firestore update()
+      // Multiple calls with same postId will overwrite, not create duplicates
+      await _firestore.runTransaction((transaction) async {
+        final postRef = _postsRef.doc(postId);
 
-            // Add updatedAt timestamp
-            final updatesWithTimestamp = {
-              ...updates,
-              'updatedAt': FieldValue.serverTimestamp(),
-            };
+        // Add updatedAt timestamp
+        final updatesWithTimestamp = {
+          ...updates,
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
 
-            transaction.update(postRef, updatesWithTimestamp);
+        transaction.update(postRef, updatesWithTimestamp);
+      });
 
-            // ✅ Selective cache invalidation (Specific post + feeds only)
-            Future.microtask(() async {
-              await _cacheService.invalidatePost(postId);
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
-            });
+      // ✅ Selective cache invalidation (Specific post + feeds only)
+      Future.microtask(() async {
+        await _cacheService.invalidatePost(postId);
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
+      });
 
-            // ✅ Logger 추가
-            PostLogger.postUpdated(postId: postId);
+      // ✅ Logger 추가
+      PostLogger.postUpdated(postId: postId);
 
-            return right(unit);
-          } catch (e) {
-            return left(PostFailure.updateFailed(
-              reason: 'Failed to update post in transaction: ${e.toString()}',
-            ));
-          }
-        },
-      );
+      return right(unit);
     } on FirebaseException catch (e) {
       return left(_mapFirebaseException(e, postId: postId));
     } catch (e) {
@@ -659,7 +633,6 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
   @override
   Future<Either<PostFailure, Unit>> deletePost({
     required String postId,
-    required String eventId,
   }) async {
     try {
       // Phase 4: Get current user ID from Firebase Auth (Firebase-Centric v2.0)
@@ -668,72 +641,62 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
         return left(const PostFailure.unauthorized());
       }
 
-      return await _idempotencyService.executeIdempotent<Either<PostFailure, Unit>>(
-        entityType: 'post_delete',
-        entityId: postId,
-        userId: userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          try {
-            final postRef = _postsRef.doc(postId);
+      // postId provides natural idempotency via Firestore delete()
+      // Multiple calls with same postId will safely delete once
+      await _firestore.runTransaction((transaction) async {
+        final postRef = _postsRef.doc(postId);
 
-            // 1. Delete comments subcollection
-            final commentsSnapshot = await postRef.collection('comments').get();
-            for (final commentDoc in commentsSnapshot.docs) {
-              // Delete comment's subcollections (likes, dislikes)
-              final commentLikesSnapshot = await commentDoc.reference.collection('likes').get();
-              for (final likeDoc in commentLikesSnapshot.docs) {
-                transaction.delete(likeDoc.reference);
-              }
-
-              final commentDislikesSnapshot = await commentDoc.reference.collection('dislikes').get();
-              for (final dislikeDoc in commentDislikesSnapshot.docs) {
-                transaction.delete(dislikeDoc.reference);
-              }
-
-              transaction.delete(commentDoc.reference);
-            }
-
-            // 2. Delete votes subcollection
-            final votesSnapshot = await postRef.collection('votes').get();
-            for (final voteDoc in votesSnapshot.docs) {
-              transaction.delete(voteDoc.reference);
-            }
-
-            // 3. Delete likes subcollection
-            final likesSnapshot = await postRef.collection('likes').get();
-            for (final likeDoc in likesSnapshot.docs) {
-              transaction.delete(likeDoc.reference);
-            }
-
-            // 4. Delete dislikes subcollection
-            final dislikesSnapshot = await postRef.collection('dislikes').get();
-            for (final dislikeDoc in dislikesSnapshot.docs) {
-              transaction.delete(dislikeDoc.reference);
-            }
-
-            // 5. Delete post document
-            transaction.delete(postRef);
-
-            // ✅ Selective cache invalidation (Deleted post + feeds only)
-            Future.microtask(() async {
-              await _cacheService.invalidatePost(postId);
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
-              await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
-            });
-
-            // ✅ Logger 추가
-            PostLogger.postDeleted(postId: postId);
-
-            return right(unit);
-          } catch (e) {
-            return left(PostFailure.deleteFailed(
-              reason: 'Failed to delete post in transaction: ${e.toString()}',
-            ));
+        // 1. Delete comments subcollection
+        final commentsSnapshot = await postRef.collection('comments').get();
+        for (final commentDoc in commentsSnapshot.docs) {
+          // Delete comment's subcollections (likes, dislikes)
+          final commentLikesSnapshot = await commentDoc.reference.collection('likes').get();
+          for (final likeDoc in commentLikesSnapshot.docs) {
+            transaction.delete(likeDoc.reference);
           }
-        },
-      );
+
+          final commentDislikesSnapshot = await commentDoc.reference.collection('dislikes').get();
+          for (final dislikeDoc in commentDislikesSnapshot.docs) {
+            transaction.delete(dislikeDoc.reference);
+          }
+
+          transaction.delete(commentDoc.reference);
+        }
+
+        // 2. Delete votes subcollection
+        final votesSnapshot = await postRef.collection('votes').get();
+        for (final voteDoc in votesSnapshot.docs) {
+          transaction.delete(voteDoc.reference);
+        }
+
+        // 3. Delete likes subcollection
+        final likesSnapshot = await postRef.collection('likes').get();
+        for (final likeDoc in likesSnapshot.docs) {
+          transaction.delete(likeDoc.reference);
+        }
+
+        // 4. Delete dislikes subcollection
+        final dislikesSnapshot = await postRef.collection('dislikes').get();
+        for (final dislikeDoc in dislikesSnapshot.docs) {
+          transaction.delete(dislikeDoc.reference);
+        }
+
+        // 5. Delete post document
+        transaction.delete(postRef);
+      });
+
+      // ✅ Selective cache invalidation (Deleted post + feeds only)
+      Future.microtask(() async {
+        await _cacheService.invalidatePost(postId);
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
+        await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
+      });
+
+      // ✅ Logger 추가
+      PostLogger.postDeleted(postId: postId);
+
+      return right(unit);
     } on FirebaseException catch (e) {
       return left(_mapFirebaseException(e, postId: postId));
     } catch (e) {

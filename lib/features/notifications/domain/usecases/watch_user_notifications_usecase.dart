@@ -1,3 +1,4 @@
+import '/services/logging/dev_logger.dart';
 import '../entities/notification.dart';
 import '../repositories/i_notification_repository.dart';
 import '../value_objects/notification_filter.dart';
@@ -18,7 +19,10 @@ import 'base/stream_use_case.dart';
 /// final stream = useCase.call(userId);
 ///
 /// stream.listen((notifications) {
-///   print('Received ${notifications.length} notifications');
+///   NotificationsLogger.notificationsReceived(
+///     count: notifications.length,
+///     userId: userId,
+///   );
 /// });
 /// ```
 class WatchUserNotificationsUseCase
@@ -35,12 +39,24 @@ class WatchUserNotificationsUseCase
   /// [userId] - The ID of the user whose notifications to watch
   @override
   Stream<List<Notification>> call(String userId) {
+    DevLogger.params({'userId': userId}, tag: 'WatchNotifications');
+    DevLogger.checkpoint('Starting notifications stream', tag: 'WatchNotifications');
+
     // Business rule: Exclude expired notifications by default
-    return _repository.watchUserNotifications(
-      userId: userId,
-      filter: const NotificationFilter(
-        excludeExpired: true,
-      ),
-    );
+    return _repository
+        .watchUserNotifications(
+          userId: userId,
+          filter: const NotificationFilter(
+            excludeExpired: true,
+          ),
+        )
+        .map((notifications) {
+      DevLogger.result(
+        isSuccess: true,
+        data: '${notifications.length} notifications emitted',
+        tag: 'WatchNotifications',
+      );
+      return notifications;
+    });
   }
 }

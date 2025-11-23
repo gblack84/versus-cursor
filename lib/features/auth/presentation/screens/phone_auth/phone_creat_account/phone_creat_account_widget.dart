@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:uuid/uuid.dart';
 import 'package:versus_space/gen/assets.gen.dart';
-import '/services/error/error_handler_service.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core_exports.dart';
@@ -367,10 +365,10 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                             ref.read(authLoadingProvider.notifier).setLoading(true);
 
                             // OTP 발송
-                            final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
-                            final result = await signInWithPhoneUseCase.sendOtp(
+                            final sendOtpUseCase = ref.read(sendPhoneOtpUseCaseProvider);
+                            final result = await sendOtpUseCase.execute(
                               phoneNumber: phoneNumberVal,
-                              eventId: const Uuid().v4(),
+                              userId: phoneNumberVal, // Rate limiting by phone number
                             );
 
                             // 결과 처리

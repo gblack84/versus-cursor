@@ -24,7 +24,6 @@ part of 'create_post_notifier.dart';
 /// - MediaStateCoordinator → 개별 Media Notifier 직접 사용
 /// - ✅ Phase 3: Draft auto-load on app start (<10ms cache hit)
 /// - ✅ Phase 3: saveDraft() with 500ms debounce (no UI blocking)
-/// - ✅ Phase 4: UUID generation for idempotency
 
 @ProviderFor(CreatePost)
 const createPostProvider = CreatePostProvider._();
@@ -45,7 +44,6 @@ const createPostProvider = CreatePostProvider._();
 /// - MediaStateCoordinator → 개별 Media Notifier 직접 사용
 /// - ✅ Phase 3: Draft auto-load on app start (<10ms cache hit)
 /// - ✅ Phase 3: saveDraft() with 500ms debounce (no UI blocking)
-/// - ✅ Phase 4: UUID generation for idempotency
 final class CreatePostProvider
     extends $NotifierProvider<CreatePost, CreatePostState> {
   /// Create Post Notifier - Riverpod 3.x (Phase 2-11, Phase 3)
@@ -64,7 +62,6 @@ final class CreatePostProvider
   /// - MediaStateCoordinator → 개별 Media Notifier 직접 사용
   /// - ✅ Phase 3: Draft auto-load on app start (<10ms cache hit)
   /// - ✅ Phase 3: saveDraft() with 500ms debounce (no UI blocking)
-  /// - ✅ Phase 4: UUID generation for idempotency
   const CreatePostProvider._()
     : super(
         from: null,
@@ -92,7 +89,7 @@ final class CreatePostProvider
   }
 }
 
-String _$createPostHash() => r'164fde81b89aa9d6e8b15f63e35a3d56158e21e1';
+String _$createPostHash() => r'd5592dd8e4f0624774034cb1d42184120d9ddf7f';
 
 /// Create Post Notifier - Riverpod 3.x (Phase 2-11, Phase 3)
 ///
@@ -110,7 +107,6 @@ String _$createPostHash() => r'164fde81b89aa9d6e8b15f63e35a3d56158e21e1';
 /// - MediaStateCoordinator → 개별 Media Notifier 직접 사용
 /// - ✅ Phase 3: Draft auto-load on app start (<10ms cache hit)
 /// - ✅ Phase 3: saveDraft() with 500ms debounce (no UI blocking)
-/// - ✅ Phase 4: UUID generation for idempotency
 
 abstract class _$CreatePost extends $Notifier<CreatePostState> {
   CreatePostState build();

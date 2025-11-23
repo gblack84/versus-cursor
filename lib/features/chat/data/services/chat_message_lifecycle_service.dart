@@ -1,4 +1,4 @@
-import '/core_exports.dart';
+import '/core_exports.dart'; // Includes logger_service
 import '/features/chat/domain/enums/message_delivery_status.dart';
 
 /// Service to handle message delivery and read status
@@ -49,7 +49,11 @@ class ChatMessageLifecycleService {
         await batch.commit();
       }
     } catch (e) {
-      print('Error marking messages as seen: $e');
+      ChatLogger.messageError(
+        errorType: 'markMessagesAsSeenFailed',
+        message: 'Failed to mark messages as seen in chat $chatId',
+        error: e,
+      );
     }
   }
 
@@ -69,7 +73,11 @@ class ChatMessageLifecycleService {
         'deliveredAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print('Error marking message as delivered: $e');
+      ChatLogger.messageError(
+        errorType: 'markMessageAsDeliveredFailed',
+        message: 'Failed to mark message $messageId as delivered in chat $chatId',
+        error: e,
+      );
     }
   }
 
@@ -100,7 +108,10 @@ class ChatMessageLifecycleService {
         return MessageDeliveryStatus.sent;
       }
     } catch (e) {
-      print('Error getting message status: $e');
+      ChatLogger.loadError(
+        error: e,
+        chatId: chatId,
+      );
       return MessageDeliveryStatus.unknown;
     }
   }
@@ -153,7 +164,11 @@ class ChatMessageLifecycleService {
       });
     } catch (e) {
       // Only log error, don't throw to prevent scroll jump issues
-      print('Error updating lastReadAt: $e');
+      ChatLogger.messageError(
+        errorType: 'updateLastReadAtFailed',
+        message: 'Failed to update lastReadAt for user $userId in chat $chatId',
+        error: e,
+      );
     }
   }
 
@@ -184,7 +199,10 @@ class ChatMessageLifecycleService {
 
       return null;
     } catch (e) {
-      print('Error getting lastReadAt: $e');
+      ChatLogger.loadError(
+        error: e,
+        chatId: chatId,
+      );
       return null;
     }
   }
@@ -226,7 +244,10 @@ class ChatMessageLifecycleService {
 
       return unreadCount;
     } catch (e) {
-      print('Error getting unread count: $e');
+      ChatLogger.loadError(
+        error: e,
+        chatId: chatId,
+      );
       return 0;
     }
   }

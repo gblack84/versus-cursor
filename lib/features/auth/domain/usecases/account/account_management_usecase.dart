@@ -2,8 +2,7 @@
 // Clean Architecture - Domain Layer
 
 import 'package:fpdart/fpdart.dart';
-import 'package:flutter/foundation.dart';
-import '/services/idempotency/idempotency_service.dart';
+import '/services/logging/dev_logger.dart';
 import '../../entities/auth_user.dart';
 import '../../repositories/i_auth_repository.dart';
 import '../../failures/auth_failure.dart';
@@ -19,65 +18,79 @@ import '../../failures/auth_failure.dart';
 /// - Returns Either<AuthFailure, T> for functional error handling
 /// - Consistent with Voting feature architecture
 ///
-/// **Phase 2**: IdempotencyService 통합
-/// - 계정 삭제 안전성 강화
-/// - 네트워크 재시도 시 중복 삭제 방지
+/// **Natural Idempotency**:
+/// - Firebase Auth handles duplicate account operations automatically
+/// - Account deletion is naturally idempotent (same input = same result)
+///
+/// **DevLogger Integration**:
+/// - debugPrint → DevLogger 마이그레이션 완료
+/// - 개발 디버깅 표준화
 class AccountManagementUseCase {
   final IAuthRepository _repository;
-  final IdempotencyService _idempotencyService;
 
   AccountManagementUseCase({
     required IAuthRepository repository,
-    required IdempotencyService idempotencyService,
-  })  : _repository = repository,
-        _idempotencyService = idempotencyService;
+  }) : _repository = repository;
 
-  /// Delete User Account (Phase 2: eventId 추가)
+  /// Delete User Account
   ///
   /// Permanently deletes the current user's account.
   /// This action cannot be undone.
+  /// Firebase Auth handles idempotency automatically.
   ///
   /// **Parameters**:
   /// - `confirmationText`: Optional safety check - must match 'DELETE' if provided
   /// - `checkReAuth`: If true, checks if user needs re-authentication
-  /// - `eventId`: 중복 작업 방지를 위한 이벤트 ID (UUID v4)
   ///
   /// **Returns**:
   /// - `Right(Unit)`: 계정 삭제 성공
   /// - `Left(AuthFailure)`: 삭제 실패
-  ///
-  /// **IdempotencyService**:
-  /// - entityType: 'auth_delete_account'
-  /// - entityId: user UID
-  /// - userId: user UID
   Future<Either<AuthFailure, Unit>> deleteAccount({
     String? confirmationText,
     bool checkReAuth = false,
-    required String eventId,
   }) async {
-    debugPrint('Attempting to delete user account with eventId: $eventId');
+    DevLogger.params({
+      'confirmationText': confirmationText != null ? '<provided>' : null,
+      'checkReAuth': checkReAuth,
+    }, tag: 'AccountManagement');
+
+    DevLogger.checkpoint('계정 삭제 프로세스 시작', tag: 'AccountManagement');
 
     // 1. Safety check: Require confirmation text if provided (Business Logic)
     if (confirmationText != null && confirmationText != 'DELETE') {
-      debugPrint('Confirmation text does not match. Expected: DELETE, Got: $confirmationText');
+      DevLogger.validation(
+        field: 'confirmationText',
+        reason: 'Expected: DELETE, Got: $confirmationText',
+        tag: 'AccountManagement',
+      );
       return left(AuthFailure.unexpected('확인 텍스트가 일치하지 않습니다'));
     }
 
     // 2. Check if user is signed in (Business Logic)
     if (!_repository.isSignedIn) {
-      debugPrint('No user signed in to delete');
+      DevLogger.result(
+        isSuccess: false,
+        data: '사용자 미로그인',
+        tag: 'AccountManagement',
+      );
       return left(const AuthFailure.userNotFound());
     }
+
+    DevLogger.checkpoint('사용자 로그인 상태 확인 완료', tag: 'AccountManagement');
 
     // 3. Get current user info (Repository returns Either)
     final userResult = await _repository.getCurrentUser();
     final currentUserEither = userResult.fold(
       (failure) {
-        debugPrint('Could not retrieve user information');
+        DevLogger.result(
+          isSuccess: false,
+          data: '사용자 정보 조회 실패: ${failure.message}',
+          tag: 'AccountManagement',
+        );
         return left(failure);
       },
       (user) {
-        debugPrint('Current user retrieved: ${user.uid}');
+        DevLogger.checkpoint('현재 사용자 조회 완료: ${user.uid}', tag: 'AccountManagement');
         return right(user);
       },
     );
@@ -90,49 +103,37 @@ class AccountManagementUseCase {
 
     // 4. Check if re-authentication is needed (Business Logic)
     if (checkReAuth && await needsReAuthentication()) {
-      debugPrint('User needs to re-authenticate before deletion');
+      DevLogger.validation(
+        field: 'reAuthentication',
+        reason: '재인증 필요 (5분 경과)',
+        tag: 'AccountManagement',
+      );
       return left(const AuthFailure.requiresRecentLogin());
     }
 
-    debugPrint('Deleting account for user: ${currentUser.uid}');
+    DevLogger.checkpoint('계정 삭제 진행: ${currentUser.uid}', tag: 'AccountManagement');
 
-    try {
-      // 5. IdempotencyService로 중복 작업 방지
-      await _idempotencyService.executeIdempotent<Unit>(
-        entityType: 'auth_delete_account',
-        entityId: currentUser.uid,
-        userId: currentUser.uid,
-        eventId: eventId,
-        operation: (transaction) async {
-          // Repository 호출
-          final deleteResult = await _repository.deleteUser();
+    // 5. Direct repository call (Firebase handles idempotency)
+    final deleteResult = await _repository.deleteUser();
 
-          // Either를 throw/Unit으로 변환
-          return deleteResult.fold(
-            (failure) {
-              debugPrint('Account deletion failed: ${failure.message}');
-              throw failure;
-            },
-            (success) {
-              debugPrint('Account deleted successfully');
-              return unit;
-            },
-          );
-        },
-      );
-
-      return right(unit);
-    } on IdempotencyViolation {
-      // 이미 삭제됨 → 성공 처리 (계정 삭제가 목표 상태)
-      debugPrint('Account deletion already completed (idempotency violation)');
-      return right(unit);
-    } on AuthFailure catch (e) {
-      debugPrint('Account deletion failed with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Account deletion unexpected error: $e');
-      return left(AuthFailure.unexpected(e.toString()));
-    }
+    return deleteResult.fold(
+      (failure) {
+        DevLogger.error(
+          '계정 삭제 실패',
+          error: failure,
+          tag: 'AccountManagement',
+        );
+        return left(failure);
+      },
+      (_) {
+        DevLogger.result(
+          isSuccess: true,
+          data: '계정 삭제 완료: ${currentUser.uid}',
+          tag: 'AccountManagement',
+        );
+        return right(unit);
+      },
+    );
   }
 
   /// Check if user needs to re-authenticate
@@ -140,12 +141,18 @@ class AccountManagementUseCase {
   /// Account deletion requires recent authentication.
   /// Returns true if re-authentication is needed.
   Future<bool> needsReAuthentication() async {
+    DevLogger.checkpoint('재인증 필요 여부 확인 시작', tag: 'AccountManagement');
+
     // Check when user last signed in (Repository returns Either)
     final userResult = await _repository.getCurrentUser();
 
     return userResult.fold(
       (failure) {
-        debugPrint('Could not retrieve user for re-auth check: ${failure.message}');
+        DevLogger.result(
+          isSuccess: false,
+          data: '사용자 조회 실패 (재인증 필요로 판단): ${failure.message}',
+          tag: 'AccountManagement',
+        );
         return true; // Err on the side of caution
       },
       (currentUser) {
@@ -153,10 +160,19 @@ class AccountManagementUseCase {
         if (currentUser.lastLoginAt != null) {
           final timeSinceLogin = DateTime.now().difference(currentUser.lastLoginAt!);
           if (timeSinceLogin.inMinutes > 5) {
-            debugPrint('Last login was ${timeSinceLogin.inMinutes} minutes ago. Re-authentication required.');
+            DevLogger.result(
+              isSuccess: true,
+              data: '재인증 필요 (${timeSinceLogin.inMinutes}분 경과)',
+              tag: 'AccountManagement',
+            );
             return true;
           }
         }
+        DevLogger.result(
+          isSuccess: true,
+          data: '재인증 불필요',
+          tag: 'AccountManagement',
+        );
         return false;
       },
     );
@@ -171,19 +187,34 @@ class AccountManagementUseCase {
     String? displayName,
     String? photoURL,
   }) async {
-    debugPrint('Updating user profile...');
+    DevLogger.params({
+      'displayName': displayName,
+      'photoURL': photoURL != null ? '<provided>' : null,
+    }, tag: 'AccountManagement');
+
+    DevLogger.checkpoint('프로필 업데이트 시작', tag: 'AccountManagement');
 
     // 1. Check if user is signed in (Business Logic)
     if (!_repository.isSignedIn) {
-      debugPrint('No user signed in');
+      DevLogger.result(
+        isSuccess: false,
+        data: '사용자 미로그인',
+        tag: 'AccountManagement',
+      );
       return left(const AuthFailure.userNotFound());
     }
 
     // 2. Validate at least one field is being updated (Business Logic)
     if (displayName == null && photoURL == null) {
-      debugPrint('No profile information provided to update');
+      DevLogger.validation(
+        field: 'profile',
+        reason: '업데이트할 필드 없음',
+        tag: 'AccountManagement',
+      );
       return left(const AuthFailure.profileIncomplete());
     }
+
+    DevLogger.checkpoint('Repository updateUserProfile 호출', tag: 'AccountManagement');
 
     // 3. Update profile (Repository returns Either<AuthFailure, void>)
     final result = await _repository.updateUserProfile(
@@ -193,11 +224,19 @@ class AccountManagementUseCase {
 
     return result.fold(
       (failure) {
-        debugPrint('Profile update failed with AuthFailure: ${failure.message}');
+        DevLogger.result(
+          isSuccess: false,
+          data: '프로필 업데이트 실패: ${failure.message}',
+          tag: 'AccountManagement',
+        );
         return left(failure);
       },
       (_) {
-        debugPrint('Profile updated successfully');
+        DevLogger.result(
+          isSuccess: true,
+          data: '프로필 업데이트 성공',
+          tag: 'AccountManagement',
+        );
         return right(unit);
       },
     );
@@ -209,18 +248,26 @@ class AccountManagementUseCase {
   ///
   /// Returns Either<AuthFailure, AuthUser> with automatic Korean error messages
   Future<Either<AuthFailure, AuthUser>> getCurrentUser() async {
-    debugPrint('Retrieving current user...');
+    DevLogger.checkpoint('현재 사용자 조회 시작', tag: 'AccountManagement');
 
     // Repository already returns Either - direct pass-through with logging
     final result = await _repository.getCurrentUser();
 
     return result.fold(
       (failure) {
-        debugPrint('Get user failed with AuthFailure: ${failure.message}');
+        DevLogger.result(
+          isSuccess: false,
+          data: '사용자 조회 실패: ${failure.message}',
+          tag: 'AccountManagement',
+        );
         return left(failure);
       },
       (user) {
-        debugPrint('Current user retrieved: ${user.uid}');
+        DevLogger.result(
+          isSuccess: true,
+          data: '사용자 조회 성공: ${user.uid}',
+          tag: 'AccountManagement',
+        );
         return right(user);
       },
     );

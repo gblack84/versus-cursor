@@ -1,14 +1,14 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:uuid/uuid.dart';
 import '../repositories/i_chat_repository.dart';
 import '../failures/chat_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// UseCase: 친구 요청 보내기 (Clean Architecture v4.0 + Phase 1: Either Pattern)
 ///
 /// **비즈니스 규칙**:
 /// - 본인에게는 친구 요청 불가
 /// - 이미 친구인 경우는 Data Layer에서 처리
-/// - 중복 요청은 IdempotencyService로 처리
+/// - 중복 요청은 Firestore의 자연스러운 멱등성으로 처리
 ///
 /// **Dependencies**:
 /// - [IChatRepository]: 데이터 접근 추상화
@@ -36,30 +36,56 @@ class SendFriendRequestUseCase {
   /// **Implementation**:
   /// 1. Validation: 본인에게 요청 불가
   /// 2. Validation: 필수 파라미터 확인
-  /// 3. eventId 생성 (UUID v4, 중복 방지용)
-  /// 4. Repository의 sendFriendRequest() 호출 (이미 Either 반환)
+  /// 3. Repository의 sendFriendRequest() 호출 (이미 Either 반환)
   Future<Either<ChatFailure, Unit>> execute({
     required String fromUserId,
     required String toUserId,
   }) async {
+    DevLogger.params({
+      'fromUserId': fromUserId,
+      'toUserId': toUserId,
+    }, tag: 'SendFriendRequest');
+
     // Validation: 필수 파라미터
     if (fromUserId.isEmpty || toUserId.isEmpty) {
+      DevLogger.result(
+        isSuccess: false,
+        data: 'Empty fromUserId or toUserId',
+        tag: 'SendFriendRequest',
+      );
       return left(const FriendRequestFailed());
     }
 
     // Validation: 본인에게 친구 요청 불가
     if (fromUserId == toUserId) {
+      DevLogger.result(
+        isSuccess: false,
+        data: 'Cannot send friend request to self',
+        tag: 'SendFriendRequest',
+      );
       return left(const FriendRequestFailed());
     }
 
-    // eventId 생성 (중복 방지용)
-    final eventId = const Uuid().v4();
+    DevLogger.checkpoint('Calling repository.sendFriendRequest', tag: 'SendFriendRequest');
 
     // Repository 호출 - Either 반환
-    return await _chatRepository.sendFriendRequest(
+    final result = await _chatRepository.sendFriendRequest(
       fromUserId: fromUserId,
       toUserId: toUserId,
-      eventId: eventId,
     );
+
+    result.fold(
+      (failure) => DevLogger.result(
+        isSuccess: false,
+        data: failure.toString(),
+        tag: 'SendFriendRequest',
+      ),
+      (_) => DevLogger.result(
+        isSuccess: true,
+        tag: 'SendFriendRequest',
+      ),
+    );
+
+    return result;
   }
 }

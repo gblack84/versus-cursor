@@ -48,11 +48,13 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
 
       if (!moderationResult.isAppropriate) {
         onProgress?.call(1.0);
-        return right(SingleImageResult(
-          success: false,
-          rejectionReason: moderationResult.reason,
-          moderationResult: moderationResult,
-        ));
+        return right(
+          SingleImageResult(
+            success: false,
+            rejectionReason: moderationResult.reason,
+            moderationResult: moderationResult,
+          ),
+        );
       }
 
       // Calculate aspect ratio
@@ -60,19 +62,23 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
 
       onProgress?.call(1.0);
 
-      return right(SingleImageResult(
-        success: true,
-        file: editedFile,
-        aspectRatio: aspectRatio,
-        assetId: assetId,
-        moderationResult: moderationResult,
-      ));
+      return right(
+        SingleImageResult(
+          success: true,
+          file: editedFile,
+          aspectRatio: aspectRatio,
+          assetId: assetId,
+          moderationResult: moderationResult,
+        ),
+      );
     } catch (e) {
-      return left(CreationFailure.mediaProcessingFailed(
-        failedStep: MediaProcessingStep.moderationCheck,
-        affectedFiles: [editedFile.path],
-        details: 'Unexpected error: $e',
-      ));
+      return left(
+        CreationFailure.mediaProcessingFailed(
+          failedStep: MediaProcessingStep.moderationCheck,
+          affectedFiles: [editedFile.path],
+          details: 'Unexpected error: $e',
+        ),
+      );
     }
   }
 
@@ -108,7 +114,11 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
 
         if (!result.isAppropriate) {
           rejectedIndices.add(editedFileIndex + 1);
-          _addRejectionReason(rejectedReasons, result.reason, editedFileIndex + 1);
+          _addRejectionReason(
+            rejectedReasons,
+            result.reason,
+            editedFileIndex + 1,
+          );
         } else {
           approvedFiles.add(editedFile);
           final ratio = await _calculateAspectRatio(editedFile);
@@ -151,21 +161,25 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
 
       onProgress?.call(1.0);
 
-      return right(ImageProcessingResult(
-        approvedFiles: approvedFiles,
-        approvedRatios: approvedRatios,
-        approvedAssetIds: approvedAssetIds,
-        rejectedReasons: rejectedReasons,
-        rejectedIndices: rejectedIndices,
-        rejectedCount: rejectedIndices.length,
-        allRejected: approvedFiles.isEmpty,
-      ));
+      return right(
+        ImageProcessingResult(
+          approvedFiles: approvedFiles,
+          approvedRatios: approvedRatios,
+          approvedAssetIds: approvedAssetIds,
+          rejectedReasons: rejectedReasons,
+          rejectedIndices: rejectedIndices,
+          rejectedCount: rejectedIndices.length,
+          allRejected: approvedFiles.isEmpty,
+        ),
+      );
     } catch (e) {
-      return left(CreationFailure.mediaProcessingFailed(
-        failedStep: MediaProcessingStep.moderationCheck,
-        affectedFiles: files.map((f) => f.path).toList(),
-        details: 'Unexpected error: $e',
-      ));
+      return left(
+        CreationFailure.mediaProcessingFailed(
+          failedStep: MediaProcessingStep.moderationCheck,
+          affectedFiles: files.map((f) => f.path).toList(),
+          details: 'Unexpected error: $e',
+        ),
+      );
     }
   }
 
@@ -189,11 +203,13 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
 
       if (!moderationResult.isAppropriate) {
         onProgress?.call(1.0);
-        return right(SingleImageResult(
-          success: false,
-          rejectionReason: moderationResult.reason,
-          moderationResult: moderationResult,
-        ));
+        return right(
+          SingleImageResult(
+            success: false,
+            rejectionReason: moderationResult.reason,
+            moderationResult: moderationResult,
+          ),
+        );
       }
 
       // Calculate aspect ratio
@@ -201,19 +217,23 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
 
       onProgress?.call(1.0);
 
-      return right(SingleImageResult(
-        success: true,
-        file: file,
-        aspectRatio: aspectRatio,
-        assetId: assetId,
-        moderationResult: moderationResult,
-      ));
+      return right(
+        SingleImageResult(
+          success: true,
+          file: file,
+          aspectRatio: aspectRatio,
+          assetId: assetId,
+          moderationResult: moderationResult,
+        ),
+      );
     } catch (e) {
-      return left(CreationFailure.mediaProcessingFailed(
-        failedStep: MediaProcessingStep.moderationCheck,
-        affectedFiles: [file.path],
-        details: 'Unexpected error: $e',
-      ));
+      return left(
+        CreationFailure.mediaProcessingFailed(
+          failedStep: MediaProcessingStep.moderationCheck,
+          affectedFiles: [file.path],
+          details: 'Unexpected error: $e',
+        ),
+      );
     }
   }
 

@@ -55,8 +55,10 @@ abstract class IUserRepository {
   ///
   /// stream.listen((profile) {
   ///   if (profile != null) {
-  ///     print('Profile updated: ${profile.displayName}');
-  ///     print('Photo: ${profile.photoUrl}');
+  ///     ProfileLogger.profileUpdated(
+  ///       displayName: profile.displayName,
+  ///       photoUrl: profile.photoUrl,
+  ///     );
   ///   }
   /// });
   /// ```
@@ -85,32 +87,30 @@ abstract class IUserRepository {
   /// **Parameters**:
   /// - `uid`: 사용자 ID
   /// - `data`: 업데이트할 데이터
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(unit)`: 업데이트 성공
   /// - `Left(ProfileFailure)`: 업데이트 실패
-  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  ///
+  /// **Natural Idempotency**: Deterministic uid provides natural idempotency
   Future<Either<ProfileFailure, Unit>> updateUser(
     String uid,
-    Map<String, dynamic> data, {
-    String? eventId,
-  });
+    Map<String, dynamic> data,
+  );
 
   /// 사용자 프로필 업데이트 (UserProfile)
   ///
   /// **Parameters**:
   /// - `user`: 업데이트할 프로필
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(unit)`: 업데이트 성공
   /// - `Left(ProfileFailure)`: 업데이트 실패
-  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  ///
+  /// **Natural Idempotency**: Deterministic user.uid provides natural idempotency
   Future<Either<ProfileFailure, Unit>> updateUserProfile(
-    UserProfile user, {
-    String? eventId,
-  });
+    UserProfile user,
+  );
 
   /// 사용자 언어 설정 업데이트
   ///
@@ -120,41 +120,39 @@ abstract class IUserRepository {
   ///
   /// **Parameters**:
   /// - `languageCode`: 언어 코드 (예: 'en', 'ko', 'ja', 'zh')
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(UserProfile)`: 업데이트된 프로필
   /// - `Left(ProfileFailure.unauthenticated)`: 인증되지 않은 사용자
   /// - `Left(ProfileFailure.serverError)`: Firestore 업데이트 실패
-  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  ///
+  /// **Natural Idempotency**: Current user uid provides natural idempotency
   ///
   /// **Usage**:
   /// ```dart
-  /// final result = await repository.updateLanguage('ko', eventId: uuid.v4());
+  /// final result = await repository.updateLanguage('ko');
   /// result.fold(
   ///   (failure) => // 에러 처리,
   ///   (updatedProfile) => // 성공 처리,
   /// );
   /// ```
   Future<Either<ProfileFailure, UserProfile>> updateLanguage(
-    String languageCode, {
-    String? eventId,
-  });
+    String languageCode,
+  );
 
   /// 사용자 삭제
   ///
   /// **Parameters**:
   /// - `uid`: 삭제할 사용자 ID
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(unit)`: 삭제 성공
   /// - `Left(ProfileFailure)`: 삭제 실패
-  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  ///
+  /// **Natural Idempotency**: Deterministic uid provides natural idempotency
   Future<Either<ProfileFailure, Unit>> deleteUser(
-    String uid, {
-    String? eventId,
-  });
+    String uid,
+  );
 
   /// 사용자 존재 여부 확인
   ///
@@ -230,17 +228,16 @@ abstract class IUserRepository {
   /// **Parameters**:
   /// - `userId`: 사용자 ID
   /// - `settings`: 업데이트할 설정
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(unit)`: 업데이트 성공
   /// - `Left(ProfileFailure)`: 업데이트 실패
-  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  ///
+  /// **Natural Idempotency**: Deterministic userId provides natural idempotency
   Future<Either<ProfileFailure, Unit>> updateUserSettings(
     String userId,
-    Map<String, dynamic> settings, {
-    String? eventId,
-  });
+    Map<String, dynamic> settings,
+  );
 
   // ============= Auth 데이터 조회 =============
   // TODO: 2025-01-21 삭제됨 - AuthContract 사용 권장

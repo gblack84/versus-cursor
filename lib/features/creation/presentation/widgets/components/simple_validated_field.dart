@@ -20,7 +20,7 @@ class SimpleValidatedField extends StatelessWidget {
   final double? fontSize; // 오버라이드용
   final TextInputAction? textInputAction; // 오버라이드용
   final Function(String, String, bool)?
-      onFieldChanged; // value, fieldName, isBlocked
+  onFieldChanged; // value, fieldName, isBlocked
   final Function()? onFieldCleared;
   final Function()? onRequiredFieldsCheck;
   final PerspectiveResult? validationResult;
@@ -94,13 +94,9 @@ class SimpleValidatedField extends StatelessWidget {
             );
           } else if (debounceKey != null && onFieldChanged != null) {
             // debounceKey만 있는 경우 (ValidatedInputField 호환)
-            EasyDebounce.debounce(
-              debounceKey!,
-              debounceDuration,
-              () {
-                onFieldChanged!(value, '', false);
-              },
-            );
+            EasyDebounce.debounce(debounceKey!, debounceDuration, () {
+              onFieldChanged!(value, '', false);
+            });
           }
         },
         validationResult: validationResult,
@@ -111,15 +107,15 @@ class SimpleValidatedField extends StatelessWidget {
         maxLength: effectiveMaxLength,
         decoration: _buildDecoration(context, config),
         style: AppTheme.of(context).bodyMedium.override(
-              font: GoogleFonts.plusJakartaSans(
-                fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
-                fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-              ),
-              fontSize: effectiveFontSize,
-              letterSpacing: 0.0,
-              fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
-              fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-            ),
+          font: GoogleFonts.plusJakartaSans(
+            fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+            fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+          ),
+          fontSize: effectiveFontSize,
+          letterSpacing: 0.0,
+          fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+        ),
       ),
     );
   }
@@ -131,34 +127,35 @@ class SimpleValidatedField extends StatelessWidget {
       contentPadding: config.contentPadding,
       labelText: AppLocalizations.of(context).getText(labelKey),
       labelStyle: AppTheme.of(context).bodyMedium.override(
-            font: GoogleFonts.plusJakartaSans(
-              fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
-              fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-            ),
-            fontSize: config.labelSize,
-            letterSpacing: 0.0,
-            fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
-            fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-          ),
+        font: GoogleFonts.plusJakartaSans(
+          fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+        ),
+        fontSize: config.labelSize,
+        letterSpacing: 0.0,
+        fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+        fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+      ),
       alignLabelWithHint: false,
       hintText: AppLocalizations.of(context).getText(hintKey),
       hintStyle: AppTheme.of(context).labelMedium.override(
-            font: GoogleFonts.plusJakartaSans(
-              fontWeight: AppTheme.of(context).labelMedium.fontWeight,
-              fontStyle: AppTheme.of(context).labelMedium.fontStyle,
-            ),
-            fontSize: config.textSize * 0.9,
-            letterSpacing: 0.0,
-            fontWeight: AppTheme.of(context).labelMedium.fontWeight,
-            fontStyle: AppTheme.of(context).labelMedium.fontStyle,
-          ),
+        font: GoogleFonts.plusJakartaSans(
+          fontWeight: AppTheme.of(context).labelMedium.fontWeight,
+          fontStyle: AppTheme.of(context).labelMedium.fontStyle,
+        ),
+        fontSize: config.textSize * 0.9,
+        letterSpacing: 0.0,
+        fontWeight: AppTheme.of(context).labelMedium.fontWeight,
+        fontStyle: AppTheme.of(context).labelMedium.fontStyle,
+      ),
       enabledBorder: _getBorder(config, FieldStyles.borderColor),
       focusedBorder: _getBorder(config, FieldStyles.focusedBorderColor),
       errorBorder: _getBorder(config, FieldStyles.errorBorderColor),
       focusedErrorBorder: _getBorder(config, FieldStyles.errorBorderColor),
       filled: true,
       fillColor: AppTheme.of(context).secondaryBackground,
-      suffixIcon: config.showClearButton &&
+      suffixIcon:
+          config.showClearButton &&
               showClearButton &&
               (controller?.text.isNotEmpty ?? false)
           ? InkWell(
@@ -187,20 +184,16 @@ class SimpleValidatedField extends StatelessWidget {
     switch (config.borderType) {
       case FieldBorderType.underline:
         return UnderlineInputBorder(
-          borderSide: BorderSide(
-            color: color,
-            width: config.borderWidth,
+          borderSide: BorderSide(color: color, width: config.borderWidth),
+          borderRadius: BorderRadius.circular(
+            config.isDense
+                ? FieldStyles.borderRadiusDense
+                : FieldStyles.borderRadius,
           ),
-          borderRadius: BorderRadius.circular(config.isDense
-              ? FieldStyles.borderRadiusDense
-              : FieldStyles.borderRadius),
         );
       case FieldBorderType.outline:
         return OutlineInputBorder(
-          borderSide: BorderSide(
-            color: color,
-            width: config.borderWidth,
-          ),
+          borderSide: BorderSide(color: color, width: config.borderWidth),
           borderRadius: BorderRadius.circular(FieldStyles.borderRadius),
         );
       case FieldBorderType.none:

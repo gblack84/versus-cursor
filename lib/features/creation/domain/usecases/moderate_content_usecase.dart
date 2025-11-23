@@ -7,6 +7,8 @@ import '../failures/creation_failure.dart';
 import '../failures/creation_failure_extensions.dart'; // Extension for getUserMessage()
 import '../services/i_image_moderation_service.dart'; // ✅ Port Interface import
 import '/services/moderation/perspective_api_service.dart';
+import '/services/logging/logger_service.dart';
+import '/services/logging/dev_logger.dart';
 
 part 'moderate_content_usecase.freezed.dart';
 
@@ -28,8 +30,8 @@ class ModerateContentUseCase {
   ModerateContentUseCase({
     required IPerspectiveApiService perspectiveService,
     required IImageModerationService imageModerationService, // ✅ 추가
-  })  : _perspectiveService = perspectiveService,
-        _imageModerationService = imageModerationService;
+  }) : _perspectiveService = perspectiveService,
+       _imageModerationService = imageModerationService;
 
   /// Execute content moderation on text
   ///
@@ -44,23 +46,48 @@ class ModerateContentUseCase {
   /// - Network errors → Graceful degradation (fallback to basic word check)
   /// - Timeout → Graceful degradation
   /// - Generic errors → Fallback with lower confidence
+  ///
+  /// **Phase 6: DevLogger Type B Integration**
+  /// - Entry: params() logging with text length and context
+  /// - 4 checkpoints tracking Perspective API moderation flow
+  /// - Validation logging for toxic content detection
+  /// - 3 error handlers (network, timeout, fallback) with separate logging
   Future<Either<CreationFailure, ModerationDecision>> moderateText({
     required String text,
     required String context,
   }) async {
+    // ✅ Phase 6: DevLogger Type B - Log input parameters
+    DevLogger.params({
+      'text_length': text.length,
+      'text_preview': text.length > 50 ? '${text.substring(0, 50)}...' : text,
+      'context': context,
+    }, tag: 'ModerateText');
+
     try {
+      // ✅ Phase 6: Checkpoint 1 - Check empty text
+      DevLogger.checkpoint('Step 1: Check empty text', tag: 'ModerateText');
+
       // Empty text is always approved
       if (text.trim().isEmpty) {
-        return right(
-          ModerationDecision(
-            isApproved: true,
-            confidence: 1.0,
-          ),
+        DevLogger.result(
+          isSuccess: true,
+          data: 'Empty text - auto-approved',
+          tag: 'ModerateText',
         );
+        return right(ModerationDecision(isApproved: true, confidence: 1.0));
       }
+
+      // ✅ Phase 6: Checkpoint 2 - Call Perspective API
+      DevLogger.checkpoint('Step 2: Call Perspective API for toxicity analysis', tag: 'ModerateText');
 
       // Call Perspective API for toxicity analysis
       final result = await _perspectiveService.analyzeText(text);
+
+      // ✅ Phase 6: Checkpoint 3 - Analyze toxicity result
+      DevLogger.checkpoint(
+        'Step 3: Analyze toxicity result - isToxic: ${result.isToxic}',
+        tag: 'ModerateText',
+      );
 
       // Map PerspectiveResult → ModerationDecision
       if (result.isToxic) {
@@ -129,19 +156,27 @@ class ModerateContentUseCase {
       );
     } on http.ClientException catch (e) {
       // Network error → Return failure
-      print('Perspective API network error: $e');
-      return left(
-        CreationFailure.moderationFailed(),
+      Logger.error(
+        'Perspective API network error',
+        error: e,
+        tag: 'ModerateContentUseCase',
       );
+      return left(CreationFailure.moderationFailed());
     } on TimeoutException catch (e) {
       // API timeout → Return failure
-      print('Perspective API timeout: $e');
-      return left(
-        CreationFailure.moderationFailed(),
+      Logger.error(
+        'Perspective API timeout',
+        error: e,
+        tag: 'ModerateContentUseCase',
       );
+      return left(CreationFailure.moderationFailed());
     } catch (error) {
       // Generic error → Graceful degradation with basic word check
-      print('Perspective API error: $error');
+      Logger.error(
+        'Perspective API error (graceful degradation)',
+        error: error,
+        tag: 'ModerateContentUseCase',
+      );
 
       // Fallback: Basic prohibited word check
       final lowerText = text.toLowerCase();
@@ -155,10 +190,7 @@ class ModerateContentUseCase {
               reason: '부적절한 콘텐츠가 감지되었습니다 (기본 검증)',
               confidence: 0.7, // Lower confidence due to fallback
               detectedCategories: [word],
-              metadata: {
-                'fallbackMode': true,
-                'error': error.toString(),
-              },
+              metadata: {'fallbackMode': true, 'error': error.toString()},
             ),
           );
         }
@@ -169,10 +201,7 @@ class ModerateContentUseCase {
         ModerationDecision(
           isApproved: true,
           confidence: 0.5, // Lower confidence due to API failure
-          metadata: {
-            'fallbackMode': true,
-            'error': error.toString(),
-          },
+          metadata: {'fallbackMode': true, 'error': error.toString()},
         ),
       );
     }
@@ -203,9 +232,7 @@ class ModerateContentUseCase {
       );
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
-      return left(
-        CreationFailure.moderationFailed(),
-      );
+      return left(CreationFailure.moderationFailed());
     }
   }
 
@@ -221,10 +248,7 @@ class ModerateContentUseCase {
       for (int i = 0; i < imageFiles.length; i++) {
         onProgress?.call(i + 1, imageFiles.length);
 
-        final result = await moderateImage(
-          imageFile: imageFiles[i],
-          box: box,
-        );
+        final result = await moderateImage(imageFile: imageFiles[i], box: box);
 
         result.fold(
           (failure) {
@@ -247,14 +271,13 @@ class ModerateContentUseCase {
       return right(decisions);
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
-      return left(
-        CreationFailure.moderationFailed(),
-      );
+      return left(CreationFailure.moderationFailed());
     }
   }
 
   /// Check if content combination is appropriate
-  Future<Either<CreationFailure, ModerationDecision>> moderateContentCombination({
+  Future<Either<CreationFailure, ModerationDecision>>
+  moderateContentCombination({
     required String title,
     required String description,
     required List<File> imagesA,
@@ -262,10 +285,7 @@ class ModerateContentUseCase {
   }) async {
     try {
       // Check text first
-      final titleResult = await moderateText(
-        text: title,
-        context: 'title',
-      );
+      final titleResult = await moderateText(text: title, context: 'title');
 
       final titleDecision = titleResult.fold(
         (failure) => null,
@@ -291,10 +311,7 @@ class ModerateContentUseCase {
       }
 
       // Check images
-      final imagesAResult = await moderateImages(
-        imageFiles: imagesA,
-        box: 'A',
-      );
+      final imagesAResult = await moderateImages(imageFiles: imagesA, box: 'A');
 
       // Early return on failure
       if (imagesAResult.isLeft()) {
@@ -309,9 +326,7 @@ class ModerateContentUseCase {
         (decisions) => decisions,
       );
 
-      final rejectedA = decisionsA
-          .where((d) => !d.isApproved)
-          .toList();
+      final rejectedA = decisionsA.where((d) => !d.isApproved).toList();
 
       if (rejectedA.isNotEmpty) {
         // Step 5: 거부된 이미지의 실제 이유와 카테고리 수집
@@ -328,17 +343,16 @@ class ModerateContentUseCase {
         return right(
           ModerationDecision(
             isApproved: false,
-            reason: reasons.isNotEmpty ? 'Option A: $reasons' : 'Option A contains inappropriate content',
+            reason: reasons.isNotEmpty
+                ? 'Option A: $reasons'
+                : 'Option A contains inappropriate content',
             confidence: rejectedA.first.confidence,
             detectedCategories: categories,
           ),
         );
       }
 
-      final imagesBResult = await moderateImages(
-        imageFiles: imagesB,
-        box: 'B',
-      );
+      final imagesBResult = await moderateImages(imageFiles: imagesB, box: 'B');
 
       // Early return on failure
       if (imagesBResult.isLeft()) {
@@ -353,9 +367,7 @@ class ModerateContentUseCase {
         (decisions) => decisions,
       );
 
-      final rejectedB = decisionsB
-          .where((d) => !d.isApproved)
-          .toList();
+      final rejectedB = decisionsB.where((d) => !d.isApproved).toList();
 
       if (rejectedB.isNotEmpty) {
         // Step 5: 거부된 이미지의 실제 이유와 카테고리 수집
@@ -372,7 +384,9 @@ class ModerateContentUseCase {
         return right(
           ModerationDecision(
             isApproved: false,
-            reason: reasons.isNotEmpty ? 'Option B: $reasons' : 'Option B contains inappropriate content',
+            reason: reasons.isNotEmpty
+                ? 'Option B: $reasons'
+                : 'Option B contains inappropriate content',
             confidence: rejectedB.first.confidence,
             detectedCategories: categories,
           ),
@@ -392,9 +406,7 @@ class ModerateContentUseCase {
       );
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
-      return left(
-        CreationFailure.moderationFailed(),
-      );
+      return left(CreationFailure.moderationFailed());
     }
   }
 }

@@ -3,24 +3,15 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../domain/entities/post_creation.dart';
 import '../../../domain/entities/target_audience.dart';
 import '/services/moderation/perspective_api_service.dart';
+import '../../constants/field_styles.dart';
 
 part 'create_post_state.freezed.dart';
 
 /// Loading state for async operations
-enum LoadingState {
-  idle,
-  loading,
-  success,
-  error,
-}
+enum LoadingState { idle, loading, success, error }
 
 /// Moderation status for content validation
-enum ModerationStatus {
-  pending,
-  checking,
-  approved,
-  rejected,
-}
+enum ModerationStatus { pending, checking, approved, rejected }
 
 /// Immutable form data for post creation
 ///
@@ -72,5 +63,23 @@ sealed class CreatePostState with _$CreatePostState {
   bool get isLoading => loadingState == LoadingState.loading;
 
   /// Check if form can be submitted
-  bool get canSubmit => formData.isValid && !isLoading;
+  /// Includes moderation checks (Issue #14 - Phase 2 Step 2.4)
+  bool get canSubmit {
+    // 1. Basic validation
+    if (!formData.isValid || isLoading) return false;
+
+    // 2. Moderation results check
+    final titleResult = validationResults[FieldStyles.questionTitle];
+    final descResult = validationResults[FieldStyles.description];
+    final textAResult = validationResults[FieldStyles.textA];
+    final textBResult = validationResults[FieldStyles.textB];
+
+    // 3. Block if toxic content detected
+    if (titleResult?.isToxic == true) return false;
+    if (descResult?.isToxic == true) return false;
+    if (textAResult?.isToxic == true) return false;
+    if (!formData.isSingleMode && textBResult?.isToxic == true) return false;
+
+    return true;
+  }
 }

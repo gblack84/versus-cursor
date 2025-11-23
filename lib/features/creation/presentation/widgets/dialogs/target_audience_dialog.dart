@@ -15,7 +15,8 @@ class TargetAudienceDialog extends ConsumerStatefulWidget {
   const TargetAudienceDialog({super.key});
 
   @override
-  ConsumerState<TargetAudienceDialog> createState() => _TargetAudienceDialogState();
+  ConsumerState<TargetAudienceDialog> createState() =>
+      _TargetAudienceDialogState();
 
   /// 다이얼로그 표시 헬퍼 메서드
   static Future<Map<String, dynamic>?> show(BuildContext context) async {
@@ -115,9 +116,15 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
     debugPrint('[TargetAudienceDialog] 최종 결과:');
     debugPrint('[TargetAudienceDialog]   - 수집 방식: ${result['type']}');
     debugPrint('[TargetAudienceDialog]   - 목표 수: ${result['targetCount']}');
-    debugPrint('[TargetAudienceDialog]   - 관심사: ${result['criteria']?['interests']}');
-    debugPrint('[TargetAudienceDialog]   - 연령대: ${result['criteria']?['ageGroup']}');
-    debugPrint('[TargetAudienceDialog]   - 성별: ${result['criteria']?['gender']}');
+    debugPrint(
+      '[TargetAudienceDialog]   - 관심사: ${result['criteria']?['interests']}',
+    );
+    debugPrint(
+      '[TargetAudienceDialog]   - 연령대: ${result['criteria']?['ageGroup']}',
+    );
+    debugPrint(
+      '[TargetAudienceDialog]   - 성별: ${result['criteria']?['gender']}',
+    );
     debugPrint('[TargetAudienceDialog] =====================================');
     Navigator.of(context).pop(result);
   }
@@ -128,8 +135,10 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding:
-          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: 16.0,
+        vertical: 24.0,
+      ),
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Container(
@@ -160,9 +169,8 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
                 child: PageView(
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (index) {
-                    ref.read(targetAudienceProvider.notifier).setStep(index);
-                  },
+                  // onPageChanged 제거 - 버튼에서 이미 상태를 관리하고 있음
+                  // Riverpod 빌드 중 상태 변경 에러 방지
                   children: const [
                     CollectionTypeSelector(),
                     TargetCountSelector(),
@@ -208,9 +216,9 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
                   decoration: BoxDecoration(
                     color: isActive
                         ? AppTheme.of(context).primary
-                        : AppTheme.of(context)
-                            .secondaryText
-                            .withValues(alpha: 0.3),
+                        : AppTheme.of(
+                            context,
+                          ).secondaryText.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -223,11 +231,11 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
                         : Text(
                             '${index + 1}',
                             style: AppTheme.of(context).bodySmall.override(
-                                  color: isActive
-                                      ? AppTheme.of(context).primaryBackground
-                                      : AppTheme.of(context).secondaryText,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              color: isActive
+                                  ? AppTheme.of(context).primaryBackground
+                                  : AppTheme.of(context).secondaryText,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                   ),
                 ),
@@ -239,9 +247,9 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
                       margin: const EdgeInsets.symmetric(horizontal: 8),
                       color: isCompleted
                           ? AppTheme.of(context).primary
-                          : AppTheme.of(context)
-                              .secondaryText
-                              .withValues(alpha: 0.3),
+                          : AppTheme.of(
+                              context,
+                            ).secondaryText.withValues(alpha: 0.3),
                     ),
                   ),
               ],
@@ -271,8 +279,8 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
               child: Text(
                 '이전',
                 style: AppTheme.of(context).bodyMedium.override(
-                      color: AppTheme.of(context).secondaryText,
-                    ),
+                  color: AppTheme.of(context).secondaryText,
+                ),
               ),
             )
           else
@@ -281,8 +289,8 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
               child: Text(
                 '취소',
                 style: AppTheme.of(context).bodyMedium.override(
-                      color: AppTheme.of(context).secondaryText,
-                    ),
+                  color: AppTheme.of(context).secondaryText,
+                ),
               ),
             ),
 
@@ -302,9 +310,9 @@ class _TargetAudienceDialogState extends ConsumerState<TargetAudienceDialog>
             child: Text(
               state.isFinalStep ? '설정 완료' : '다음',
               style: AppTheme.of(context).bodyMedium.override(
-                    color: AppTheme.of(context).primaryBackground,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: AppTheme.of(context).primaryBackground,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

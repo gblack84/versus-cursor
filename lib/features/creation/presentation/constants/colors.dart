@@ -10,13 +10,15 @@ class AppColors {
 
   // Error Colors
   static final Color errorRed = Colors.red.shade700;
-  static final Color errorRedOverlay =
-      Colors.red.shade700.withValues(alpha: 0.9);
+  static final Color errorRedOverlay = Colors.red.shade700.withValues(
+    alpha: 0.9,
+  );
 
   // Success Colors
   static final Color successGreen = Colors.green.shade700;
-  static final Color successGreenOverlay =
-      Colors.green.shade700.withValues(alpha: 0.9);
+  static final Color successGreenOverlay = Colors.green.shade700.withValues(
+    alpha: 0.9,
+  );
 
   // Base Colors
   static const Color black = Colors.black;

@@ -82,7 +82,8 @@ sealed class TargetAudience with _$TargetAudience {
   /// - Age group conversion (English → Korean)
   factory TargetAudience.fromProviderMap(Map<String, dynamic> map) {
     return TargetAudience(
-      collectionType: map['type'] as String, // UI 'type' → Domain 'collectionType'
+      collectionType:
+          map['type'] as String, // UI 'type' → Domain 'collectionType'
       targetCount: map['targetCount'] as int? ?? 100,
       isPremium: map['isPremium'] as bool? ?? false,
       selectedInterests: map['criteria'] != null

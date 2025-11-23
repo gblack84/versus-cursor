@@ -83,10 +83,7 @@ class MediaSelection extends _$MediaSelection {
   /// ref.read(mediaSelectionProvider.notifier)
   ///    .reorderUploadedUrlsA(oldIndex: 0, newIndex: 2);
   /// ```
-  void reorderUploadedUrlsA({
-    required int oldIndex,
-    required int newIndex,
-  }) {
+  void reorderUploadedUrlsA({required int oldIndex, required int newIndex}) {
     if (oldIndex < 0 ||
         oldIndex >= state.uploadedUrlsA.length ||
         newIndex < 0 ||
@@ -233,10 +230,7 @@ class MediaSelection extends _$MediaSelection {
   /// 업로드된 URL 재정렬 (Option B)
   ///
   /// **AppState 대체**: AppState에서 직접 수정하던 패턴을 메서드화
-  void reorderUploadedUrlsB({
-    required int oldIndex,
-    required int newIndex,
-  }) {
+  void reorderUploadedUrlsB({required int oldIndex, required int newIndex}) {
     if (oldIndex < 0 ||
         oldIndex >= state.uploadedUrlsB.length ||
         newIndex < 0 ||
@@ -370,7 +364,7 @@ class MediaSelection extends _$MediaSelection {
   /// ```dart
   /// final data = ref.read(mediaSelectionProvider.notifier).getMediaDataA(0);
   /// if (data != null) {
-  ///   print('URL: ${data.$1}, Ratio: ${data.$2}, ID: ${data.$3}');
+  ///   Logger.debug('URL: ${data.$1}, Ratio: ${data.$2}, ID: ${data.$3}', tag: 'Creation/Media');
   /// }
   /// ```
   (String, double, String)? getMediaDataA(int index) {

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_profile_storage_repository.dart';
 
@@ -46,8 +47,8 @@ class SelectMediaUseCase {
   ///   imageQuality: 100,
   /// );
   /// result.fold(
-  ///   (failure) => print('실패: ${failure.getUserMessage()}'),
-  ///   (files) => print('선택된 파일: ${files.length}개'),
+  ///   (failure) => ProfileLogger.mediaError(error: failure),
+  ///   (files) => ProfileLogger.mediaSelected(count: files.length),
   /// );
   /// ```
   Future<Either<ProfileFailure, List<File>>> execute({
@@ -58,18 +59,34 @@ class SelectMediaUseCase {
     double? maxHeight,
     int? imageQuality,
   }) async {
+    DevLogger.params({
+      'userId': userId,
+      'allowPhoto': allowPhoto,
+      'allowVideo': allowVideo,
+      'maxWidth': maxWidth,
+      'maxHeight': maxHeight,
+      'imageQuality': imageQuality,
+    }, tag: 'SelectMedia');
+
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
+        DevLogger.validation(field: 'userId', reason: 'Empty userId', tag: 'SelectMedia');
         return left(ProfileFailure.validation('userId'));
       }
 
       if (!allowPhoto && !allowVideo) {
+        DevLogger.validation(
+          field: 'allowPhoto/allowVideo',
+          reason: 'Both false - at least one must be true',
+          tag: 'SelectMedia',
+        );
         return left(ProfileFailure.validation('allowPhoto 또는 allowVideo 중 하나는 true여야 합니다'));
       }
 
       // 2. Storage Repository로 미디어 선택 위임
-      return await _storageRepository.selectMedia(
+      DevLogger.checkpoint('Calling repository.selectMedia', tag: 'SelectMedia');
+      final result = await _storageRepository.selectMedia(
         userId: userId,
         allowPhoto: allowPhoto,
         allowVideo: allowVideo,
@@ -77,9 +94,18 @@ class SelectMediaUseCase {
         maxHeight: maxHeight,
         imageQuality: imageQuality,
       );
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'SelectMedia'),
+        (files) => DevLogger.result(isSuccess: true, data: '${files.length} files selected', tag: 'SelectMedia'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'SelectMedia');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'SelectMedia');
       return left(ProfileFailure.storage(e.toString()));
     }
   }

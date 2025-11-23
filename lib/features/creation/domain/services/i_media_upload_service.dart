@@ -11,7 +11,8 @@ abstract class IMediaUploadService {
   /// 반환값: Either<MediaRepositoryFailure, Map<String, dynamic>>
   /// - Right: URLs와 aspect ratio 정보를 포함한 Map
   /// - Left: MediaRepositoryFailure
-  Future<Either<CreationFailure,Map<String, dynamic>>> uploadImageWithVariants({
+  Future<Either<CreationFailure, Map<String, dynamic>>>
+  uploadImageWithVariants({
     required Uint8List imageBytes,
     required String box,
     String? customPath,
@@ -24,7 +25,8 @@ abstract class IMediaUploadService {
   /// 반환값: Either<MediaRepositoryFailure, Map<String, dynamic>>
   /// - Right: 검열 통과한 URLs와 실패한 이미지 정보
   /// - Left: MediaRepositoryFailure
-  Future<Either<CreationFailure,Map<String, dynamic>>> uploadAndWaitForModeration({
+  Future<Either<CreationFailure, Map<String, dynamic>>>
+  uploadAndWaitForModeration({
     required List<Uint8List> imageBytesList,
     required String box,
     String? customPath,
@@ -36,5 +38,5 @@ abstract class IMediaUploadService {
   /// 반환값: Either<MediaRepositoryFailure, Uint8List>
   /// - Right: 다운로드된 이미지 바이트
   /// - Left: MediaRepositoryFailure
-  Future<Either<CreationFailure,Uint8List>> downloadImageFromUrl(String url);
+  Future<Either<CreationFailure, Uint8List>> downloadImageFromUrl(String url);
 }

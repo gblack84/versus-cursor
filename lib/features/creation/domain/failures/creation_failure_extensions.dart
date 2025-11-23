@@ -43,8 +43,7 @@ extension CreationFailureExtensions on CreationFailure {
         }
         return '$mediaType 파일 ${failedPaths.length}개 처리 중 오류가 발생했습니다';
       },
-      metricsRepositoryFailed: (metricType) =>
-          '$metricType 통계 처리 중 오류가 발생했습니다',
+      metricsRepositoryFailed: (metricType) => '$metricType 통계 처리 중 오류가 발생했습니다',
       moderationRepositoryFailed: (moderationStep, rejectedReasons) {
         if (rejectedReasons.isEmpty) {
           return '$moderationStep 검열 중 오류가 발생했습니다';
@@ -68,44 +67,52 @@ extension CreationFailureExtensions on CreationFailure {
       },
 
       // Domain Layer Failures - AI Moderation
-      aiModerationFailed: (aiProvider, confidenceScore, detectedCategories,
-          suggestions, rejectedReasons) {
-        if (detectedCategories.isEmpty) {
-          return 'AI 검열에서 부적절한 콘텐츠가 감지되었습니다';
-        }
+      aiModerationFailed:
+          (
+            aiProvider,
+            confidenceScore,
+            detectedCategories,
+            suggestions,
+            rejectedReasons,
+          ) {
+            if (detectedCategories.isEmpty) {
+              return 'AI 검열에서 부적절한 콘텐츠가 감지되었습니다';
+            }
 
-        // 카테고리를 한국어로 변환
-        final koreanCategories = detectedCategories.map((category) {
-          switch (category.toLowerCase()) {
-            case 'sexual':
-            case 'sexually_explicit':
-              return '선정적 콘텐츠';
-            case 'violence':
-            case 'violent':
-              return '폭력적 내용';
-            case 'hate':
-            case 'hate_speech':
-              return '혐오 표현';
-            case 'harassment':
-            case 'threat':
-              return '괴롭힘/협박';
-            case 'toxicity':
-            case 'toxic':
-              return '유해한 콘텐츠';
-            case 'profanity':
-            case 'obscene':
-              return '욕설';
-            case 'spam':
-              return '스팸';
-            case 'identity_attack':
-              return '신원 공격';
-            default:
-              return category;
-          }
-        }).join(', ');
+            // 카테고리를 한국어로 변환
+            final koreanCategories = detectedCategories
+                .map((category) {
+                  switch (category.toLowerCase()) {
+                    case 'sexual':
+                    case 'sexually_explicit':
+                      return '선정적 콘텐츠';
+                    case 'violence':
+                    case 'violent':
+                      return '폭력적 내용';
+                    case 'hate':
+                    case 'hate_speech':
+                      return '혐오 표현';
+                    case 'harassment':
+                    case 'threat':
+                      return '괴롭힘/협박';
+                    case 'toxicity':
+                    case 'toxic':
+                      return '유해한 콘텐츠';
+                    case 'profanity':
+                    case 'obscene':
+                      return '욕설';
+                    case 'spam':
+                      return '스팸';
+                    case 'identity_attack':
+                      return '신원 공격';
+                    default:
+                      return category;
+                  }
+                })
+                .join(', ');
 
-        return 'AI 검열에서 다음 문제가 감지되었습니다: $koreanCategories';
-      },
+            return 'AI 검열에서 다음 문제가 감지되었습니다: $koreanCategories';
+          },
 
       // Domain Layer Failures - Media Processing
       mediaProcessingFailed: (failedStep, affectedFiles, details) {
@@ -129,56 +136,60 @@ extension CreationFailureExtensions on CreationFailure {
       },
 
       // Domain Layer Failures - Audience Configuration
-      audienceConfigurationFailed: (invalidField, attemptedValue,
-          validationRule) {
-        return '타겟 오디언스 설정이 올바르지 않습니다: $invalidField';
-      },
+      audienceConfigurationFailed:
+          (invalidField, attemptedValue, validationRule) {
+            return '타겟 오디언스 설정이 올바르지 않습니다: $invalidField';
+          },
 
       // Domain Layer Failures - Post Validation
       postValidationFailed: (missingFields, invalidFields, fieldErrors) {
         if (missingFields.isNotEmpty) {
           // 필드명을 한국어로 변환
-          final koreanFields = missingFields.map((field) {
-            switch (field) {
-              case 'title':
-                return '제목';
-              case 'description':
-                return '설명';
-              case 'optionA':
-              case 'textA':
-                return 'A 옵션';
-              case 'optionB':
-              case 'textB':
-                return 'B 옵션';
-              case 'images':
-              case 'imagesA':
-                return 'A 이미지';
-              case 'imagesB':
-                return 'B 이미지';
-              default:
-                return field;
-            }
-          }).join(', ');
+          final koreanFields = missingFields
+              .map((field) {
+                switch (field) {
+                  case 'title':
+                    return '제목';
+                  case 'description':
+                    return '설명';
+                  case 'optionA':
+                  case 'textA':
+                    return 'A 옵션';
+                  case 'optionB':
+                  case 'textB':
+                    return 'B 옵션';
+                  case 'images':
+                  case 'imagesA':
+                    return 'A 이미지';
+                  case 'imagesB':
+                    return 'B 이미지';
+                  default:
+                    return field;
+                }
+              })
+              .join(', ');
           return '필수 항목을 입력해주세요: $koreanFields';
         }
 
         if (invalidFields.isNotEmpty) {
-          final koreanFields = invalidFields.map((field) {
-            switch (field) {
-              case 'title':
-                return '제목';
-              case 'description':
-                return '설명';
-              case 'optionA':
-              case 'textA':
-                return 'A 옵션';
-              case 'optionB':
-              case 'textB':
-                return 'B 옵션';
-              default:
-                return field;
-            }
-          }).join(', ');
+          final koreanFields = invalidFields
+              .map((field) {
+                switch (field) {
+                  case 'title':
+                    return '제목';
+                  case 'description':
+                    return '설명';
+                  case 'optionA':
+                  case 'textA':
+                    return 'A 옵션';
+                  case 'optionB':
+                  case 'textB':
+                    return 'B 옵션';
+                  default:
+                    return field;
+                }
+              })
+              .join(', ');
           return '올바르지 않은 항목이 있습니다: $koreanFields';
         }
 
@@ -193,9 +204,14 @@ extension CreationFailureExtensions on CreationFailure {
   /// 다른 Failure는 null 반환
   String? getSuggestions() {
     return maybeWhen(
-      aiModerationFailed: (aiProvider, confidenceScore, detectedCategories,
-              suggestions, rejectedReasons) =>
-          suggestions,
+      aiModerationFailed:
+          (
+            aiProvider,
+            confidenceScore,
+            detectedCategories,
+            suggestions,
+            rejectedReasons,
+          ) => suggestions,
       orElse: () => null,
     );
   }

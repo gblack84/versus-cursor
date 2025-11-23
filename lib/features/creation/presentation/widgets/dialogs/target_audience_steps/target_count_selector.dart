@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
 import '/features/creation/presentation/providers/creation_providers.dart';
-import '/features/creation/presentation/providers/target_audience_notifier.dart' show TargetAudience;
+import '/features/creation/presentation/providers/target_audience_notifier.dart'
+    show TargetAudience;
 import '/features/creation/domain/constants/target_audience_constants.dart';
 import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 
 /// Step 2: 목표 응답 수 설정
 class TargetCountSelector extends ConsumerWidget {
-
-  const TargetCountSelector({
-    super.key,
-  });
+  const TargetCountSelector({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,32 +23,32 @@ class TargetCountSelector extends ConsumerWidget {
         children: [
           Text(
             '목표 응답 수를 설정하세요',
-            style: AppTheme.of(context).headlineSmall.override(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: AppTheme.of(
+              context,
+            ).headlineSmall.override(fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
-              const SizedBox(height: 32),
+          const SizedBox(height: 32),
 
-              // 목표 응답 수 섹션
-              _buildTargetCountSection(context, state, notifier),
+          // 목표 응답 수 섹션
+          _buildTargetCountSection(context, state, notifier),
 
-              const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-              // 예상 소요 시간 섹션
-              _buildEstimatedTimeSection(context, state),
+          // 예상 소요 시간 섹션
+          _buildEstimatedTimeSection(context, state),
 
-              const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-              // 프리미엄 옵션
-              _buildPremiumOption(context, state, notifier),
+          // 프리미엄 옵션
+          _buildPremiumOption(context, state, notifier),
 
-              const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-              // 안내 메시지
-              _buildInfoMessage(context),
-            ],
-          ),
+          // 안내 메시지
+          _buildInfoMessage(context),
+        ],
+      ),
     );
   }
 
@@ -64,18 +62,16 @@ class TargetCountSelector extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppTheme.of(context).primaryBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.of(context).alternate,
-        ),
+        border: Border.all(color: AppTheme.of(context).alternate),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '목표 응답 수',
-            style: AppTheme.of(context).bodyLarge.override(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: AppTheme.of(
+              context,
+            ).bodyLarge.override(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 16),
 
@@ -85,9 +81,7 @@ class TargetCountSelector extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppTheme.of(context).secondaryBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppTheme.of(context).alternate,
-              ),
+              border: Border.all(color: AppTheme.of(context).alternate),
             ),
             child: DropdownButton<int>(
               value: state.targetCount,
@@ -145,11 +139,11 @@ class TargetCountSelector extends ConsumerWidget {
                     child: Text(
                       '$count',
                       style: AppTheme.of(context).bodySmall.override(
-                            color: isSelected
-                                ? Colors.white
-                                : AppTheme.of(context).primaryText,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        color: isSelected
+                            ? Colors.white
+                            : AppTheme.of(context).primaryText,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),
@@ -184,9 +178,9 @@ class TargetCountSelector extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 '예상 소요 시간',
-                style: AppTheme.of(context).bodyMedium.override(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: AppTheme.of(
+                  context,
+                ).bodyMedium.override(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -194,9 +188,9 @@ class TargetCountSelector extends ConsumerWidget {
           Text(
             state.estimatedTime,
             style: AppTheme.of(context).headlineMedium.override(
-                  color: AppTheme.of(context).primary,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppTheme.of(context).primary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -265,31 +259,28 @@ class TargetCountSelector extends ConsumerWidget {
                     children: [
                       Text(
                         '빠른 수집 모드',
-                        style: AppTheme.of(context).bodyLarge.override(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style: AppTheme.of(
+                          context,
+                        ).bodyLarge.override(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        '💎',
-                        style: const TextStyle(fontSize: 18),
-                      ),
+                      Text('💎', style: const TextStyle(fontSize: 18)),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '5분 내 완료 보장',
                     style: AppTheme.of(context).bodySmall.override(
-                          color: AppTheme.of(context).secondaryText,
-                        ),
+                      color: AppTheme.of(context).secondaryText,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '(프리미엄 기능)',
                     style: AppTheme.of(context).labelSmall.override(
-                          color: AppTheme.of(context).tertiary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      color: AppTheme.of(context).tertiary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -318,9 +309,9 @@ class TargetCountSelector extends ConsumerWidget {
           Expanded(
             child: Text(
               '활성 사용자가 많은 시간대에는 더 빠르게 수집됩니다',
-              style: AppTheme.of(context).bodySmall.override(
-                    color: AppTheme.of(context).primaryText,
-                  ),
+              style: AppTheme.of(
+                context,
+              ).bodySmall.override(color: AppTheme.of(context).primaryText),
             ),
           ),
         ],

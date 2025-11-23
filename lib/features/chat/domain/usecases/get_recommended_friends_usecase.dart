@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 import '../repositories/i_chat_repository.dart';
 import '../failures/chat_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// UseCase: 친구 추천 목록 조회 (Clean Architecture v4.0 + Phase 1: Either Pattern)
 ///
@@ -41,11 +42,23 @@ class GetRecommendedFriendsUseCase {
     required String currentUserId,
     int limit = 20,
   }) async* {
+    DevLogger.params({
+      'currentUserId': currentUserId,
+      'limit': limit,
+    }, tag: 'GetRecommendedFriends');
+
     // Validation: 현재 사용자 ID 확인
     if (currentUserId.isEmpty) {
+      DevLogger.result(
+        isSuccess: false,
+        data: 'Empty currentUserId',
+        tag: 'GetRecommendedFriends',
+      );
       yield left(const FriendLoadFailed());
       return;
     }
+
+    DevLogger.checkpoint('Starting recommended friends stream', tag: 'GetRecommendedFriends');
 
     // Repository 호출 - Either 반환, dynamic → UserProfile 변환
     await for (final either in _chatRepository.getRecommendedFriends(
@@ -53,6 +66,23 @@ class GetRecommendedFriendsUseCase {
       sortBy: 'totalAPoints',
       limit: limit,
     )) {
+      either.fold(
+        (failure) {
+          DevLogger.result(
+            isSuccess: false,
+            data: failure.toString(),
+            tag: 'GetRecommendedFriends',
+          );
+        },
+        (users) {
+          DevLogger.result(
+            isSuccess: true,
+            data: {'count': users.length},
+            tag: 'GetRecommendedFriends',
+          );
+        },
+      );
+
       yield either.map((users) => users.cast<UserProfile>());
     }
   }

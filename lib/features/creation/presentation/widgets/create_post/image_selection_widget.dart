@@ -9,7 +9,8 @@ import '../../providers/media/states/media_selection_state.dart'; // For MediaSe
 import '/features/creation/presentation/widgets/components/media_selection_box_multi.dart';
 import '/features/creation/presentation/widgets/media/media_selection_flow_widget.dart';
 import '/core/types/layout_type.dart'; // Phase 5: Provider의 LayoutType 읽기용 (직접 생성 안 함)
-import '/features/creation/presentation/constants/dimensions.dart' as post_dimensions;
+import '/features/creation/presentation/constants/dimensions.dart'
+    as post_dimensions;
 import '/features/creation/presentation/constants/colors.dart'; // Phase 2: Box colors
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -23,6 +24,7 @@ class ImageSelectionWidget extends ConsumerStatefulWidget {
   final Function(List<File> images, String box)? onImagesSelected;
   final Function(String box)? onImageEdit;
   final Function(String box, int index)? onImageDelete;
+  final VoidCallback? onBBoxBecameEmpty; // Issue #13: B box auto-hide callback
   final bool absellected; // A/B 박스 선택 상태
   final bool isDynamic; // 동적 레이아웃 여부
   final String? validationSessionId;
@@ -32,13 +34,15 @@ class ImageSelectionWidget extends ConsumerStatefulWidget {
     this.onImagesSelected,
     this.onImageEdit,
     this.onImageDelete,
+    this.onBBoxBecameEmpty,
     this.absellected = false,
     this.isDynamic = true,
     this.validationSessionId,
   });
 
   @override
-  ConsumerState<ImageSelectionWidget> createState() => _ImageSelectionWidgetState();
+  ConsumerState<ImageSelectionWidget> createState() =>
+      _ImageSelectionWidgetState();
 }
 
 class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
@@ -61,38 +65,44 @@ class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
         _buildMediaSection(createPostState, mediaSelectionState),
 
         // 경고 메시지
-        if (_shouldShowWarning(createPostState))
-          _buildWarningMessage(),
+        if (_shouldShowWarning(createPostState)) _buildWarningMessage(),
       ],
     );
   }
 
-  Widget _buildMediaSection(CreatePostState createPostState, MediaSelectionState mediaSelectionState) {
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          // 라벨
-          Container(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              'A vs B 이미지 선택',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-
-          // 미디어 박스들
-          _buildMediaBoxes(createPostState, mediaSelectionState),
-        ],
-      ),
-    );
+  Widget _buildMediaSection(
+    CreatePostState createPostState,
+    MediaSelectionState mediaSelectionState,
+  ) {
+    // Issue #18 fixed: Removed unnecessary label and Container padding to match August 22 baseline
+    return _buildMediaBoxes(createPostState, mediaSelectionState);
   }
 
-  Widget _buildMediaBoxes(CreatePostState createPostState, MediaSelectionState mediaSelectionState) {
+  Widget _buildMediaBoxes(
+    CreatePostState createPostState,
+    MediaSelectionState mediaSelectionState,
+  ) {
     // Phase 5: Provider의 레이아웃 상태 사용
-    final isHorizontal = mediaSelectionState.currentLayout == LayoutType.horizontal;
+    final isHorizontal =
+        mediaSelectionState.currentLayout == LayoutType.horizontal;
+
+    // Issue #12 fixed: Single image mode - center layout when B box is hidden
+    if (widget.absellected && isHorizontal) {
+      return Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(8.0, 0.0, 8.0, 0.0),
+        child: Center(
+          child: SizedBox(
+            width: mediaSelectionState.boxWidthA,
+            height: mediaSelectionState.boxHeightA,
+            child: _buildMediaBox(
+              box: 'A',
+              createPostState: createPostState,
+              mediaSelectionState: mediaSelectionState,
+            ),
+          ),
+        ),
+      );
+    }
 
     if (isHorizontal) {
       // 가로 레이아웃
@@ -153,8 +163,12 @@ class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
         : mediaSelectionState.uploadedUrlsB;
 
     // Phase 5: Provider의 박스 크기 사용
-    final boxWidth = box == 'A' ? mediaSelectionState.boxWidthA : mediaSelectionState.boxWidthB;
-    final boxHeight = box == 'A' ? mediaSelectionState.boxHeightA : mediaSelectionState.boxHeightB;
+    final boxWidth = box == 'A'
+        ? mediaSelectionState.boxWidthA
+        : mediaSelectionState.boxWidthB;
+    final boxHeight = box == 'A'
+        ? mediaSelectionState.boxHeightA
+        : mediaSelectionState.boxHeightB;
 
     return GestureDetector(
       onTap: () => _handleBoxTap(box, createPostState, mediaSelectionState),
@@ -162,11 +176,16 @@ class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
         label: box,
         isSelected: widget.absellected,
         isVideoSelected: mediaSelectionState.isVideoSelectedA,
-        isHorizontal: mediaSelectionState.currentLayout == LayoutType.horizontal,
-        boxColor: box == 'A' ? AppColors.boxABackground : AppColors.boxBBackground,
+        isHorizontal:
+            mediaSelectionState.currentLayout == LayoutType.horizontal,
+        // Issue #19 fixed: Use dynamic theme colors instead of hardcoded AppColors
+        boxColor: box == 'A'
+            ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+            : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
         imageUrls: uploadedUrls,
         imageFiles: images.isNotEmpty ? images : null,
-        dynamicHeight: boxHeight ?? post_dimensions.MediaDimensions.defaultBoxHeight,
+        dynamicHeight:
+            boxHeight ?? post_dimensions.MediaDimensions.defaultBoxHeight,
         dynamicWidth: boxWidth,
         onTap: () => _handleBoxTap(box, createPostState, mediaSelectionState),
         onEditTap: images.isNotEmpty
@@ -175,17 +194,27 @@ class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
         onAddImageTap: images.isNotEmpty
             ? () => _handleAddMore(box, createPostState, mediaSelectionState)
             : null,
-        showPlusIcon: box == 'A' && !widget.absellected,
-        onPlusIconTap: box == 'A' && !widget.absellected
+        // Issue #11 fixed: Show Plus icon when B box is hidden (absellected = true)
+        showPlusIcon: box == 'A' && widget.absellected,
+        onPlusIconTap: box == 'A' && widget.absellected
             ? () {
                 // B박스 토글 로직 - Notifier를 통해 업데이트
-                ref.read(mediaSelectionProvider.notifier).toggleBoxBVisibility();
+                ref
+                    .read(mediaSelectionProvider.notifier)
+                    .toggleBoxBVisibility();
               }
             : null,
-        onCancel: (index) => _handleDeleteImage(box, index, createPostState, mediaSelectionState),
+        onCancel: (index) => _handleDeleteImage(
+          box,
+          index,
+          createPostState,
+          mediaSelectionState,
+        ),
         onCurrentIndexChanged: (index) {
           // Notifier를 통해 currentIndex 업데이트
-          ref.read(mediaSelectionProvider.notifier).updateCurrentIndex(box: box, index: index);
+          ref
+              .read(mediaSelectionProvider.notifier)
+              .updateCurrentIndex(box: box, index: index);
         },
       ),
     );
@@ -226,17 +255,12 @@ class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
           },
           onImagesSelected: (List<AssetEntity> assets) async {
             // AssetEntity를 File로 변환
-            final files = await Future.wait(
-              assets.map((asset) => asset.file),
-            );
+            final files = await Future.wait(assets.map((asset) => asset.file));
 
             final validFiles = files.whereType<File>().toList();
 
             // MediaSelectionNotifier를 통해 상태 업데이트
-            await mediaSelectionNotifier.selectImages(
-              box: box,
-              assets: assets,
-            );
+            await mediaSelectionNotifier.selectImages(box: box, assets: assets);
 
             // CreatePostNotifier에도 동기화
             final createPostNotifier = ref.read(createPostProvider.notifier);
@@ -287,6 +311,11 @@ class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
       createPostNotifier.updateImagesA(updatedState.selectedFilesA);
     } else {
       createPostNotifier.updateImagesB(updatedState.selectedFilesB);
+
+      // Issue #13: Auto-hide B box when empty
+      if (updatedState.selectedFilesB.isEmpty) {
+        widget.onBBoxBecameEmpty?.call();
+      }
     }
   }
 
@@ -295,11 +324,19 @@ class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
   void _updateLayoutIfNeeded(MediaSelectionState mediaSelectionState) {
     final screenWidth = MediaQuery.of(context).size.width - 32; // 패딩 제외
 
-    // Notifier가 레이아웃 관리 책임을 가짐
-    ref.read(mediaSelectionProvider.notifier).updateLayout(
-      containerWidth: screenWidth,
-      absellected: widget.absellected,
-    );
+    // PostFrameCallback을 사용하여 build phase 이후에 상태 업데이트
+    // Riverpod의 "Cannot modify providers during widget build" 에러 방지
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        // Notifier가 레이아웃 관리 책임을 가짐
+        ref
+            .read(mediaSelectionProvider.notifier)
+            .updateLayout(
+              containerWidth: screenWidth,
+              absellected: widget.absellected,
+            );
+      }
+    });
   }
 
   bool _shouldShowWarning(CreatePostState createPostState) {

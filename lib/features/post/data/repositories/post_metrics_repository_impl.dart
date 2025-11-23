@@ -1,9 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:uuid/uuid.dart';
 import '../../domain/repositories/i_post_metrics_repository.dart';
 import '../../domain/failures/post_failure.dart';
-import '/services/idempotency/idempotency_service.dart';
 import '/services/sharding/shard_utils.dart';
 
 /// Implementation of post metrics repository
@@ -12,19 +10,18 @@ import '/services/sharding/shard_utils.dart';
 /// **Migrated from**: `lib/features/creation/data/repositories/content_metrics_repository_impl.dart`
 /// **Migration Date**: 2025-11-06
 /// **Reason**: Metrics are displayed and used in Post screens
+///
+/// **Natural Idempotency**: Uses userId as document ID in interactions subcollection
+/// - Multiple calls with same userId overwrite, preventing duplicates
 class PostMetricsRepositoryImpl implements IPostMetricsRepository {
   final FirebaseFirestore _firestore;
-  final IdempotencyService _idempotencyService;
   final ShardUtils _shardUtils;
   static const String _collection = 'posts';
 
   PostMetricsRepositoryImpl({
     FirebaseFirestore? firestore,
-    IdempotencyService? idempotencyService,
     ShardUtils? shardUtils,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _idempotencyService =
-            idempotencyService ?? IdempotencyService(firestore: firestore ?? FirebaseFirestore.instance),
         _shardUtils = shardUtils ?? ShardUtils(firestore: firestore ?? FirebaseFirestore.instance);
 
   CollectionReference get _postsCollection =>
@@ -257,43 +254,35 @@ class PostMetricsRepositoryImpl implements IPostMetricsRepository {
   Future<Either<PostFailure, Unit>> recordInteraction(
     String contentId,
     String userId,
-    InteractionType type, {
-    String? eventId, // 🆕 Idempotency
-  }) async {
+    InteractionType type,
+  ) async {
     try {
-      final actualEventId = eventId ?? const Uuid().v4();
+      // userId as document ID provides natural idempotency
+      // Multiple calls with same userId will overwrite, not create duplicates
+      await _firestore.runTransaction((transaction) async {
+        final postRef = _postsCollection.doc(contentId);
 
-      // ✅ Idempotency + Sharded Counter 적용
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'interactions',
-        entityId: contentId,
-        userId: userId,
-        eventId: actualEventId,
-        operation: (transaction) async {
-          final postRef = _postsCollection.doc(contentId);
+        // ✨ Sharded Counter 증가
+        final statField = _getStatFieldForInteraction(type);
+        if (statField != null) {
+          _shardUtils.incrementShard(
+            transaction,
+            counterType: 'interaction',
+            entityId: contentId,
+            userId: userId,
+            field: statField,
+          );
+        }
 
-          // ✨ Sharded Counter 증가
-          final statField = _getStatFieldForInteraction(type);
-          if (statField != null) {
-            _shardUtils.incrementShard(
-              transaction,
-              counterType: 'interaction',
-              entityId: contentId,
-              userId: userId,
-              field: statField,
-            );
-          }
-
-          // Record interaction in subcollection
-          final interactionRef = postRef.collection('interactions').doc(userId);
-          transaction.set(interactionRef, {
-            'userId': userId,
-            'type': type.toString().split('.').last,
-            'eventId': actualEventId,
-            'timestamp': FieldValue.serverTimestamp(),
-          });
-        },
-      );
+        // Record interaction in subcollection
+        // Using userId as doc ID ensures idempotency
+        final interactionRef = postRef.collection('interactions').doc(userId);
+        transaction.set(interactionRef, {
+          'userId': userId,
+          'type': type.toString().split('.').last,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      });
       return right(unit);
     } on FirebaseException catch (e) {
       return left(PostFailure.metricsOperationFailed(

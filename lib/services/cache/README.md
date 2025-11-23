@@ -2195,6 +2195,251 @@ Future<void> cacheFeedPosts({
 
 ## 🎨 사용 패턴
 
+### 구현 패턴 선택: Pattern A vs Pattern B
+
+Versus Space는 2가지 캐싱 구현 패턴을 지원합니다. 각 Feature의 복잡도에 따라 적절한 패턴을 선택하세요:
+
+#### Pattern A: Direct UnifiedCache (80% Cases) ✅
+
+**특징**: Repository에서 UnifiedCacheService를 직접 호출하는 단순한 패턴
+
+**적합한 경우**:
+- ✅ 단순한 CRUD 작업
+- ✅ 간단한 캐시 키 구조 (`user_$userId`, `chat_$chatId`)
+- ✅ 특별한 비즈니스 로직 없음
+- ✅ 표준 TTL 정책 사용
+
+**사용 중인 Feature**: Chat, Voting, Notifications, (Future: Search)
+
+**구현 예시**:
+```dart
+// lib/features/chat/data/repositories/chat_repository_impl.dart
+class ChatRepositoryImpl implements IChatRepository {
+  final UnifiedCacheService _cache = UnifiedCacheService.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  @override
+  Stream<Either<ChatFailure, List<Chat>>> queryChats({
+    required String userId,
+  }) async* {
+    // 1. 캐시 직접 조회
+    final cachedResult = await _cache.get<List<dynamic>>('chat_list_$userId');
+
+    final cached = cachedResult.fold(
+      (failure) => null,  // Cache miss
+      (data) => data?.map((json) => Chat.fromJson(json)).toList(),
+    );
+
+    if (cached != null) {
+      yield right(cached);
+    }
+
+    // 2. Firestore Stream
+    yield* _firestore
+        .collection('chats')
+        .where('participants', arrayContains: userId)
+        .snapshots()
+        .map((snapshot) {
+          final chats = snapshot.docs.map((doc) => Chat.fromFirestore(doc)).toList();
+
+          // 3. 캐시 직접 업데이트
+          _cache.set(
+            'chat_list_$userId',
+            chats.map((chat) => chat.toJson()).toList(),
+          );
+
+          return right(chats);
+        })
+        .handleError((error) {
+          return left(ChatFailure.fetchFailed(error.toString()));
+        });
+  }
+}
+```
+
+**장점**:
+- ✅ 구현이 단순하고 직관적
+- ✅ 별도 래퍼 클래스 불필요
+- ✅ 유지보수 용이
+- ✅ 코드 중복 최소화
+
+**단점**:
+- ⚠️ 복잡한 캐시 키 생성 로직 처리 어려움
+- ⚠️ 특수한 캐싱 정책 구현 어려움
+
+---
+
+#### Pattern B: Dedicated Cache Service (20% Cases) 🎯
+
+**특징**: Feature 전용 캐시 서비스를 만들어 복잡한 비즈니스 로직 캡슐화
+
+**적합한 경우**:
+- ✅ 복잡한 캐시 키 생성 (MD5 해싱 등)
+- ✅ Feature 특화 캐싱 정책
+- ✅ 여러 Repository에서 공유하는 캐싱 로직
+- ✅ Draft 자동 저장, AI 결과 캐싱 등 특수 케이스
+
+**사용 중인 Feature**: Creation (CreationCacheService), Post (PostCacheService)
+
+**구현 예시**:
+```dart
+// lib/services/cache/creation_cache_service.dart
+class CreationCacheService {
+  final UnifiedCacheService _cacheService;
+
+  CreationCacheService({required UnifiedCacheService cacheService})
+      : _cacheService = cacheService;
+
+  // Draft 자동 저장 (복잡한 비즈니스 로직)
+  Future<PostCreation?> getDraftPost(String userId) async {
+    final key = CreationCacheKeys.draftPost(userId);
+
+    try {
+      final cachedResult = await _cacheService.get<Map<String, dynamic>>(key);
+      final cached = cachedResult.fold(
+        (failure) => null,
+        (data) => data,
+      );
+
+      if (cached != null) {
+        return PostCreation.fromJson(cached);
+      }
+      return null;
+    } catch (e) {
+      // 손상된 캐시 처리
+      return null;
+    }
+  }
+
+  // AI 결과 캐싱 (MD5 해싱 로직)
+  Future<String?> getAIGenerationResult(String description) async {
+    // 복잡한 키 생성 로직
+    final hash = md5.convert(utf8.encode(description)).toString();
+    final key = CreationCacheKeys.aiGenerationResult(hash);
+
+    try {
+      final cachedResult = await _cacheService.get<String>(key);
+      return cachedResult.fold(
+        (failure) => null,
+        (data) => data,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 미디어 메타데이터 캐싱 (파일 해시 기반)
+  Future<MediaInfo?> getMediaMetadata(String fileHash) async {
+    final key = CreationCacheKeys.mediaMetadata(fileHash);
+
+    try {
+      final cachedResult = await _cacheService.get<Map<String, dynamic>>(key);
+      final cached = cachedResult.fold(
+        (failure) => null,
+        (data) => data,
+      );
+
+      if (cached != null) {
+        return MediaInfo.fromJson(cached);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+// DI 등록
+getIt.registerLazySingleton<CreationCacheService>(
+  () => CreationCacheService(
+    cacheService: getIt<UnifiedCacheService>(),
+  ),
+);
+
+// Repository에서 사용
+class PostCreationRepositoryImpl implements IPostCreationRepository {
+  final CreationCacheService _cacheService;  // 전용 서비스 사용
+
+  @override
+  Future<Either<CreationFailure, PostCreation>> getDraft(String userId) async {
+    // 복잡한 로직은 캐시 서비스가 처리
+    final draft = await _cacheService.getDraftPost(userId);
+
+    if (draft != null) {
+      return right(draft);
+    }
+
+    // Firestore 조회...
+  }
+}
+```
+
+**장점**:
+- ✅ 복잡한 캐싱 로직 캡슐화
+- ✅ Feature별 특화 정책 구현 가능
+- ✅ 재사용 가능한 캐싱 메서드
+- ✅ 테스트 용이성 (Mock 주입 가능)
+
+**단점**:
+- ⚠️ 추가 클래스 작성 필요 (보일러플레이트)
+- ⚠️ DI 설정 필요
+- ⚠️ 단순한 케이스에는 과도한 복잡성
+
+---
+
+### 패턴 선택 가이드
+
+```mermaid
+flowchart TD
+    Start([새 Feature 캐싱 구현]) --> Check{캐시 키가<br/>단순한가?}
+
+    Check -->|예<br/>user_$userId| Simple[Pattern A:<br/>Direct UnifiedCache]
+    Check -->|아니오<br/>MD5 해싱 등| Complex{특수 로직이<br/>있는가?}
+
+    Complex -->|예<br/>Draft 자동 저장| Special[Pattern B:<br/>Dedicated Service]
+    Complex -->|아니오| Simple
+
+    Simple --> DirectImpl[Repository에서<br/>직접 UnifiedCache 사용]
+    Special --> ServiceImpl[전용 CacheService<br/>클래스 생성]
+
+    DirectImpl --> Done([구현 완료])
+    ServiceImpl --> DI[DI 등록 후<br/>Repository 주입]
+    DI --> Done
+
+    style Simple fill:#90EE90
+    style Special fill:#FFE4B5
+    style DirectImpl fill:#E6F3FF
+    style ServiceImpl fill:#FFF0F5
+```
+
+### Pattern 비교 표
+
+| 측면 | Pattern A (Direct) | Pattern B (Service) |
+|-----|-------------------|---------------------|
+| **복잡도** | 낮음 | 중간-높음 |
+| **코드량** | ~50줄 | ~200줄+ |
+| **적합한 경우** | 80% (일반 CRUD) | 20% (특수 요구사항) |
+| **캐시 키** | 단순 (`type_$id`) | 복잡 (해싱, 복합 키) |
+| **비즈니스 로직** | 없음-최소 | 복잡한 로직 |
+| **재사용성** | 낮음 | 높음 |
+| **테스트** | Repository 테스트 | 별도 서비스 테스트 가능 |
+| **유지보수** | 간단 | 캡슐화로 변경 용이 |
+| **예시 Feature** | Chat, Voting | Creation, Post |
+
+### 권장사항
+
+1. **기본적으로 Pattern A 사용** (단순함이 최고)
+2. **다음 경우에만 Pattern B 고려**:
+   - MD5 해싱 등 복잡한 키 생성이 필요한 경우
+   - Draft 자동 저장처럼 특수한 캐싱 정책이 필요한 경우
+   - 여러 Repository가 동일한 캐싱 로직을 공유하는 경우
+   - AI 결과 캐싱처럼 비용 절감이 핵심인 경우
+
+3. **Pattern 혼용 가능**: 한 Feature 내에서도 필요에 따라 혼용
+   - 예: Profile Feature - 기본 CRUD는 Pattern A, 복잡한 설정 캐싱은 Pattern B
+
+---
+
 ### Pattern 1: Cache-First (권장 ✅)
 
 **개념**: 캐시를 먼저 확인하고, Cache Miss 시 Firestore 조회 후 캐싱

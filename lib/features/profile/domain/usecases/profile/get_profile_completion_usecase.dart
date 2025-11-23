@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import '../../repositories/i_profile_repository.dart';
 import '../../failures/profile_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// 프로필 완성도 계산 UseCase
 ///
@@ -23,12 +24,31 @@ class GetProfileCompletionUseCase {
   /// - `Left(FirestoreRead)`: Firestore 읽기 실패
   /// - `Right(double)`: 완성도 (0.0 ~ 100.0)
   Future<Either<ProfileFailure, double>> execute(String userId) async {
+    DevLogger.params({'userId': userId}, tag: 'GetProfileCompletion');
+
     try {
-      // Repository가 이미 Either를 반환하므로 직접 반환
-      return await _repository.getProfileCompletionPercentage(userId);
+      DevLogger.checkpoint('Calling repository.getProfileCompletionPercentage', tag: 'GetProfileCompletion');
+      final result = await _repository.getProfileCompletionPercentage(userId);
+
+      result.fold(
+        (failure) => DevLogger.result(
+          isSuccess: false,
+          data: failure.toString(),
+          tag: 'GetProfileCompletion',
+        ),
+        (completion) => DevLogger.result(
+          isSuccess: true,
+          data: {'completion': completion},
+          tag: 'GetProfileCompletion',
+        ),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'GetProfileCompletion');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unknown error', error: e, tag: 'GetProfileCompletion');
       return left(ProfileFailure.unknown(e.toString()));
     }
   }

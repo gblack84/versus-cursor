@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import '/core/constants/app_constants.dart';
+import '/services/logging/logger_service.dart';
 import '../../domain/entities/message.dart';
 
 /// Flutter Chat UI Adapter
@@ -74,7 +75,11 @@ class FlutterChatAdapter {
           );
       }
     } catch (e) {
-      print('Error converting document to message: $e');
+      ChatLogger.messageError(
+        errorType: 'documentToMessageConversionFailed',
+        message: 'Failed to convert Firestore document to flutter_chat_ui Message',
+        error: e,
+      );
       return null;
     }
   }
@@ -122,7 +127,11 @@ class FlutterChatAdapter {
         );
       }
     } catch (e) {
-      print('Error converting entity to message: $e');
+      ChatLogger.messageError(
+        errorType: 'entityToMessageConversionFailed',
+        message: 'Failed to convert Message Entity to flutter_chat_ui Message',
+        error: e,
+      );
       return null;
     }
   }

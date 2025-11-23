@@ -22,8 +22,9 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
 
   MediaUploadRepositoryImpl({
     required IMediaRepository mediaRepository,
-    IImageProcessingService? imageProcessingService, // Kept for backward compatibility
-  })  : _mediaRepository = mediaRepository;
+    IImageProcessingService?
+    imageProcessingService, // Kept for backward compatibility
+  }) : _mediaRepository = mediaRepository;
 
   /// 이미지를 3가지 크기로 업로드 (original, display, thumbnail)
   ///
@@ -41,7 +42,8 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
   /// })
   /// ```
   @override
-  Future<Either<CreationFailure, Map<String, dynamic>>> uploadImageWithVariants({
+  Future<Either<CreationFailure, Map<String, dynamic>>>
+  uploadImageWithVariants({
     required Uint8List imageBytes,
     required String box,
     String? customPath,
@@ -50,7 +52,9 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
     Function(String)? onRejected,
   }) async {
     try {
-      debugPrint('📤 [MediaUploadService] Starting multi-variant upload for box: $box');
+      debugPrint(
+        '📤 [MediaUploadService] Starting multi-variant upload for box: $box',
+      );
 
       // 1. 원본 이미지 정보 추출
       final codec = await ui.instantiateImageCodec(imageBytes);
@@ -59,12 +63,16 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
       final height = frame.image.height;
       final aspectRatio = width / height;
 
-      debugPrint('  ℹ️  Original size: ${width}x$height (ratio: ${aspectRatio.toStringAsFixed(2)})');
+      debugPrint(
+        '  ℹ️  Original size: ${width}x$height (ratio: ${aspectRatio.toStringAsFixed(2)})',
+      );
 
       // 2. 3가지 크기로 리사이징
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final basePath = customPath ?? 'posts/$box';
-      final baseFileName = sessionId != null ? '${sessionId}_$timestamp' : timestamp.toString();
+      final baseFileName = sessionId != null
+          ? '${sessionId}_$timestamp'
+          : timestamp.toString();
 
       // Original (원본 크기)
       final originalResult = await _mediaRepository.uploadImage(
@@ -74,7 +82,8 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
       );
 
       final originalUrl = originalResult.fold(
-        (failure) => throw Exception('Original upload failed: ${failure.message}'),
+        (failure) =>
+            throw Exception('Original upload failed: ${failure.message}'),
         (url) => url,
       );
       onModerationStatusUpdate?.call('Uploaded original image');
@@ -88,7 +97,8 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
       );
 
       final displayUrl = displayResult.fold(
-        (failure) => throw Exception('Display upload failed: ${failure.message}'),
+        (failure) =>
+            throw Exception('Display upload failed: ${failure.message}'),
         (url) => url,
       );
       onModerationStatusUpdate?.call('Uploaded display image');
@@ -102,7 +112,8 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
       );
 
       final thumbnailUrl = thumbnailResult.fold(
-        (failure) => throw Exception('Thumbnail upload failed: ${failure.message}'),
+        (failure) =>
+            throw Exception('Thumbnail upload failed: ${failure.message}'),
         (url) => url,
       );
       onModerationStatusUpdate?.call('Uploaded thumbnail image');
@@ -122,19 +133,23 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
       debugPrint('❌ [MediaUploadService] Upload failed: $errorMessage');
       onRejected?.call(errorMessage);
 
-      return left(CreationFailure.mediaRepositoryFailed(
-        mediaType: 'image',
-        failedPaths: [customPath ?? 'posts/$box'],
-      ));
+      return left(
+        CreationFailure.mediaRepositoryFailed(
+          mediaType: 'image',
+          failedPaths: [customPath ?? 'posts/$box'],
+        ),
+      );
     } catch (e) {
       final errorMessage = 'Unexpected error during upload: $e';
       debugPrint('❌ [MediaUploadService] Upload failed: $errorMessage');
       onRejected?.call(errorMessage);
 
-      return left(CreationFailure.mediaRepositoryFailed(
-        mediaType: 'image',
-        failedPaths: [customPath ?? 'posts/$box'],
-      ));
+      return left(
+        CreationFailure.mediaRepositoryFailed(
+          mediaType: 'image',
+          failedPaths: [customPath ?? 'posts/$box'],
+        ),
+      );
     }
   }
 
@@ -154,7 +169,8 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
   /// })
   /// ```
   @override
-  Future<Either<CreationFailure, Map<String, dynamic>>> uploadAndWaitForModeration({
+  Future<Either<CreationFailure, Map<String, dynamic>>>
+  uploadAndWaitForModeration({
     required List<Uint8List> imageBytesList,
     required String box,
     String? customPath,
@@ -162,7 +178,9 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
     Function(int current, int total)? onProgress,
   }) async {
     try {
-      debugPrint('📤 [MediaUploadService] Starting batch upload with moderation for ${imageBytesList.length} images');
+      debugPrint(
+        '📤 [MediaUploadService] Starting batch upload with moderation for ${imageBytesList.length} images',
+      );
 
       final approvedUrls = <String>[];
       final rejectedIndices = <int>[];
@@ -191,7 +209,9 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
               if (!rejectedReasons.containsKey(category)) {
                 rejectedReasons[category] = [];
               }
-              rejectedReasons[category]!.add(i + 1); // 1-indexed for user display
+              rejectedReasons[category]!.add(
+                i + 1,
+              ); // 1-indexed for user display
             },
           );
 
@@ -230,7 +250,9 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
         }
       }
 
-      debugPrint('✅ [MediaUploadService] Batch upload complete: ${approvedUrls.length} approved, ${rejectedIndices.length} rejected');
+      debugPrint(
+        '✅ [MediaUploadService] Batch upload complete: ${approvedUrls.length} approved, ${rejectedIndices.length} rejected',
+      );
 
       return right({
         'approvedUrls': approvedUrls,
@@ -239,21 +261,27 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
         'allRejected': approvedUrls.isEmpty,
       });
     } on FirebaseException {
-      return left(CreationFailure.mediaRepositoryFailed(
-        mediaType: 'image',
-        failedPaths: [customPath ?? 'posts/$box'],
-      ));
+      return left(
+        CreationFailure.mediaRepositoryFailed(
+          mediaType: 'image',
+          failedPaths: [customPath ?? 'posts/$box'],
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.mediaRepositoryFailed(
-        mediaType: 'image',
-        failedPaths: [customPath ?? 'posts/$box'],
-      ));
+      return left(
+        CreationFailure.mediaRepositoryFailed(
+          mediaType: 'image',
+          failedPaths: [customPath ?? 'posts/$box'],
+        ),
+      );
     }
   }
 
   /// Firebase Storage URL에서 이미지 다운로드
   @override
-  Future<Either<CreationFailure, Uint8List>> downloadImageFromUrl(String url) async {
+  Future<Either<CreationFailure, Uint8List>> downloadImageFromUrl(
+    String url,
+  ) async {
     try {
       debugPrint('⬇️  [MediaUploadService] Downloading image from: $url');
 
@@ -263,23 +291,29 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
         debugPrint('✅ [MediaUploadService] Image downloaded successfully');
         return right(response.bodyBytes);
       } else {
-        return left(CreationFailure.mediaRepositoryFailed(
-          mediaType: 'image',
-          failedPaths: [url],
-        ));
+        return left(
+          CreationFailure.mediaRepositoryFailed(
+            mediaType: 'image',
+            failedPaths: [url],
+          ),
+        );
       }
     } on FirebaseException catch (e) {
       debugPrint('❌ [MediaUploadService] Download failed: ${e.message}');
-      return left(CreationFailure.mediaRepositoryFailed(
-        mediaType: 'image',
-        failedPaths: [url],
-      ));
+      return left(
+        CreationFailure.mediaRepositoryFailed(
+          mediaType: 'image',
+          failedPaths: [url],
+        ),
+      );
     } catch (e) {
       debugPrint('❌ [MediaUploadService] Download failed: $e');
-      return left(CreationFailure.mediaRepositoryFailed(
-        mediaType: 'image',
-        failedPaths: [url],
-      ));
+      return left(
+        CreationFailure.mediaRepositoryFailed(
+          mediaType: 'image',
+          failedPaths: [url],
+        ),
+      );
     }
   }
 
@@ -306,7 +340,9 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
 
     final picture = recorder.endRecording();
     final resizedImage = await picture.toImage(targetWidth, targetHeight);
-    final byteData = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
+    final byteData = await resizedImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
 
     return byteData!.buffer.asUint8List();
   }

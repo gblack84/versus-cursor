@@ -37,8 +37,10 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
     _pageController = PageController(initialPage: widget.initialIndex);
 
     // Validate that we have either URLs or paths
-    assert(widget.imageUrls.isNotEmpty || widget.imagePaths.isNotEmpty,
-        'Either imageUrls or imagePaths must be provided');
+    assert(
+      widget.imageUrls.isNotEmpty || widget.imagePaths.isNotEmpty,
+      'Either imageUrls or imagePaths must be provided',
+    );
   }
 
   @override
@@ -64,9 +66,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
         imageUrl: widget.imageUrls[index],
         fit: BoxFit.contain,
         placeholder: (context, url) => Center(
-          child: CircularProgressIndicator(
-            color: AppTheme.of(context).primary,
-          ),
+          child: CircularProgressIndicator(color: AppTheme.of(context).primary),
         ),
         errorWidget: (context, url, error) => _buildErrorWidget(),
       );
@@ -88,9 +88,9 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
           SizedBox(height: 16.0),
           Text(
             '이미지를 불러올 수 없습니다',
-            style: AppTheme.of(context).bodyMedium.override(
-                  color: Colors.white,
-                ),
+            style: AppTheme.of(
+              context,
+            ).bodyMedium.override(color: Colors.white),
           ),
         ],
       ),
@@ -119,9 +119,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
               return InteractiveViewer(
                 minScale: 1.0,
                 maxScale: 4.0,
-                child: Center(
-                  child: _buildImageWidget(index),
-                ),
+                child: Center(child: _buildImageWidget(index)),
               );
             },
           ),
@@ -144,8 +142,10 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
               ),
               child: SafeArea(
                 child: Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -163,9 +163,9 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                       Text(
                         widget.box != null ? '${widget.box} 이미지' : '이미지 보기',
                         style: AppTheme.of(context).titleMedium.override(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
 
                       // Page Indicator
@@ -178,16 +178,18 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                           if (totalCount > 1) {
                             return Container(
                               padding: EdgeInsets.symmetric(
-                                  horizontal: 12.0, vertical: 6.0),
+                                horizontal: 12.0,
+                                vertical: 6.0,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(20.0),
                               ),
                               child: Text(
                                 '${_currentIndex + 1} / $totalCount',
-                                style: AppTheme.of(context).bodySmall.override(
-                                      color: Colors.white,
-                                    ),
+                                style: AppTheme.of(
+                                  context,
+                                ).bodySmall.override(color: Colors.white),
                               ),
                             );
                           } else {
@@ -314,17 +316,13 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24.0,
-            ),
+            Icon(icon, color: Colors.white, size: 24.0),
             SizedBox(height: 4.0),
             Text(
               label,
-              style: AppTheme.of(context).bodySmall.override(
-                    color: Colors.white,
-                  ),
+              style: AppTheme.of(
+                context,
+              ).bodySmall.override(color: Colors.white),
             ),
           ],
         ),

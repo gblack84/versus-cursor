@@ -4,7 +4,9 @@ import '/app/di.dart';
 import '/features/auth/domain/usecases/sign_in/sign_in_with_email_usecase.dart';
 import '/features/auth/domain/usecases/sign_in/sign_in_with_google_usecase.dart';
 import '/features/auth/domain/usecases/sign_in/sign_in_with_apple_usecase.dart';
-import '/features/auth/domain/usecases/sign_in/sign_in_with_phone_usecase.dart';
+// Phone Authentication (New SRP location)
+import '/features/auth/domain/usecases/phone/sign_in_with_phone_usecase.dart';
+import '/features/auth/domain/usecases/phone/send_phone_otp_usecase.dart';
 // Sign Up
 import '/features/auth/domain/usecases/sign_up/sign_up_with_email_usecase.dart';
 // Account Management
@@ -58,12 +60,22 @@ SignInWithAppleUseCase signInWithAppleUseCase(Ref ref) {
 
 /// Sign In with Phone UseCase Provider
 ///
-/// **역할**: 전화번호 OTP 로그인
+/// **역할**: 전화번호 OTP 로그인 (인증 코드 검증)
 /// **의존성**: IAuthRepository, Firebase Phone Auth
-/// **사용처**: PhoneSignInScreen
+/// **사용처**: PhoneLoginPincodeScreen
 @riverpod
 SignInWithPhoneUseCase signInWithPhoneUseCase(Ref ref) {
   return getIt<SignInWithPhoneUseCase>();
+}
+
+/// Send Phone OTP UseCase Provider
+///
+/// **역할**: SMS OTP 전송 (전화번호 인증 시작)
+/// **의존성**: IAuthRepository, Firebase Phone Auth
+/// **사용처**: PhoneCreateAccountScreen, PhoneLoginPincodeScreen (resend)
+@riverpod
+SendPhoneOtpUseCase sendPhoneOtpUseCase(Ref ref) {
+  return getIt<SendPhoneOtpUseCase>();
 }
 
 // ========================================

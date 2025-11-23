@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import '/services/logging/logger_service.dart';
 
 class ImageDownloadService {
   /// Firebase Storage URL에서 이미지를 다운로드하여 로컬 파일로 저장
@@ -41,7 +42,11 @@ class ImageDownloadService {
       }
     } catch (e) {
       // 파일 삭제 실패는 무시 (임시 파일이므로)
-      print('임시 파일 삭제 실패: $e');
+      MediaLogger.mediaDeletionError(
+        errorType: 'tempFileDeletionFailed',
+        error: e,
+        mediaUrl: filePath,
+      );
     }
   }
 }

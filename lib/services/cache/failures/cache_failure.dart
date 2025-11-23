@@ -20,14 +20,14 @@ part 'cache_failure.freezed.dart';
 ///
 /// result.fold(
 ///   (failure) => failure.when(
-///     notFound: (_) => print('Cache miss'),
-///     typeMismatch: (expected, actual) => print('Type error: $expected vs $actual'),
-///     hiveError: (msg) => print('Hive error: $msg'),
-///     firestoreError: (msg) => print('Firestore error: $msg'),
-///     serializationError: (msg) => print('Serialization error: $msg'),
-///     expired: () => print('Cache expired'),
+///     notFound: (_) => CacheLogger.cacheMiss(key: 'user_123'),
+///     typeMismatch: (expected, actual) => CacheLogger.cacheError(errorType: 'typeMismatch', message: '$expected vs $actual'),
+///     hiveError: (msg) => CacheLogger.cacheError(errorType: 'hiveError', message: msg),
+///     firestoreError: (msg) => CacheLogger.cacheError(errorType: 'firestoreError', message: msg),
+///     serializationError: (msg) => CacheLogger.cacheError(errorType: 'serializationError', message: msg),
+///     expired: () => CacheLogger.cacheError(errorType: 'expired'),
 ///   ),
-///   (profile) => print('Cache hit: ${profile.displayName}'),
+///   (profile) => CacheLogger.cacheHit(key: 'user_123', layer: 'L2'),
 /// );
 /// ```
 @freezed

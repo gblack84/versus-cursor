@@ -33,53 +33,38 @@ class CreationRoutes {
   /// );
   /// ```
   static List<GoRoute> routes(WidgetRef ref) => [
-        // Pro Image Editor Page (이미지 편집)
-        AppRoute(
-          name: ProImageEditorPage.routeName,
-          path: ProImageEditorPage.routePath,
-          requireAuth: false, // 이미지 편집기는 public (게스트도 사용 가능)
-          builder: (context, params) => ProImageEditorPage(
-            imagePath: params.getParam(
-              'imagePath',
-              ParamType.String,
-            ),
-            box: params.getParam(
-              'box',
-              ParamType.String,
-            ),
-          ),
-        ).toRoute(ref),
+    // Pro Image Editor Page (이미지 편집)
+    AppRoute(
+      name: ProImageEditorPage.routeName,
+      path: ProImageEditorPage.routePath,
+      requireAuth: false, // 이미지 편집기는 public (게스트도 사용 가능)
+      builder: (context, params) => ProImageEditorPage(
+        imagePath: params.getParam('imagePath', ParamType.String),
+        box: params.getParam('box', ParamType.String),
+      ),
+    ).toRoute(ref),
 
-        // Image Viewer Page (이미지 뷰어)
-        AppRoute(
-          name: ImageViewerPage.routeName,
-          path: ImageViewerPage.routePath,
-          requireAuth: false, // 이미지 뷰어는 public (누구나 볼 수 있음)
-          builder: (context, params) => ImageViewerPage(
-            imageUrls: params.getParam<String>('imageUrls', ParamType.String) !=
-                    null
-                ? (params.getParam<String>('imageUrls', ParamType.String) ?? '')
-                    .split(',')
-                : [],
-            imagePaths:
-                params.getParam<String>('imagePaths', ParamType.String) != null
-                    ? (params.getParam<String>(
-                                'imagePaths', ParamType.String) ??
-                            '')
-                        .split('|')
-                    : [],
-            initialIndex: params.getParam(
-                  'initialIndex',
-                  ParamType.int,
-                ) ??
-                0,
-            box: params.getParam(
-              'box',
-              ParamType.String,
-            ),
-          ),
-        ).toRoute(ref),
-      ];
+    // Image Viewer Page (이미지 뷰어)
+    AppRoute(
+      name: ImageViewerPage.routeName,
+      path: ImageViewerPage.routePath,
+      requireAuth: false, // 이미지 뷰어는 public (누구나 볼 수 있음)
+      builder: (context, params) => ImageViewerPage(
+        imageUrls:
+            params.getParam<String>('imageUrls', ParamType.String) != null
+            ? (params.getParam<String>('imageUrls', ParamType.String) ?? '')
+                  .split(',')
+            : [],
+        imagePaths:
+            params.getParam<String>('imagePaths', ParamType.String) != null
+            ? (params.getParam<String>('imagePaths', ParamType.String) ?? '')
+                  .split('|')
+            : [],
+        initialIndex: params.getParam('initialIndex', ParamType.int) ?? 0,
+        box: params.getParam('box', ParamType.String),
+      ),
+    ).toRoute(ref),
+  ];
 
   /// Route names for type-safe navigation
   ///

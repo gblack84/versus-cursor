@@ -13,6 +13,7 @@
   - [Widgets](#2-widgets-export-중앙화--navigation)
   - [Config](#3-config-firebase-설정)
   - [DI](#4-di-dependency-injection)
+- [신규 Feature 추가 가이드](#-신규-feature-추가-완전-가이드)
 - [아키텍처 개요](#-아키텍처-개요)
 - [Migration History](#-migration-history)
 - [관련 문서](#-관련-문서)
@@ -216,7 +217,6 @@ AppRoute(
 Future<void> setupDependencyInjection() async {
   // 1. 핵심 의존성
   getIt.registerSingleton<SharedPreferences>(/* */);
-  getIt.registerSingleton<IdempotencyService>(/* */);
   getIt.registerSingleton<BatchService>(/* */);
 
   // 2. Moderation Services (전역 서비스)
@@ -251,6 +251,340 @@ Future<void> setupDependencyInjection() async {
 - Voting → Post (VoteTimerService)
 - Notifications → Voting (SubmitVoteUseCase)
 - Creation, Post → Moderation (AI 검열 서비스)
+
+---
+
+## 🚀 신규 Feature 추가 완전 가이드
+
+이 섹션은 새로운 Feature를 프로젝트에 추가할 때 **DI → Routes → Provider** 연결 전체 플로우를 단계별로 설명합니다.
+
+### 전제 조건
+
+- Feature의 Domain/Data Layer 구현 완료 (Entity, Repository, UseCase)
+- Feature의 Presentation Layer 화면 위젯 작성 완료
+- Clean Architecture 3-Layer 구조 이해
+
+---
+
+### Step 1: Feature DI 모듈 생성
+
+**위치**: `lib/features/[feature_name]/di/[feature_name]_di_module.dart`
+
+**목적**: Feature의 Repository, UseCase, Service를 GetIt에 등록
+
+**예시** (Notifications Feature):
+```dart
+// lib/features/notifications/di/notification_di_module.dart
+import 'package:get_it/get_it.dart';
+
+void registerNotificationModule(GetIt getIt) {
+  // 1. Repository 등록 (Singleton - 앱 전체에서 재사용)
+  getIt.registerSingleton<INotificationRepository>(
+    NotificationRepositoryImpl(
+      firestore: FirebaseFirestore.instance,
+      cacheService: getIt<UnifiedCacheService>(),
+    ),
+  );
+
+  // 2. UseCase 등록 (Factory - 호출마다 새 인스턴스)
+  getIt.registerFactory(() => GetNotificationsUseCase(getIt()));
+  getIt.registerFactory(() => MarkAsReadUseCase(getIt()));
+  getIt.registerFactory(() => DeleteNotificationUseCase(getIt()));
+
+  // 3. Service 등록 (Singleton)
+  getIt.registerSingleton<INotificationService>(
+    NotificationServiceImpl(repository: getIt()),
+  );
+}
+```
+
+**핵심 패턴**:
+- `registerSingleton`: 앱 전체에서 하나의 인스턴스만 사용 (Repository, Service)
+- `registerFactory`: 호출마다 새 인스턴스 생성 (UseCase)
+- `getIt()`: 이미 등록된 의존성 주입
+
+---
+
+### Step 2: app/di.dart 등록
+
+**위치**: `lib/app/di.dart`
+
+**목적**: Feature DI 모듈을 앱 전체 DI 컨테이너에 등록
+
+**등록 순서 고려**:
+```dart
+Future<void> setupDependencyInjection() async {
+  // 1. 핵심 의존성 (모든 Feature가 의존)
+  getIt.registerSingleton<SharedPreferences>(/* */);
+  getIt.registerSingleton<UnifiedCacheService>(/* */);
+
+  // 2. 전역 서비스 (다른 Feature가 의존할 수 있음)
+  registerModerationModule(getIt);
+
+  // 3. Feature 모듈 (의존성 순서대로)
+  registerCreationModule(getIt);   // 의존성 없음
+  registerPostModule(getIt);        // Creation에 의존
+  registerVotingModule(getIt);      // Post에 의존
+  registerNotificationModule(getIt); // Voting에 의존
+  registerProfileModule(getIt);     // Auth보다 먼저 (IUserRepository 제공)
+  registerAuthModule(getIt);        // Profile에 의존
+
+  // 🆕 새 Feature 추가 위치 (의존성 고려)
+  registerYourFeatureModule(getIt);  // 의존하는 Feature 다음에 배치
+
+  registerChatModule(getIt);        // 의존성 없음
+  registerSearchModule(getIt);      // 의존성 없음
+}
+```
+
+**의존성 확인 방법**:
+- Repository 생성자에서 다른 Feature의 Repository/Service를 주입받는가?
+- UseCase에서 다른 Feature의 UseCase를 호출하는가?
+
+---
+
+### Step 3: Feature Routes 생성
+
+**위치**: `lib/features/[feature_name]/presentation/routes/[feature_name]_routes.dart`
+
+**목적**: Feature의 모든 라우트를 독립적으로 관리
+
+**예시** (Profile Feature):
+```dart
+// lib/features/profile/presentation/routes/profile_routes.dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+class ProfileRoutes {
+  static List<RouteBase> routes(WidgetRef ref) => [
+    // 1. 프로필 메인 화면
+    GoRoute(
+      name: 'profile',
+      path: '/profile',
+      redirect: (context, state) {
+        // AuthGuard: 로그인 필수
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) return '/signin';
+        return null;
+      },
+      builder: (context, state) => const ProfilePageWidget(),
+    ),
+
+    // 2. 프로필 편집 화면
+    GoRoute(
+      name: 'profile_edit',
+      path: '/profile/edit',
+      redirect: (context, state) {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) return '/signin';
+        return null;
+      },
+      builder: (context, state) => const EditProfilePageWidget(),
+    ),
+
+    // 3. 관심사 선택 화면 (Onboarding)
+    GoRoute(
+      name: 'expertise_select',
+      path: '/expertise-select',
+      builder: (context, state) => const ExpertiseSelectWidget(),
+    ),
+  ];
+}
+```
+
+**핵심 패턴**:
+- `static List<RouteBase> routes(WidgetRef ref)`: Riverpod 통합
+- `redirect`: AuthGuard 로직 (로그인 체크, 권한 확인)
+- `name`: 네비게이션 시 사용할 라우트 이름
+- `path`: URL 경로 (웹 딥링크 지원)
+
+---
+
+### Step 4: nav.dart 통합
+
+**위치**: `lib/app/router/navigation/nav.dart`
+
+**목적**: Feature Routes를 GoRouter에 병합
+
+**변경 사항**:
+```dart
+GoRouter createRouter(WidgetRef ref) => GoRouter(
+  initialLocation: '/start',
+  debugLogDiagnostics: true,
+  routes: [
+    // ShellRoute (하단 네비게이션)
+    ShellRoute(
+      builder: (context, state, child) => MainNavigationShell(child: child),
+      routes: [/* 메인 탭 라우트 */],
+    ),
+
+    // Feature Routes (모듈화)
+    ...AuthRoutes.routes(ref),
+    ...ProfileRoutes.routes(ref),
+    ...CreationRoutes.routes(ref),
+    ...ChatRoutes.routes(ref),
+    ...NotificationRoutes.routes(ref),
+    ...PostRoutes.routes(ref),
+    ...SearchRoutes.routes(ref),
+    ...VotingRoutes.routes(ref),
+
+    // 🆕 새 Feature Routes 추가
+    ...YourFeatureRoutes.routes(ref),
+  ],
+);
+```
+
+**주의사항**:
+- `...` spread operator로 리스트 병합
+- 순서는 중요하지 않음 (path가 unique하므로)
+- import 추가 필요: `import '/features/[feature_name]/presentation/routes/[feature_name]_routes.dart';`
+
+---
+
+### Step 5: Riverpod Provider 설정
+
+**위치**: `lib/features/[feature_name]/presentation/providers/[feature_name]_providers.dart`
+
+**목적**: GetIt의 Repository/UseCase를 Riverpod Provider로 노출
+
+**패턴 1: FutureProvider (비동기 데이터 로딩)**:
+```dart
+@riverpod
+FutureOr<UserProfile> userProfile(UserProfileRef ref, String userId) {
+  final useCase = getIt<GetUserProfileUseCase>();
+  return useCase(userId).then(
+    (either) => either.fold(
+      (failure) => throw Exception(failure.getUserMessage()),
+      (profile) => profile,
+    ),
+  );
+}
+```
+
+**패턴 2: StreamProvider (실시간 동기화)**:
+```dart
+@riverpod
+Stream<List<Notification>> notificationList(NotificationListRef ref) {
+  final repository = getIt<INotificationRepository>();
+  final userId = ref.watch(currentUserIdProvider).value ?? '';
+
+  return repository.watchNotifications(userId).map(
+    (either) => either.getOrElse((l) => []),
+  );
+}
+```
+
+**패턴 3: Notifier (복잡한 상태 관리)**:
+```dart
+@riverpod
+class CreatePost extends _$CreatePost {
+  @override
+  CreatePostState build() => CreatePostState.initial();
+
+  Future<void> updateTitle(String title) async {
+    state = state.copyWith(title: title);
+  }
+
+  Future<void> submitPost() async {
+    final useCase = getIt<CreatePostUseCase>();
+    final result = await useCase(state.toDto());
+
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.getUserMessage()),
+      (post) => state = state.copyWith(isSubmitted: true),
+    );
+  }
+}
+```
+
+---
+
+### Step 6: 검증 및 테스트
+
+**1. DI 검증**:
+```bash
+# 앱 실행 시 DI 에러 확인
+flutter run
+
+# 기대 출력: "All dependencies registered successfully"
+```
+
+**2. 라우트 검증**:
+```dart
+// Riverpod DevTools에서 확인
+ref.read(goRouterProvider);
+
+// 또는 디버그 모드에서 URL 직접 입력
+context.go('/your-feature');
+```
+
+**3. Provider 검증**:
+```dart
+// Widget에서 Provider 사용 테스트
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final dataAsync = ref.watch(yourFeatureProvider);
+
+  return dataAsync.when(
+    data: (data) => Text('Success: $data'),
+    loading: () => CircularProgressIndicator(),
+    error: (error, stack) => Text('Error: $error'),
+  );
+}
+```
+
+---
+
+### ✅ 체크리스트
+
+신규 Feature 추가 시 다음 항목을 확인하세요:
+
+- [ ] **Step 1**: Feature DI 모듈 생성 (`[feature_name]_di_module.dart`)
+  - [ ] Repository Singleton 등록
+  - [ ] UseCase Factory 등록
+  - [ ] Service Singleton 등록 (필요 시)
+
+- [ ] **Step 2**: `lib/app/di.dart`에 등록
+  - [ ] 의존성 순서 고려
+  - [ ] import 추가
+
+- [ ] **Step 3**: Feature Routes 생성 (`[feature_name]_routes.dart`)
+  - [ ] 모든 화면 라우트 정의
+  - [ ] AuthGuard 적용 (필요 시)
+  - [ ] 라우트 이름/경로 명확히 정의
+
+- [ ] **Step 4**: `lib/app/router/navigation/nav.dart` 통합
+  - [ ] Feature Routes spread 추가
+  - [ ] import 추가
+
+- [ ] **Step 5**: Riverpod Provider 설정
+  - [ ] GetIt → Riverpod 브릿지 Provider 생성
+  - [ ] @riverpod annotation 사용
+  - [ ] Either 패턴 unwrap (fold, getOrElse)
+
+- [ ] **Step 6**: 검증
+  - [ ] DI 에러 없이 앱 실행
+  - [ ] 라우트 네비게이션 정상 동작
+  - [ ] Provider 데이터 로딩 성공
+
+---
+
+### 🔗 참고 예시 (Feature별)
+
+실제 구현 예시는 다음 Feature를 참조하세요:
+
+- **Auth Feature**: 가장 단순한 DI + Routes 패턴
+- **Profile Feature**: 3개 라우트 + Onboarding 플로우
+- **Chat Feature**: StreamProvider 실시간 동기화
+- **Notifications Feature**: Sealed Class Failure + Badge Provider
+- **Creation Feature**: Notifier 복잡한 상태 관리
+
+각 Feature의 상세 문서:
+- [Auth README](../features/auth/README.md)
+- [Profile README](../features/profile/README.md)
+- [Chat README](../features/chat/README.md)
+- [Notifications README](../features/notifications/README.md)
+- [Creation README](../features/creation/README.md)
 
 ---
 
@@ -784,6 +1118,6 @@ initService.initialize(user.uid);
 
 ---
 
-**최종 업데이트**: 2025-11-11
+**최종 업데이트**: 2025-11-13
 **작성자**: Claude Code (Deep Analysis)
-**문서 버전**: v1.0.0
+**문서 버전**: v1.1.0

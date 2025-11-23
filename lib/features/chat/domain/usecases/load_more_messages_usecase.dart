@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
+import '/services/logging/dev_logger.dart';
 import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/message.dart';
@@ -21,8 +22,8 @@ import '../entities/message.dart';
 /// );
 ///
 /// result.fold(
-///   (failure) => print('로드 실패: $failure'),
-///   (olderMessages) => print('${olderMessages.length}개 추가 로드'),
+///   (failure) => ChatLogger.loadError(error: failure, chatId: 'chat123'),
+///   (olderMessages) => ChatLogger.messagesLoaded(count: olderMessages.length, chatId: 'chat123'),
 /// );
 /// ```
 class LoadMoreMessagesUseCase {
@@ -57,25 +58,54 @@ class LoadMoreMessagesUseCase {
     required String lastMessageId,
     int limit = 30,
   }) async {
+    DevLogger.params({
+      'chatId': chatId,
+      'lastMessageId': lastMessageId,
+      'limit': limit,
+    }, tag: 'LoadMoreMessages');
+
     try {
       // 입력 검증
       if (chatId.isEmpty) {
+        DevLogger.validation(
+          field: 'chatId',
+          reason: 'Chat ID cannot be empty',
+          tag: 'LoadMoreMessages',
+        );
         return left(const InvalidMessageContent());
       }
 
       if (lastMessageId.isEmpty) {
+        DevLogger.validation(
+          field: 'lastMessageId',
+          reason: 'Last message ID cannot be empty',
+          tag: 'LoadMoreMessages',
+        );
         return left(const InvalidMessageContent());
       }
 
       // Clean Architecture v4.0: messageId만 전달, Repository에서 Firestore 처리
+      DevLogger.checkpoint('Querying repository for previous messages', tag: 'LoadMoreMessages');
       final messages = await _chatRepository.queryMessagesBeforeMessageId(
         chatId: chatId,
         lastMessageId: lastMessageId,
         limit: limit,
       );
 
+      DevLogger.result(
+        isSuccess: true,
+        data: '${messages.length} messages loaded',
+        tag: 'LoadMoreMessages',
+      );
+
       return right(messages);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      DevLogger.error(
+        'Load more messages failed',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'LoadMoreMessages',
+      );
       return left(const MessageLoadFailed());
     }
   }

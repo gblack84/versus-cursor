@@ -147,9 +147,9 @@ class _ProImageEditorPageState extends ConsumerState<ProImageEditorPage> {
                     Text(
                       '업로드 중... ${(_uploadProgress * 100).clamp(0, 100).toInt()}%',
                       style: AppTheme.of(context).bodyMedium.override(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),

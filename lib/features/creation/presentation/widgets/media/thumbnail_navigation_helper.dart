@@ -14,7 +14,8 @@ class ThumbnailNavigationHelper {
       required File selectedFile,
       required int currentEditIndex,
       required List<File> allSelectedFiles,
-    }) onImageSelected,
+    })
+    onImageSelected,
     required VoidCallback onCancel,
   }) {
     if (result != null && mounted) {

@@ -7,6 +7,7 @@ import '../../domain/entities/character.dart';
 import '../../domain/entities/interest.dart';
 import '../../domain/entities/profile_info.dart';
 import 'usecase_providers.dart';
+import '/services/logging/logger_service.dart';
 
 part 'profile_notifiers.freezed.dart';
 part 'profile_notifiers.g.dart';
@@ -152,19 +153,29 @@ class ProfileNotifier extends _$ProfileNotifier {
   /// Update user profile
   Future<void> updateProfile({
     required UserProfile profile,
-    String? eventId,
   }) async {
     ref.read(profileUIProvider.notifier).setLoading(true);
     ref.read(profileUIProvider.notifier).clearError();
 
     final useCase = ref.read(updateUserProfileUseCaseProvider);
-    final result = await useCase.execute(profile, eventId: eventId);
+    final result = await useCase.execute(profile);
 
     result.fold(
       (failure) {
+        // ✅ Phase 3: Log profile update failure
+        ProfileLogger.profileError(
+          errorType: 'updateFailed',
+          message: failure.message,
+          error: failure,
+        );
         ref.read(profileUIProvider.notifier).setError(failure.message);
       },
       (_) {
+        // ✅ Phase 3: Log profile update success
+        ProfileLogger.profileUpdated(
+          displayName: profile.displayName ?? 'Unknown',
+          photoUrl: profile.photoUrl,
+        );
         ref.read(profileUIProvider.notifier).clearError();
       },
     );
@@ -181,12 +192,10 @@ class ProfileNotifier extends _$ProfileNotifier {
   /// ```dart
   /// await ref.read(profileNotifierProvider.notifier).updateLanguage(
   ///   languageCode: 'ko',  // 한국어
-  ///   eventId: uuid.v4(),   // Optional: Idempotency
   /// );
   /// ```
   Future<void> updateLanguage({
     required String languageCode,
-    String? eventId,
   }) async {
     ref.read(profileUIProvider.notifier).setLoading(true);
     ref.read(profileUIProvider.notifier).clearError();
@@ -194,7 +203,6 @@ class ProfileNotifier extends _$ProfileNotifier {
     final useCase = ref.read(updateLanguageUseCaseProvider);
     final result = await useCase.execute(
       languageCode: languageCode,
-      eventId: eventId,
     );
 
     result.fold(
@@ -228,9 +236,20 @@ class ProfileNotifier extends _$ProfileNotifier {
 
     result.fold(
       (failure) {
+        // ✅ Phase 3: Log image upload failure
+        ProfileLogger.profileError(
+          errorType: 'imageUploadFailed',
+          message: failure.message,
+          error: failure,
+        );
         ref.read(imageUploadProvider.notifier).setError(failure.message);
       },
       (url) {
+        // ✅ Phase 3: Log image upload success
+        ProfileLogger.profileUpdated(
+          displayName: 'Image uploaded',
+          photoUrl: url,
+        );
         ref.read(imageUploadProvider.notifier).setUploadedUrl(url);
       },
     );
@@ -248,6 +267,12 @@ class ProfileNotifier extends _$ProfileNotifier {
 
     result.fold(
       (failure) {
+        // ✅ Phase 3: Log profile deletion failure
+        ProfileLogger.profileError(
+          errorType: 'deleteFailed',
+          message: failure.message,
+          error: failure,
+        );
         ref.read(profileUIProvider.notifier).setError(failure.message);
         ref.read(profileUIProvider.notifier).setLoading(false);
       },
@@ -261,16 +286,21 @@ class ProfileNotifier extends _$ProfileNotifier {
   Future<void> updateSettings({
     required String userId,
     required Map<String, dynamic> settings,
-    String? eventId,
   }) async {
     ref.read(settingsUIProvider.notifier).setLoading(true);
     ref.read(settingsUIProvider.notifier).clearError();
 
     final useCase = ref.read(updateUserSettingsUseCaseProvider);
-    final result = await useCase.execute(userId, settings, eventId: eventId);
+    final result = await useCase.execute(userId, settings);
 
     result.fold(
       (failure) {
+        // ✅ Phase 3: Log settings update failure
+        ProfileLogger.profileError(
+          errorType: 'settingsUpdateFailed',
+          message: failure.message,
+          error: failure,
+        );
         ref.read(settingsUIProvider.notifier).setError(failure.message);
       },
       (_) {
@@ -286,7 +316,6 @@ class ProfileNotifier extends _$ProfileNotifier {
     required String userId,
     required List<String> expertise,
     required List<String> hobbies,
-    String? eventId,
   }) async {
     ref.read(profileUIProvider.notifier).setLoading(true);
     ref.read(profileUIProvider.notifier).clearError();
@@ -296,11 +325,16 @@ class ProfileNotifier extends _$ProfileNotifier {
       userId: userId,
       expertise: expertise,
       hobbies: hobbies,
-      eventId: eventId,
     );
 
     result.fold(
       (failure) {
+        // ✅ Phase 3: Log interests update failure
+        ProfileLogger.profileError(
+          errorType: 'interestsUpdateFailed',
+          message: failure.message,
+          error: failure,
+        );
         ref.read(profileUIProvider.notifier).setError(failure.message);
       },
       (_) {

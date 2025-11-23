@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 import '../repositories/i_chat_repository.dart';
 import '../failures/chat_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// UseCase: 친구 검색 (Clean Architecture v4.0 + Phase 1: Either Pattern)
 ///
@@ -41,17 +42,46 @@ class SearchFriendsUseCase {
     required String currentUserId,
     required String query,
   }) async* {
+    DevLogger.params({
+      'currentUserId': currentUserId,
+      'query': query,
+    }, tag: 'SearchFriends');
+
     // Validation: 검색어 및 현재 사용자 ID 확인
     if (query.trim().isEmpty || currentUserId.isEmpty) {
+      DevLogger.result(
+        isSuccess: false,
+        data: 'Empty query or currentUserId',
+        tag: 'SearchFriends',
+      );
       yield left(const SearchFailed());
       return;
     }
+
+    DevLogger.checkpoint('Starting friends search stream', tag: 'SearchFriends');
 
     // Repository 호출 - Either 반환, dynamic → UserProfile 변환
     await for (final either in _chatRepository.searchUsers(
       currentUserId: currentUserId,
       query: query.trim(),
     )) {
+      either.fold(
+        (failure) {
+          DevLogger.result(
+            isSuccess: false,
+            data: failure.toString(),
+            tag: 'SearchFriends',
+          );
+        },
+        (users) {
+          DevLogger.result(
+            isSuccess: true,
+            data: {'count': users.length, 'query': query},
+            tag: 'SearchFriends',
+          );
+        },
+      );
+
       yield either.map((users) => users.cast<UserProfile>());
     }
   }

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
-import '/services/idempotency/idempotency_service.dart';
 import '../../domain/repositories/i_interests_repository.dart';
 import '../../domain/entities/interest.dart';
 import '../../domain/failures/profile_failure.dart';
@@ -22,23 +21,19 @@ import '/services/cache/unified_cache_service.dart';
 /// - 에러 처리
 class InterestsRepositoryImpl implements IInterestsRepository {
   final FirebaseFirestore _firestore;
-  final IdempotencyService _idempotencyService;
   final UnifiedCacheService _cacheService = UnifiedCacheService.instance;
 
   InterestsRepositoryImpl({
     FirebaseFirestore? firestore,
-    IdempotencyService? idempotencyService,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _idempotencyService = idempotencyService ?? IdempotencyService();
+  })  : _firestore = firestore ?? FirebaseFirestore.instance;
 
   // ============= 관심사 관리 =============
 
   @override
   Future<Either<ProfileFailure, Unit>> updateUserInterests(
     String userId,
-    List<Interest> interests, {
-    String? eventId,
-  }) async {
+    List<Interest> interests,
+  ) async {
     try {
       debugPrint('[InterestsRepository] Updating interests for: $userId');
 
@@ -60,34 +55,16 @@ class InterestsRepositoryImpl implements IInterestsRepository {
       // Interest 리스트를 Firestore interests 배열로 변환
       final interestNames = interests.map((i) => i.name).toList();
 
-      // IdempotencyService로 래핑
-      if (eventId != null && eventId.isNotEmpty) {
-        await _idempotencyService.executeIdempotent<void>(
-          entityType: 'interest_updates',
-          entityId: userId,
-          userId: userId,
-          eventId: eventId,
-          operation: (transaction) async {
-            // Transaction 내부에서 update
-            final docRef = _firestore.collection('users').doc(userId);
-            transaction.update(docRef, {'interests': interestNames});
-          },
-        );
-      } else {
-        // eventId 없으면 기존 로직 (backward compatibility)
-        await _firestore.collection('users').doc(userId).update({
-          'interests': interestNames,
-        });
-      }
+      // Natural idempotency via deterministic userId
+      await _firestore.collection('users').doc(userId).update({
+        'interests': interestNames,
+      });
 
       // 🔥 캐시 무효화 (다음 조회 시 최신 데이터 가져오도록)
       await _cacheService.clearUserInterests(userId);
 
       debugPrint('[InterestsRepository] Interests updated successfully, cache cleared');
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      debugPrint('[InterestsRepository] Idempotency violation: $e');
-      return left(ProfileFailure.duplicateOperation('Interests already updated: ${e.message}'));
     } on FirebaseException catch (e) {
       debugPrint('[InterestsRepository] Firebase error: ${e.code} - ${e.message}');
       return left(_mapFirebaseException(e));

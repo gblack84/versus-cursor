@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../entities/user_profile.dart';
 import '../../failures/profile_failure.dart';
@@ -30,17 +31,30 @@ class GetUserProfileUseCase {
   Future<Either<ProfileFailure, UserProfile>> execute({
     required String userId,
   }) async {
+    DevLogger.params({'userId': userId}, tag: 'GetUserProfile');
+
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
+        DevLogger.validation(field: 'userId', reason: 'Empty userId', tag: 'GetUserProfile');
         return left(ProfileFailure.validation('userId'));
       }
 
       // 2. Repository 호출 (이미 Either 반환, null 체크 완료)
-      return await _repository.getUser(userId);
+      DevLogger.checkpoint('Calling repository.getUser', tag: 'GetUserProfile');
+      final result = await _repository.getUser(userId);
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'GetUserProfile'),
+        (profile) => DevLogger.result(isSuccess: true, data: profile.uid, tag: 'GetUserProfile'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'GetUserProfile');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'GetUserProfile');
       return left(ProfileFailure.unknown(e.toString()));
     }
   }

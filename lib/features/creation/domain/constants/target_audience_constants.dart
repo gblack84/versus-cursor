@@ -88,8 +88,5 @@ class GenderInfo {
   final String id;
   final String label;
 
-  const GenderInfo({
-    required this.id,
-    required this.label,
-  });
+  const GenderInfo({required this.id, required this.label});
 }

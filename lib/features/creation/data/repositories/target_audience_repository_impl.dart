@@ -1,6 +1,7 @@
 import '/features/creation/domain/entities/target_audience.dart';
 import '/features/creation/domain/entities/target_audience_extensions.dart';
 import '/features/creation/domain/services/i_target_audience_service.dart';
+import '/services/logging/logger_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:fpdart/fpdart.dart';
@@ -40,10 +41,7 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
   ValidationResult validateTargetAudience(TargetAudience model) {
     // 기본 검증
     if (model.targetCount <= 0) {
-      return ValidationResult(
-        isValid: false,
-        error: '목표 응답 수는 1명 이상이어야 합니다.',
-      );
+      return ValidationResult(isValid: false, error: '목표 응답 수는 1명 이상이어야 합니다.');
     }
 
     if (model.targetCount > 1000 && !model.isPremium) {
@@ -101,16 +99,14 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
 
       final postId = docRef.id;
 
-      print('[TargetAudienceService] 투표 생성 완료: $postId');
-      print(
-          '[TargetAudienceService] 타겟 오디언스: ${targetAudience.collectionType}, ${targetAudience.targetCount}명');
+      TargetAudienceLogger.voteCreationCompleted(postId: postId);
 
       return right(postId);
     } on FirebaseException catch (e) {
-      print('[TargetAudienceService] Firebase 오류: ${e.code} - ${e.message}');
+      TargetAudienceLogger.voteCreationError(error: e);
       return left(CreationFailure.targetAudienceFailed());
     } catch (e) {
-      print('[TargetAudienceService] 투표 생성 오류: $e');
+      TargetAudienceLogger.voteCreationError(error: e);
       return left(CreationFailure.targetAudienceFailed());
     }
   }
@@ -140,13 +136,16 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
           .doc(postId)
           .update(updateData);
 
-      print('[TargetAudienceService] 알림 상태 업데이트: $postId, 발송: $sentCount명');
+      TargetAudienceLogger.notificationStatusUpdated(
+        postId: postId,
+        sentCount: sentCount,
+      );
       return right(unit);
     } on FirebaseException catch (e) {
-      print('[TargetAudienceService] Firebase 오류: ${e.code} - ${e.message}');
+      TargetAudienceLogger.notificationStatusError(postId: postId, error: e);
       return left(CreationFailure.targetAudienceFailed());
     } catch (e) {
-      print('[TargetAudienceService] 알림 상태 업데이트 오류: $e');
+      TargetAudienceLogger.notificationStatusError(postId: postId, error: e);
       return left(CreationFailure.targetAudienceFailed());
     }
   }
@@ -155,7 +154,8 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
   ///
   /// 현재 사용자의 타겟 오디언스 사용 통계를 조회합니다.
   Future<Either<CreationFailure, TargetAudienceStats>> getUserStats(
-      String userId) async {
+    String userId,
+  ) async {
     try {
       // Firestore에서 직접 조회
       final querySnapshot = await FirebaseFirestore.instance
@@ -165,17 +165,11 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
           .limit(100)
           .get();
 
-      final posts = querySnapshot.docs
-          .map((doc) => doc.data())
-          .toList();
+      final posts = querySnapshot.docs.map((doc) => doc.data()).toList();
 
       int totalSent = 0;
       int totalCompleted = 0;
-      final Map<String, int> typeCount = {
-        'quick': 0,
-        'public': 0,
-        'custom': 0,
-      };
+      final Map<String, int> typeCount = {'quick': 0, 'public': 0, 'custom': 0};
 
       for (final data in posts) {
         final targetAudience = data['targetAudience'] as Map<String, dynamic>?;
@@ -200,16 +194,17 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
         totalSent: totalSent,
         totalCompleted: totalCompleted,
         typeCount: typeCount,
-        averageCompletionRate:
-            totalSent > 0 ? (totalCompleted / totalSent) : 0.0,
+        averageCompletionRate: totalSent > 0
+            ? (totalCompleted / totalSent)
+            : 0.0,
       );
 
       return right(stats);
     } on FirebaseException catch (e) {
-      print('[TargetAudienceService] Firebase 오류: ${e.code} - ${e.message}');
+      TargetAudienceLogger.statsQueryError(error: e);
       return left(CreationFailure.targetAudienceFailed());
     } catch (e) {
-      print('[TargetAudienceService] 통계 조회 오류: $e');
+      TargetAudienceLogger.statsQueryError(error: e);
       return left(CreationFailure.targetAudienceFailed());
     }
   }
@@ -236,7 +231,7 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
 
       return right(targetAudience);
     } catch (e) {
-      print('[TargetAudienceService] 타겟 오디언스 생성 오류: $e');
+      TargetAudienceLogger.targetAudienceCreationError(error: e);
       return left(CreationFailure.targetAudienceFailed());
     }
   }
@@ -247,7 +242,10 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
     required int count,
   }) async {
     try {
-      print('[TargetAudienceService] AI 추천 시작: postId=$contentId, count=$count');
+      TargetAudienceLogger.aiRecommendationStarted(
+        contentId: contentId,
+        requestedCount: count,
+      );
 
       // Call Firebase Cloud Function for AI recommendation
       final callable = FirebaseFunctions.instance.httpsCallable(
@@ -266,29 +264,37 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
       }
 
       // Extract user IDs from response
-      final userIds = (data['userIds'] as List<dynamic>?)
-          ?.map((id) => id.toString())
-          .toList() ?? [];
+      final userIds =
+          (data['userIds'] as List<dynamic>?)
+              ?.map((id) => id.toString())
+              .toList() ??
+          [];
 
-      // Log metadata for debugging
+      // Log metadata for debugging (GDPR-compliant: aggregated metrics only)
       final metadata = data['metadata'] as Map<String, dynamic>?;
       if (metadata != null) {
-        print('[TargetAudienceService] AI 추천 완료:');
-        print('  - 후보 사용자: ${metadata['totalCandidates']}명');
-        print('  - 추천된 사용자: ${metadata['recommendedCount']}명');
-        print('  - 평균 점수: ${metadata['avgScore']?.toStringAsFixed(1)}');
+        final totalCandidates = metadata['totalCandidates'] as int? ?? 0;
+        final recommendedCount =
+            metadata['recommendedCount'] as int? ?? userIds.length;
+        final avgScore = metadata['avgScore'] as double? ?? 0.0;
+
+        TargetAudienceLogger.aiRecommendationCompleted(
+          totalCandidates: totalCandidates,
+          recommendedCount: recommendedCount,
+          avgScore: avgScore,
+        );
       }
 
-      print('[TargetAudienceService] 추천 사용자: ${userIds.length}명');
       return right(userIds);
-
     } on FirebaseFunctionsException catch (e) {
-      print('[TargetAudienceService] Cloud Function 오류: ${e.code} - ${e.message}');
+      TargetAudienceLogger.aiRecommendationError(
+        error: e,
+        stage: 'Cloud Function call',
+      );
 
       return left(CreationFailure.targetAudienceFailed());
-
     } catch (e) {
-      print('[TargetAudienceService] 예상치 못한 오류: $e');
+      TargetAudienceLogger.aiRecommendationError(error: e);
       return left(CreationFailure.targetAudienceFailed());
     }
   }
@@ -311,10 +317,10 @@ class TargetAudienceStats {
   });
 
   factory TargetAudienceStats.empty() => TargetAudienceStats(
-        totalPosts: 0,
-        totalSent: 0,
-        totalCompleted: 0,
-        typeCount: {'quick': 0, 'public': 0, 'custom': 0},
-        averageCompletionRate: 0.0,
-      );
+    totalPosts: 0,
+    totalSent: 0,
+    totalCompleted: 0,
+    typeCount: {'quick': 0, 'public': 0, 'custom': 0},
+    averageCompletionRate: 0.0,
+  );
 }

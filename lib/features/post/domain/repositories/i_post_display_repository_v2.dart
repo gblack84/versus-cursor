@@ -127,18 +127,18 @@ abstract class IPostDisplayRepositoryV2 {
     List<String> postIds,
   );
 
-  // ========== CRUD Methods (Phase 4: Idempotency) ==========
+  // ========== CRUD Methods (Phase 4: Natural Idempotency) ==========
 
   /// Create a new post
   ///
-  /// **Phase 4: IdempotencyService Integration**
-  /// - eventId prevents duplicate post creation on network retry
+  /// **Phase 4: Natural Idempotency via Deterministic IDs**
+  /// - post.id provides natural idempotency via Firestore set()
+  /// - Multiple calls with same post.id will overwrite, not create duplicates
   /// - Transaction ensures atomicity
   /// - Automatic cache invalidation
   ///
   /// **Parameters**:
-  /// - post: Post data to create
-  /// - eventId: Client-generated UUID for idempotency (prevents duplicates)
+  /// - post: Post data to create (with deterministic ID)
   ///
   /// **Success**: Right(unit) - Post created successfully
   /// **Failure**: Left(PostFailure.invalidInput) - Invalid post data (e.g., empty titles)
@@ -146,15 +146,18 @@ abstract class IPostDisplayRepositoryV2 {
   /// **Failure**: Left(PostFailure.networkError) - Network connection issue
   Future<Either<PostFailure, Unit>> createPost({
     required PostDisplay post,
-    required String eventId,
   });
 
   /// Update an existing post
   ///
+  /// **Phase 4: Natural Idempotency via Deterministic IDs**
+  /// - postId provides natural idempotency via Firestore update()
+  /// - Multiple calls with same postId and updates will overwrite
+  /// - Transaction ensures atomicity
+  ///
   /// **Parameters**:
-  /// - postId: ID of post to update
+  /// - postId: ID of post to update (deterministic)
   /// - updates: Map of fields to update (e.g., {'titleA': 'New Title'})
-  /// - eventId: Client-generated UUID for idempotency
   ///
   /// **Allowed Fields**:
   /// - titleA, titleB
@@ -168,10 +171,14 @@ abstract class IPostDisplayRepositoryV2 {
   Future<Either<PostFailure, Unit>> updatePost({
     required String postId,
     required Map<String, dynamic> updates,
-    required String eventId,
   });
 
   /// Delete a post (complete deletion with subcollections)
+  ///
+  /// **Phase 4: Natural Idempotency via Deterministic IDs**
+  /// - postId provides natural idempotency via Firestore delete()
+  /// - Multiple calls with same postId are safe (idempotent)
+  /// - Transaction ensures atomicity
   ///
   /// **Transaction Processing Order**:
   /// 1. Delete comments subcollection (including comment likes/dislikes)
@@ -182,8 +189,7 @@ abstract class IPostDisplayRepositoryV2 {
   /// 6. Invalidate cache
   ///
   /// **Parameters**:
-  /// - postId: ID of post to delete
-  /// - eventId: Client-generated UUID for idempotency
+  /// - postId: ID of post to delete (deterministic)
   ///
   /// **Success**: Right(unit) - Post and all subcollections deleted
   /// **Failure**: Left(PostFailure.postNotFound) - Post doesn't exist
@@ -191,7 +197,6 @@ abstract class IPostDisplayRepositoryV2 {
   /// **Failure**: Left(PostFailure.permissionDenied) - User not authorized
   Future<Either<PostFailure, Unit>> deletePost({
     required String postId,
-    required String eventId,
   });
 
   /// Increment view count (idempotent)

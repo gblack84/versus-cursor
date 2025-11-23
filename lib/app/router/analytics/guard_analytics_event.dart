@@ -156,7 +156,7 @@ sealed class GuardAnalyticsEvent with _$GuardAnalyticsEvent {
 ///   allowedCount: 105,
 /// );
 ///
-/// print('Block rate: ${stats.blockPercentage.toStringAsFixed(1)}%');
+/// Logger.debug('Block rate: ${stats.blockPercentage.toStringAsFixed(1)}%', tag: 'Analytics/Stats');
 /// ```
 @Freezed(fromJson: false, toJson: false)
 sealed class GuardAnalyticsStats with _$GuardAnalyticsStats {

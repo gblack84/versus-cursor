@@ -18,9 +18,7 @@ class ModerationErrorDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppTheme.of(context).secondaryBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           Icon(
@@ -29,10 +27,7 @@ class ModerationErrorDialog extends StatelessWidget {
             size: 28,
           ),
           const SizedBox(width: 12),
-          Text(
-            '부적절한 콘텐츠',
-            style: AppTheme.of(context).headlineSmall,
-          ),
+          Text('부적절한 콘텐츠', style: AppTheme.of(context).headlineSmall),
         ],
       ),
       content: Text(
@@ -49,9 +44,9 @@ class ModerationErrorDialog extends StatelessWidget {
           child: Text(
             '다시 선택',
             style: AppTheme.of(context).bodyMedium.override(
-                  color: AppTheme.of(context).primary,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: AppTheme.of(context).primary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -68,11 +63,8 @@ class ModerationErrorDialog extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ModerationErrorDialog(
-        reason: reason,
-        box: box,
-        onRetry: onRetry,
-      ),
+      builder: (_) =>
+          ModerationErrorDialog(reason: reason, box: box, onRetry: onRetry),
     );
   }
 }

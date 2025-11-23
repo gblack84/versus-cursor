@@ -119,16 +119,13 @@ class EnvironmentConfig {
 
       // Check if missing or empty
       if (value == null || value.isEmpty) {
-        print('⚠️ Missing required environment variable: $varName');
-        print('   Please set this in .env file (see .env.example)');
+        // Missing required environment variable - check .env file
         return false;
       }
 
       // Check for placeholder values (e.g., "your_sender_id_here")
       if (value.startsWith('your_') || value.contains('_here')) {
-        print('⚠️ Placeholder value detected for: $varName');
-        print('   Current value: $value');
-        print('   Please replace with actual value in .env file');
+        // Placeholder value detected - replace in .env file
         return false;
       }
     }
@@ -138,15 +135,7 @@ class EnvironmentConfig {
 
   /// Print configuration status (for debugging only, never in production)
   static void printStatus() {
-    if (isDevelopment) {
-      print('=== Environment Configuration Status ===');
-      print('Environment: $environment');
-      print('Debug Mode: $isDebug');
-      print(
-          'Firebase Project: ${firebaseProjectId.isNotEmpty ? '✅ Configured' : '❌ Missing'}');
-      print(
-          'Perspective API: ${perspectiveApiKey.isNotEmpty ? '✅ Configured' : '❌ Missing'}');
-      print('========================================');
-    }
+    // No-op: status logging removed in Phase 1
+    // TODO: Replace with Logger in Phase 2
   }
 }

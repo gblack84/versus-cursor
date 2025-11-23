@@ -10,12 +10,12 @@ part 'post_failure.freezed.dart';
 /// result.fold(
 ///   (failure) {
 ///     failure.when(
-///       postNotFound: (postId) => print('Post $postId not found'),
-///       networkError: () => print('Network error'),
+///       postNotFound: (postId) => PostLogger.postNotFound(postId: postId),
+///       networkError: () => PostLogger.postError(errorType: 'network', message: 'Network error'),
 ///       ...
 ///     );
 ///   },
-///   (post) => print('Success: ${post.id}'),
+///   (post) => PostLogger.postsLoaded(count: 1),
 /// );
 /// ```
 @freezed

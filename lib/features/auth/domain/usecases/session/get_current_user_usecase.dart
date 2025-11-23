@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../repositories/i_auth_repository.dart';
 import '../../entities/auth_user.dart';
 import '../../failures/auth_failure.dart';
@@ -18,7 +19,22 @@ class GetCurrentUserUseCase {
   ///
   /// Returns Either<AuthFailure, AuthUser> with automatic Korean error messages
   Future<Either<AuthFailure, AuthUser>> call() async {
-    // Repository already returns Either - direct pass-through
-    return await _authRepository.getCurrentUser();
+    DevLogger.params({}, tag: 'GetCurrentUser');
+    DevLogger.checkpoint('Retrieving current authenticated user', tag: 'GetCurrentUser');
+
+    // Repository already returns Either - process with fold for logging
+    DevLogger.checkpoint('Calling repository.getCurrentUser', tag: 'GetCurrentUser');
+    final result = await _authRepository.getCurrentUser();
+
+    return result.fold(
+      (failure) {
+        DevLogger.error('Failed to get current user', error: failure, tag: 'GetCurrentUser');
+        return left(failure);
+      },
+      (user) {
+        DevLogger.result(isSuccess: true, data: 'uid: ${user.uid}', tag: 'GetCurrentUser');
+        return right(user);
+      },
+    );
   }
 }

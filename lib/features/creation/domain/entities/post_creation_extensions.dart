@@ -29,8 +29,7 @@ extension PostCreationFirestore on PostCreation {
       'description': description,
       'optionA': optionA.toFirestore(),
       'optionB': optionB.toFirestore(),
-      if (targetAudience != null)
-        'targetAudience': targetAudience!.toMap(),
+      if (targetAudience != null) 'targetAudience': targetAudience!.toMap(),
       'createdAt': Timestamp.fromDate(createdAt),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
       'status': status.name,
@@ -66,7 +65,8 @@ extension PostCreationFirestore on PostCreation {
       optionB: _parsePostOption(data['optionB'] as Map<String, dynamic>?),
       targetAudience: data['targetAudience'] != null
           ? TargetAudienceFirestore.fromMap(
-              data['targetAudience'] as Map<String, dynamic>?)
+              data['targetAudience'] as Map<String, dynamic>?,
+            )
           : null,
       createdAt: _parseDateTime(data['createdAt']),
       updatedAt: _parseDateTime(data['updatedAt']),

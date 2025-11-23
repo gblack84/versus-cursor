@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../entities/user_profile.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_user_repository.dart';
@@ -120,19 +121,27 @@ class WatchUserProfileUseCase {
   ///       // 에러 처리
   ///       failure.when(
   ///         profileNotFound: (userId) {
-  ///           print('User not found: $userId');
+  ///           ProfileLogger.profileError(
+  ///             errorType: 'notFound',
+  ///             message: 'User not found: $userId',
+  ///           );
   ///         },
   ///         firestoreRead: (message) {
-  ///           print('Firestore error: $message');
+  ///           ProfileLogger.profileError(
+  ///             errorType: 'firestoreRead',
+  ///             message: message,
+  ///           );
   ///         },
   ///         orElse: () {},
   ///       );
   ///     },
   ///     (profile) {
   ///       // 정상 데이터 처리
-  ///       print('Profile updated: ${profile.displayName}');
-  ///       print('Photo: ${profile.photoUrl}');
-  ///       print('Bio: ${profile.shortDescription}');
+  ///       ProfileLogger.profileUpdated(
+  ///         displayName: profile.displayName,
+  ///         photoUrl: profile.photoUrl,
+  ///         bio: profile.shortDescription,
+  ///       );
   ///     },
   ///   );
   /// });
@@ -140,23 +149,31 @@ class WatchUserProfileUseCase {
   Stream<Either<ProfileFailure, UserProfile>> execute({
     required String userId,
   }) async* {
+    DevLogger.params({'userId': userId}, tag: 'WatchUserProfile');
+
     // async generator를 사용한 Stream 에러 처리
     // await for로 Repository Stream을 소비하면서 에러를 Either로 변환
     try {
+      DevLogger.checkpoint('Starting user profile stream', tag: 'WatchUserProfile');
+
       await for (final profile in _repository.watchUserProfile(userId)) {
         if (profile == null) {
           // 사용자가 존재하지 않거나 삭제됨
+          DevLogger.result(isSuccess: false, data: 'Profile not found: $userId', tag: 'WatchUserProfile');
           yield left(ProfileFailure.profileNotFound(userId: userId));
         } else {
           // 정상 프로필 데이터
+          DevLogger.result(isSuccess: true, data: 'Profile updated: ${profile.displayName}', tag: 'WatchUserProfile');
           yield right(profile);
         }
       }
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'WatchUserProfile');
       yield left(e);
     } catch (error) {
       // Firestore 에러 (네트워크, 권한 등)
       // Left를 발행하고 스트림 종료 (재연결은 UI에서 처리)
+      DevLogger.error('Unexpected error', error: error, tag: 'WatchUserProfile');
       yield left(ProfileFailure.firestoreRead('Failed to watch user profile: $error'));
     }
   }

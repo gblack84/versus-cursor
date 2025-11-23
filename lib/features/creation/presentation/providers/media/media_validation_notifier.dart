@@ -68,18 +68,15 @@ class MediaValidation extends _$MediaValidation {
       );
 
       // Handle result using fold()
-      final shouldContinue = resultEither.fold(
-        (failure) {
-          state = state.copyWith(
-            validationFailure: failure,
-            validationMessage: failure is MediaProcessingFailed
-                ? failure.getUserMessage()
-                : failure.getUserMessage(),
-          );
-          return false;
-        },
-        (_) => true,
-      );
+      final shouldContinue = resultEither.fold((failure) {
+        state = state.copyWith(
+          validationFailure: failure,
+          validationMessage: failure is MediaProcessingFailed
+              ? failure.getUserMessage()
+              : failure.getUserMessage(),
+        );
+        return false;
+      }, (_) => true);
 
       if (!shouldContinue) {
         state = state.copyWith(isValidating: false);
@@ -94,7 +91,9 @@ class MediaValidation extends _$MediaValidation {
 
       bool allApproved = true;
       final rejectedIndices = <int>[];
-      final newResults = Map<String, ValidationResult>.from(state.validationResults);
+      final newResults = Map<String, ValidationResult>.from(
+        state.validationResults,
+      );
 
       for (int i = 0; i < decisions.length; i++) {
         final decision = decisions[i];
@@ -202,7 +201,9 @@ class MediaValidation extends _$MediaValidation {
         },
         (decision) {
           final id = 'text_$context';
-          final newResults = Map<String, ValidationResult>.from(state.validationResults);
+          final newResults = Map<String, ValidationResult>.from(
+            state.validationResults,
+          );
 
           newResults[id] = ValidationResult(
             id: id,
@@ -247,12 +248,13 @@ class MediaValidation extends _$MediaValidation {
     );
 
     try {
-      final resultEither = await _moderateContentUseCase.moderateContentCombination(
-        title: title,
-        description: description,
-        imagesA: imagesA,
-        imagesB: imagesB,
-      );
+      final resultEither = await _moderateContentUseCase
+          .moderateContentCombination(
+            title: title,
+            description: description,
+            imagesA: imagesA,
+            imagesB: imagesB,
+          );
 
       // Handle result using fold()
       return resultEither.fold(
@@ -265,7 +267,9 @@ class MediaValidation extends _$MediaValidation {
         },
         (decision) {
           const id = 'content_combination';
-          final newResults = Map<String, ValidationResult>.from(state.validationResults);
+          final newResults = Map<String, ValidationResult>.from(
+            state.validationResults,
+          );
 
           newResults[id] = ValidationResult(
             id: id,
@@ -304,7 +308,9 @@ class MediaValidation extends _$MediaValidation {
     // Check if result is expired
     if (result != null && result.isExpired(cacheExpiration)) {
       // Remove expired result
-      final newResults = Map<String, ValidationResult>.from(state.validationResults);
+      final newResults = Map<String, ValidationResult>.from(
+        state.validationResults,
+      );
       newResults.remove(id);
       state = state.copyWith(validationResults: newResults);
       return null;
@@ -329,7 +335,9 @@ class MediaValidation extends _$MediaValidation {
   /// Clear validation for specific box
   /// 특정 박스의 검증 결과 초기화
   void clearBoxValidation(String box) {
-    final newResults = Map<String, ValidationResult>.from(state.validationResults);
+    final newResults = Map<String, ValidationResult>.from(
+      state.validationResults,
+    );
     newResults.removeWhere((key, _) => key.startsWith(box));
 
     state = state.copyWith(

@@ -40,7 +40,7 @@ abstract class IAIModerationService {
   ///     titleA: '어벤져스',
   ///     titleB: '인터스텔라',
   ///   ),
-  ///   onProgressUpdate: (message) => print(message),
+  ///   onProgressUpdate: (message) => Logger.debug(message, tag: 'Moderation/Progress'),
   /// );
   ///
   /// if (result.isValid) {

@@ -9,15 +9,22 @@ import '../../domain/services/i_image_processing_service.dart';
 import '/app/di.dart';
 
 // Phase 2-7: Export Riverpod 3.x Notifier Providers
-export 'media/media_selection_notifier.dart' show mediaSelectionProvider, MediaSelection;
+export 'media/media_selection_notifier.dart'
+    show mediaSelectionProvider, MediaSelection;
 export 'media/media_upload_notifier.dart' show mediaUploadProvider, MediaUpload;
-export 'media/media_validation_notifier.dart' show mediaValidationProvider, MediaValidation;
+export 'media/media_validation_notifier.dart'
+    show mediaValidationProvider, MediaValidation;
 export 'target_audience_notifier.dart' show targetAudienceProvider;
-export 'states/target_audience_state.dart' show TargetAudienceState, TargetAudienceStateX;
+export 'states/target_audience_state.dart'
+    show TargetAudienceState, TargetAudienceStateX;
 // export 'media/media_coordinator_provider.dart' show mediaStateCoordinatorProvider; // DELETED - Phase 2-14
 
 // Phase 2-11: Export UseCase Providers
-export 'usecase_providers.dart' show createPostUseCaseProvider, moderateContentUseCaseProvider, validatePostUseCaseProvider;
+export 'usecase_providers.dart'
+    show
+        createPostUseCaseProvider,
+        moderateContentUseCaseProvider,
+        validatePostUseCaseProvider;
 
 part 'creation_providers.g.dart';
 

@@ -15,8 +15,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ===== Core Services =====
-import '/services/idempotency/idempotency_service.dart';
+// ===== Services Layer (App-wide) =====
+import '/services/batch/batch_service.dart';
 
 // ===== PHASE 3: 3-Layer Caching =====
 // Note: UnifiedCacheService는 Repository에서 직접 사용 (싱글톤)
@@ -94,12 +94,17 @@ void registerChatModule(GetIt getIt) {
 /// **Firebase-Centric v2.0**:
 /// - Direct Firestore access (no DataSource layer)
 /// - Extension Pattern for Entity ↔ Firestore conversion
-/// - Preserves PHASE 3 (3-Layer Caching) + PHASE 4 (Idempotency)
+/// - Preserves PHASE 3 (3-Layer Caching)
+/// - Removed IdempotencyService (uses Firestore's native idempotency)
+///
+/// **PHASE 7: BatchService Integration**:
+/// - BatchService for atomic batch operations (500+ auto-chunking)
+/// - Consistent with Notifications Feature pattern
 void _registerRepository(GetIt getIt) {
   getIt.registerLazySingleton<IChatRepository>(
     () => ChatRepositoryImpl(
-      idempotencyService: getIt<IdempotencyService>(),
       firestore: FirebaseFirestore.instance,
+      batchService: getIt<BatchService>(),
     ),
   );
 }

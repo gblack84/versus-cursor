@@ -135,10 +135,7 @@ class MediaUpload extends _$MediaUpload {
     }
 
     // Update queue with remaining tasks
-    state = state.copyWith(
-      uploadQueue: queue.toList(),
-      isUploading: false,
-    );
+    state = state.copyWith(uploadQueue: queue.toList(), isUploading: false);
   }
 
   /// Upload a single task
@@ -149,13 +146,14 @@ class MediaUpload extends _$MediaUpload {
       _updateTaskStatus(task.id, UploadStatus.uploading);
 
       // Process images with moderation
-      final processResultEither = await _imageProcessingService.processMultipleImages(
-        files: task.files,
-        box: task.box,
-        onProgress: (progress) {
-          _updateProgress(task.id, progress * 0.5); // 50% for processing
-        },
-      );
+      final processResultEither = await _imageProcessingService
+          .processMultipleImages(
+            files: task.files,
+            box: task.box,
+            onProgress: (progress) {
+              _updateProgress(task.id, progress * 0.5); // 50% for processing
+            },
+          );
 
       // Handle processing result using fold()
       final processResult = await processResultEither.fold(
@@ -432,7 +430,9 @@ class MediaUpload extends _$MediaUpload {
     // Cancel all active tasks
     final newActiveTasks = <String, UploadTask>{};
     for (final entry in state.activeTasks.entries) {
-      newActiveTasks[entry.key] = entry.value.copyWith(status: UploadStatus.cancelled);
+      newActiveTasks[entry.key] = entry.value.copyWith(
+        status: UploadStatus.cancelled,
+      );
       _progressControllers[entry.key]?.close();
       _progressControllers.remove(entry.key);
     }
@@ -448,9 +448,11 @@ class MediaUpload extends _$MediaUpload {
   /// 완료된 업로드 정리
   void clearCompleted() {
     final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
-    newActiveTasks.removeWhere((_, task) =>
-        task.status == UploadStatus.completed ||
-        task.status == UploadStatus.cancelled);
+    newActiveTasks.removeWhere(
+      (_, task) =>
+          task.status == UploadStatus.completed ||
+          task.status == UploadStatus.cancelled,
+    );
 
     final newProgress = Map<String, double>.from(state.uploadProgress);
     newProgress.removeWhere((taskId, _) => !newActiveTasks.containsKey(taskId));
@@ -555,10 +557,7 @@ class MediaUpload extends _$MediaUpload {
     );
 
     // Handle result using fold()
-    return resultEither.fold(
-      (failure) => throw failure,
-      (result) => result,
-    );
+    return resultEither.fold((failure) => throw failure, (result) => result);
   }
 
   /// Process multiple images with moderation (MediaEditorWidget용)
@@ -597,9 +596,6 @@ class MediaUpload extends _$MediaUpload {
     );
 
     // Handle result using fold()
-    return resultEither.fold(
-      (failure) => throw failure,
-      (result) => result,
-    );
+    return resultEither.fold((failure) => throw failure, (result) => result);
   }
 }

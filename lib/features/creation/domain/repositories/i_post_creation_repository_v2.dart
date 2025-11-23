@@ -16,7 +16,7 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Create a new post using PostCreation aggregate
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: post.id provides natural idempotency via Firestore set()
   ///
   /// **Returns**: `Either<CreationFailure, String>` (postId on success)
   ///
@@ -24,34 +24,30 @@ abstract class IPostCreationRepositoryV2 {
   /// - `PostCreationRepositoryFailure`: Firestore write failure
   /// - `NetworkFailure`: No internet connection
   /// - `ServerFailure`: Firestore service unavailable
-  /// - `IdempotencyViolation`: Duplicate operation with different eventId
   ///
-  /// **Idempotency**: Same eventId will skip operation and return success (network retry safe)
+  /// **Idempotency**: Firestore set() with deterministic post.id is idempotent (network retry safe)
   ///
   /// Voting Feature and Post Feature will add their fields later through onCreate triggers.
   Future<Either<CreationFailure, String>> createPost({
     required PostCreation post,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   // ====== Update Operations ======
 
   /// Update post using PostCreation aggregate
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: postId provides natural idempotency via Firestore update()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>` (Unit on success = functional void)
   ///
   /// **Errors**:
   /// - `PostCreationRepositoryFailure`: Update failed
   /// - `NetworkFailure`: Connection lost during update
-  /// - `IdempotencyViolation`: Duplicate operation with different eventId
   ///
-  /// **Idempotency**: Same eventId will skip operation and return success
+  /// **Idempotency**: Firestore update() with deterministic postId is idempotent (network retry safe)
   Future<Either<CreationFailure, Unit>> updatePost({
     required String postId,
     required PostCreation post,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   /// Update post using partial data (for granular updates)
@@ -69,31 +65,29 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Delete post
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: postId provides natural idempotency via Firestore delete()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
   ///
-  /// **Idempotency**: Same eventId will skip operation and return success
+  /// **Idempotency**: Firestore delete() with deterministic postId is idempotent (network retry safe)
   Future<Either<CreationFailure, Unit>> deletePost({
     required String postId,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   // ====== Media Operations ======
 
   /// Upload post media (image/video)
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: postId + mediaUrl provides natural idempotency via Firestore update()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
   ///
-  /// **Idempotency**: Same eventId will skip operation and return success
+  /// **Idempotency**: Firestore update() with deterministic postId is idempotent (network retry safe)
   Future<Either<CreationFailure, Unit>> uploadPostMedia({
     required String postId,
     required String mediaUrl,
     required String mediaType,
     String? side, // 'A' or 'B'
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   /// Delete post media
@@ -109,28 +103,26 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Update post status (draft, published, archived)
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: postId provides natural idempotency via Firestore update()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
   ///
-  /// **Idempotency**: Same eventId will skip operation and return success
+  /// **Idempotency**: Firestore update() with deterministic postId is idempotent (network retry safe)
   Future<Either<CreationFailure, Unit>> updatePostStatus({
     required String postId,
     required String status,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   /// Mark post as processed by backend
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: postId provides natural idempotency via Firestore update()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
   ///
-  /// **Idempotency**: Same eventId will skip operation and return success
+  /// **Idempotency**: Firestore update() with deterministic postId is idempotent (network retry safe)
   Future<Either<CreationFailure, Unit>> markPostAsProcessed({
     required String postId,
     DateTime? processedAt,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   // ====== Query Operations ======
@@ -219,59 +211,54 @@ abstract class IPostCreationRepositoryV2 {
   /// Create content using PostCreation aggregate
   /// Convenience wrapper for createPost() with consistent naming
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: post.id provides natural idempotency via Firestore set()
   ///
   /// **Returns**: `Either<CreationFailure, String>` (contentId)
   Future<Either<CreationFailure, String>> createContent(
-    PostCreation post, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  });
+    PostCreation post,
+  );
 
   /// Update existing content using PostCreation aggregate
   /// Convenience wrapper for updatePost() with consistent naming
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: contentId provides natural idempotency via Firestore update()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
   Future<Either<CreationFailure, Unit>> updateContent(
     String contentId,
-    PostCreation post, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  });
+    PostCreation post,
+  );
 
   /// Delete content
   /// Removes the post and all associated data
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: contentId provides natural idempotency via Firestore delete()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
   Future<Either<CreationFailure, Unit>> deleteContent(
-    String contentId, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  });
+    String contentId,
+  );
 
   /// Publish content (change visibility to public)
   /// This is a convenience method that updates post status and visibility
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: contentId provides natural idempotency via Firestore update()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
   Future<Either<CreationFailure, Unit>> publishContent(
-    String contentId, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  });
+    String contentId,
+  );
 
   /// Save as draft
   /// This saves the post with draft status for later editing
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Idempotency**: contentId provides natural idempotency via Firestore set()
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
   Future<Either<CreationFailure, Unit>> saveDraft(
     String contentId,
-    PostCreation post, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  });
+    PostCreation post,
+  );
 
   // ====== Phase 3: Draft Cache Operations ======
 

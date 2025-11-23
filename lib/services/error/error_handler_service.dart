@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bot_toast/bot_toast.dart';
-import '/services/logging/debug_service.dart';
+import '/services/logging/logger_service.dart';
 
 /// 에러 타입 정의
 enum ErrorType {
@@ -58,9 +58,9 @@ class ErrorHandler {
         _errorMessages[ErrorType.unknown]!;
 
     // 디버그 로깅
-    DebugHelper.logError('[$errorType] $userMessage', error);
-    if (stackTrace != null && DebugHelper.isDebugMode) {
-      print('StackTrace: $stackTrace');
+    Logger.error('[$errorType] $userMessage', error: error, tag: 'Error');
+    if (stackTrace != null) {
+      Logger.error('StackTrace: $stackTrace', tag: 'Error');
     }
 
     // Toast 표시

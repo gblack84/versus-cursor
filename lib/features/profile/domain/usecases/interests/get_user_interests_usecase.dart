@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../repositories/i_interests_repository.dart';
 import '../../entities/interest.dart';
 import '../../failures/profile_failure.dart';
@@ -26,6 +27,24 @@ class GetUserInterestsUseCase {
   Future<Either<ProfileFailure, List<Interest>>> execute(
     String userId,
   ) async {
-    return await _repository.getUserInterests(userId);
+    DevLogger.params({'userId': userId}, tag: 'GetUserInterests');
+
+    try {
+      DevLogger.checkpoint('Calling repository.getUserInterests', tag: 'GetUserInterests');
+      final result = await _repository.getUserInterests(userId);
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'GetUserInterests'),
+        (interests) => DevLogger.result(isSuccess: true, data: '${interests.length} interests', tag: 'GetUserInterests'),
+      );
+
+      return result;
+    } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'GetUserInterests');
+      return left(e);
+    } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'GetUserInterests');
+      return left(ProfileFailure.unknown(e.toString()));
+    }
   }
 }

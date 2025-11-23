@@ -82,7 +82,7 @@ class Navigation extends _$Navigation {
         case '/chat/friends':
           state = state.copyWith(chatTabIndex: 1);
           break;
-        case '/chat/search':
+        case '/search':  // Fixed: Changed from /chat/search to /search
           state = state.copyWith(chatTabIndex: 2);
           break;
       }
@@ -96,7 +96,7 @@ class Navigation extends _$Navigation {
         case '/search':
           state = state.copyWith(mainTabIndex: 1);
           break;
-        case '/inPutPostImage':
+        case '/createPost':  // Fixed: Changed from /inPutPostImage to /createPost
           state = state.copyWith(mainTabIndex: 2);
           break;
         case '/profile':

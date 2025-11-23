@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_profile_storage_repository.dart';
 
@@ -42,21 +43,37 @@ class ValidateMediaUseCase {
   /// ]);
   /// result.fold(
   ///   (failure) => showError('검증 실패: ${failure.getUserMessage()}'),
-  ///   (_) => print('모든 파일이 유효합니다'),
+  ///   (_) => ProfileLogger.mediaValidated(),
   /// );
   /// ```
   Future<Either<ProfileFailure, bool>> execute(List<String> filePaths) async {
+    DevLogger.params({
+      'filePathsCount': filePaths.length,
+      'filePaths': filePaths,
+    }, tag: 'ValidateMedia');
+
     try {
       // 1. 입력 검증
       if (filePaths.isEmpty) {
+        DevLogger.validation(field: 'filePaths', reason: 'Empty file paths list', tag: 'ValidateMedia');
         return left(ProfileFailure.validation('filePaths가 비어있습니다'));
       }
 
       // 2. Storage Repository로 검증 위임
-      return await _storageRepository.validateMediaFiles(filePaths);
+      DevLogger.checkpoint('Calling repository.validateMediaFiles', tag: 'ValidateMedia');
+      final result = await _storageRepository.validateMediaFiles(filePaths);
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'ValidateMedia'),
+        (isValid) => DevLogger.result(isSuccess: true, data: 'All files valid: $isValid', tag: 'ValidateMedia'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'ValidateMedia');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'ValidateMedia');
       return left(ProfileFailure.validation(e.toString()));
     }
   }

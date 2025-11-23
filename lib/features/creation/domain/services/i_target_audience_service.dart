@@ -31,9 +31,5 @@ class ValidationResult {
   final String? error;
   final Map<String, dynamic>? metadata;
 
-  const ValidationResult({
-    required this.isValid,
-    this.error,
-    this.metadata,
-  });
+  const ValidationResult({required this.isValid, this.error, this.metadata});
 }

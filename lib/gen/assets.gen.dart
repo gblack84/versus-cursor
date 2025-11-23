@@ -14,6 +14,9 @@ import 'package:flutter/widgets.dart';
 class Assets {
   const Assets._();
 
+  /// File path: .env
+  static const String a_env = '.env';
+
   /// File path: assets/audios/.gitkeep
   static const String audios_gitkeep = 'assets/audios/.gitkeep';
 
@@ -127,6 +130,7 @@ class Assets {
 
   /// List of all assets
   static List<dynamic> get values => [
+    a_env,
     audios_gitkeep,
     fonts_sour_gummy_black,
     fonts_sour_gummy_black_italic,

@@ -30,7 +30,10 @@ abstract class IImageModerationService {
   /// );
   ///
   /// if (!result.isAppropriate) {
-  ///   print('Image rejected: ${result.reason}');
+  ///   ModerationLogger.imageRejected(
+  ///     filePath: 'path/to/image.jpg',
+  ///     reason: result.reason,
+  ///   );
   /// }
   /// ```
   Future<ImageCheckResult> checkImage({

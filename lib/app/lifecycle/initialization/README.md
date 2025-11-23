@@ -1,8 +1,8 @@
 # Initialization Service
 
-> **위치**: `/lib/services/initialization/`
+> **위치**: `/lib/app/lifecycle/initialization/`
 > **목적**: 앱 초기화 및 백그라운드 프리로드 관리
-> **레이어**: Service Layer (Cross-Feature)
+> **레이어**: App Layer (Lifecycle Management)
 > **생성일**: 2025-11-11 (Phase B-3)
 
 ---
@@ -70,7 +70,7 @@ initService.initialize(user.uid);
 ## 📁 디렉토리 구조
 
 ```
-lib/services/initialization/
+lib/app/lifecycle/initialization/
 ├── app_initialization_service.dart       # 135 lines - 초기화 서비스 구현
 ├── initialization_providers.dart          # 44 lines  - Riverpod Provider
 ├── initialization_providers.g.dart        # [생성]    - Riverpod Generator

@@ -38,11 +38,7 @@ class CameraFloatingButtonDelegate extends DefaultAssetPickerBuilderDelegate {
             heroTag: 'camera_fab',
             backgroundColor: Theme.of(context).primaryColor,
             onPressed: onCameraPressed,
-            child: const Icon(
-              Icons.camera_alt,
-              color: Colors.white,
-              size: 28,
-            ),
+            child: const Icon(Icons.camera_alt, color: Colors.white, size: 28),
           ),
         ),
       ],

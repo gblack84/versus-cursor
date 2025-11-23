@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import '/core_exports.dart';
 
 class WarningMessage extends StatelessWidget {
-  const WarningMessage({
-    Key? key,
-    required this.message,
-    this.textStyle,
-  }) : super(key: key);
+  const WarningMessage({Key? key, required this.message, this.textStyle})
+    : super(key: key);
 
   final String message;
   final TextStyle? textStyle;
@@ -17,7 +14,8 @@ class WarningMessage extends StatelessWidget {
       padding: EdgeInsetsDirectional.fromSTEB(20.0, 8.0, 20.0, 0.0),
       child: Text(
         message,
-        style: textStyle ??
+        style:
+            textStyle ??
             TextStyle(
               color: AppTheme.of(context).error,
               fontSize: 12.0,

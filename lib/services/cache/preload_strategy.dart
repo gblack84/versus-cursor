@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'unified_cache_service.dart';
 
 /// Preload strategy for improving cache hit rates
@@ -41,9 +40,6 @@ class PreloadStrategy {
             .get();
       } catch (indexError) {
         // 인덱스 에러 발생 시 간단한 쿼리로 폴백
-        if (kDebugMode) {
-          print('[PreloadStrategy] Index not available, using fallback query');
-        }
 
         // 대체 쿼리: participant_ids 조건만 사용
         try {
@@ -54,10 +50,6 @@ class PreloadStrategy {
               .get();
         } catch (fallbackError) {
           // 그래도 실패하면 가장 단순한 쿼리 사용
-          if (kDebugMode) {
-            print(
-                '[PreloadStrategy] Fallback query failed, using simple limit query');
-          }
 
           recentChatsQuery = await FirebaseFirestore.instance
               .collection('chats')
@@ -93,23 +85,13 @@ class PreloadStrategy {
           }
         }).catchError((e) {
           _preloadingChats.remove(chatId);
-          if (kDebugMode) {
-            print('[PreloadStrategy] Error preloading chat $chatId: $e');
-          }
         }));
       }
 
       // Wait for all preloads to complete
       await Future.wait(preloadFutures);
-
-      if (kDebugMode) {
-        print(
-            '[PreloadStrategy] Preloaded ${preloadFutures.length} chats for user $userId');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[PreloadStrategy] Error in preloadRecentChats: $e');
-      }
+      // Error in preloadRecentChats
     }
   }
 
@@ -140,16 +122,8 @@ class PreloadStrategy {
       // Messages are already in JSON-compatible format
       final messagesJson = messages;
       await UnifiedCacheService.instance.set(cacheKey, messagesJson);
-
-      if (kDebugMode) {
-        print(
-            '[PreloadStrategy] Cached ${messages.length} messages for chat $chatId');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print(
-            '[PreloadStrategy] Error preloading messages for chat $chatId: $e');
-      }
+      // Error preloading messages
     }
   }
 
@@ -180,14 +154,8 @@ class PreloadStrategy {
           await UnifiedCacheService.instance.set(cacheKey, userData);
         }
       }
-
-      if (kDebugMode) {
-        print('[PreloadStrategy] Preloaded ${userDocs.length} user profiles');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[PreloadStrategy] Error preloading user data: $e');
-      }
+      // Error preloading user data
     }
   }
 
@@ -209,15 +177,8 @@ class PreloadStrategy {
       final cacheKey = 'home_feed_posts';
       final postsData = postsQuery.docs.map((doc) => doc.data()).toList();
       await UnifiedCacheService.instance.set(cacheKey, postsData);
-
-      if (kDebugMode) {
-        print(
-            '[PreloadStrategy] Preloaded ${postsData.length} posts for home feed');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[PreloadStrategy] Error preloading home feed: $e');
-      }
+      // Error preloading home feed
     }
   }
 

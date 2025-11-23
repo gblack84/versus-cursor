@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../entities/user_profile.dart';
 import '../../failures/profile_failure.dart';
@@ -24,29 +25,41 @@ class UpdateUserProfileUseCase {
   ///
   /// **Parameters**:
   /// - `profile`: 업데이트할 프로필 객체
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(Unit)`: 업데이트 성공
   /// - `Left(ProfileFailure)`: 업데이트 실패
-  ///   - `ProfileFailure.duplicateOperation`: 이미 처리된 작업 (eventId 중복)
   ///
-  /// **Phase 1.3**: IdempotencyService 지원 추가
+  /// **Natural Idempotency**: Deterministic profile.uid provides natural idempotency
   Future<Either<ProfileFailure, Unit>> execute(
-    UserProfile profile, {
-    String? eventId,
-  }) async {
+    UserProfile profile,
+  ) async {
+    DevLogger.params({
+      'userId': profile.uid,
+    }, tag: 'UpdateUserProfile');
+
     try {
       // 1. 프로필 검증
       if (profile.uid.isEmpty) {
+        DevLogger.validation(field: 'uid', reason: 'Empty uid', tag: 'UpdateUserProfile');
         return left(ProfileFailure.validation('uid'));
       }
 
       // 2. Repository 호출 (이미 Either 반환)
-      return await _repository.updateUserProfile(profile, eventId: eventId);
+      DevLogger.checkpoint('Calling repository.updateUserProfile', tag: 'UpdateUserProfile');
+      final result = await _repository.updateUserProfile(profile);
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'UpdateUserProfile'),
+        (_) => DevLogger.result(isSuccess: true, data: 'Profile updated successfully', tag: 'UpdateUserProfile'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'UpdateUserProfile');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'UpdateUserProfile');
       return left(ProfileFailure.unknown(e.toString()));
     }
   }

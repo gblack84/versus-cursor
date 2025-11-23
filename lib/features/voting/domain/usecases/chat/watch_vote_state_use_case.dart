@@ -1,6 +1,7 @@
 import '../../repositories/i_voting_chat_repository.dart';
 import '../../entities/chat/vote_state.dart';
 import '../../entities/vote_state_extensions.dart';
+import '/services/logging/dev_logger.dart';
 
 /// **VoteStateCoordinator.getVoteStateStream() 대체**
 ///
@@ -39,25 +40,54 @@ class WatchVoteStateUseCase {
     required String? userId,
     required DateTime? voteEndTime,
   }) {
+    DevLogger.params({
+      'postId': postId,
+      'userId': userId ?? 'null',
+      'voteEndTime': voteEndTime?.toString() ?? 'null',
+    }, tag: 'WatchVoteState');
+
+    DevLogger.checkpoint('Starting vote state stream watch', tag: 'WatchVoteState');
+
     return _repository
         .watchPostVoting(postId)
-        .map((either) => either.fold(
-              // ✅ Failure 시: 기본 VoteStateData 반환
-              // (Coordinator line 91-95와 동일)
-              (failure) => VoteStateData(
+        .map((either) {
+          return either.fold(
+            // ✅ Failure 시: 기본 VoteStateData 반환
+            // (Coordinator line 91-95와 동일)
+            (failure) {
+              DevLogger.result(
+                isSuccess: false,
+                data: failure.toString(),
+                tag: 'WatchVoteState',
+              );
+              return VoteStateData(
                 state: VoteState.votingRequest,
                 hasUserVoted: false,
                 userChoice: null,
                 voteEndTime: voteEndTime,
                 remainingTime: null,
                 voteResults: null,
-              ),
-              // ✅ Success 시: Extension으로 변환
-              // (Coordinator line 97-152와 동일, Extension으로 이동)
-              (postVoting) => postVoting.toVoteStateData(
+              );
+            },
+            // ✅ Success 시: Extension으로 변환
+            // (Coordinator line 97-152와 동일, Extension으로 이동)
+            (postVoting) {
+              final voteStateData = postVoting.toVoteStateData(
                 userId: userId,
                 voteEndTime: voteEndTime,
-              ),
-            ));
+              );
+              DevLogger.result(
+                isSuccess: true,
+                data: {
+                  'state': voteStateData.state.name,
+                  'hasUserVoted': voteStateData.hasUserVoted,
+                  'userChoice': voteStateData.userChoice ?? 'null',
+                },
+                tag: 'WatchVoteState',
+              );
+              return voteStateData;
+            },
+          );
+        });
   }
 }

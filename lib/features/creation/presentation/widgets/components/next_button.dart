@@ -27,19 +27,16 @@ class NextButton extends StatelessWidget {
         child: FloatingActionButton.extended(
           onPressed: showButton ? onPressed : null,
           backgroundColor: AppTheme.of(context).primary,
-          icon: const Icon(
-            Icons.arrow_forward,
-            color: Colors.white,
-          ),
+          icon: const Icon(Icons.arrow_forward, color: Colors.white),
           label: Text(
             '다음',
             style: AppTheme.of(context).bodyMedium.override(
-                  font: GoogleFonts.plusJakartaSans(),
-                  color: Colors.white,
-                  fontSize: 16.0,
-                  letterSpacing: 0.0,
-                  fontWeight: FontWeight.w600,
-                ),
+              font: GoogleFonts.plusJakartaSans(),
+              color: Colors.white,
+              fontSize: 16.0,
+              letterSpacing: 0.0,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),

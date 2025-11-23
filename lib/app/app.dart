@@ -9,7 +9,7 @@ import '/core_exports.dart';
 import '/features/notifications/domain/services/i_notification_service.dart';
 import '/features/notifications/presentation/providers/notification_overlay_provider.dart';
 import '/features/profile/presentation/providers/usecase_providers.dart';
-import '/services/initialization/initialization_providers.dart';
+import '/app/lifecycle/initialization/initialization_providers.dart';
 import 'package:get_it/get_it.dart';
 
 class VersusApp extends ConsumerStatefulWidget {

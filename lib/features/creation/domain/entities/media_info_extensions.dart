@@ -27,41 +27,66 @@ extension MediaInfoFirestore on MediaInfo {
   /// **Pattern Matching**: Uses when() to handle Image vs Video
   Map<String, dynamic> toFirestore() {
     return when(
-      image: (id, url, parentId, aspectRatio, width, height, size, mimeType,
-          createdAt, thumbnailUrl, metadata) {
-        return {
-          'id': id,
-          'type': 'image', // ← Discriminator field
-          'url': url,
-          if (parentId != null) 'parentId': parentId,
-          if (aspectRatio != null) 'aspectRatio': aspectRatio,
-          if (width != null) 'width': width,
-          if (height != null) 'height': height,
-          if (size != null) 'size': size,
-          if (mimeType != null) 'mimeType': mimeType,
-          if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt),
-          if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
-          if (metadata != null) 'metadata': metadata,
-        };
-      },
-      video: (id, url, parentId, width, height, duration, size, mimeType,
-          createdAt, thumbnailUrl, aspectRatio, metadata) {
-        return {
-          'id': id,
-          'type': 'video', // ← Discriminator field
-          'url': url,
-          if (parentId != null) 'parentId': parentId,
-          if (width != null) 'width': width,
-          if (height != null) 'height': height,
-          if (duration != null) 'duration': duration,
-          if (size != null) 'size': size,
-          if (mimeType != null) 'mimeType': mimeType,
-          if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt),
-          if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
-          if (aspectRatio != null) 'aspectRatio': aspectRatio,
-          if (metadata != null) 'metadata': metadata,
-        };
-      },
+      image:
+          (
+            id,
+            url,
+            parentId,
+            aspectRatio,
+            width,
+            height,
+            size,
+            mimeType,
+            createdAt,
+            thumbnailUrl,
+            metadata,
+          ) {
+            return {
+              'id': id,
+              'type': 'image', // ← Discriminator field
+              'url': url,
+              if (parentId != null) 'parentId': parentId,
+              if (aspectRatio != null) 'aspectRatio': aspectRatio,
+              if (width != null) 'width': width,
+              if (height != null) 'height': height,
+              if (size != null) 'size': size,
+              if (mimeType != null) 'mimeType': mimeType,
+              if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt),
+              if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
+              if (metadata != null) 'metadata': metadata,
+            };
+          },
+      video:
+          (
+            id,
+            url,
+            parentId,
+            width,
+            height,
+            duration,
+            size,
+            mimeType,
+            createdAt,
+            thumbnailUrl,
+            aspectRatio,
+            metadata,
+          ) {
+            return {
+              'id': id,
+              'type': 'video', // ← Discriminator field
+              'url': url,
+              if (parentId != null) 'parentId': parentId,
+              if (width != null) 'width': width,
+              if (height != null) 'height': height,
+              if (duration != null) 'duration': duration,
+              if (size != null) 'size': size,
+              if (mimeType != null) 'mimeType': mimeType,
+              if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt),
+              if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
+              if (aspectRatio != null) 'aspectRatio': aspectRatio,
+              if (metadata != null) 'metadata': metadata,
+            };
+          },
     );
   }
 

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
 import '/features/creation/presentation/providers/creation_providers.dart';
-import '/features/creation/presentation/providers/target_audience_notifier.dart' show TargetAudience;
+import '/features/creation/presentation/providers/target_audience_notifier.dart'
+    show TargetAudience;
 import '/features/creation/domain/constants/target_audience_constants.dart';
 import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 
@@ -16,38 +17,38 @@ class DetailedTargetSelector extends ConsumerWidget {
     final notifier = ref.read(targetAudienceProvider.notifier);
 
     return SingleChildScrollView(
-          padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                '타겟 조건을 설정하세요',
-                style: AppTheme.of(context).headlineSmall.override(
-                      fontWeight: FontWeight.w600,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-
-              // 관심사 선택
-              _buildInterestsSection(context, state, notifier),
-
-              const SizedBox(height: 24),
-
-              // 연령대 선택
-              _buildAgeGroupSection(context, state, notifier),
-
-              const SizedBox(height: 24),
-
-              // 성별 선택
-              _buildGenderSection(context, state, notifier),
-
-              const SizedBox(height: 24),
-
-              // 고급 옵션
-              _buildAdvancedOptions(context, state, notifier),
-            ],
+      padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '타겟 조건을 설정하세요',
+            style: AppTheme.of(
+              context,
+            ).headlineSmall.override(fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 32),
+
+          // 관심사 선택
+          _buildInterestsSection(context, state, notifier),
+
+          const SizedBox(height: 24),
+
+          // 연령대 선택
+          _buildAgeGroupSection(context, state, notifier),
+
+          const SizedBox(height: 24),
+
+          // 성별 선택
+          _buildGenderSection(context, state, notifier),
+
+          const SizedBox(height: 24),
+
+          // 고급 옵션
+          _buildAdvancedOptions(context, state, notifier),
+        ],
+      ),
     );
   }
 
@@ -61,9 +62,9 @@ class DetailedTargetSelector extends ConsumerWidget {
       children: [
         Text(
           '관심사 (복수 선택 가능)',
-          style: AppTheme.of(context).bodyLarge.override(
-                fontWeight: FontWeight.w600,
-              ),
+          style: AppTheme.of(
+            context,
+          ).bodyLarge.override(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Container(
@@ -71,9 +72,7 @@ class DetailedTargetSelector extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppTheme.of(context).primaryBackground,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppTheme.of(context).alternate,
-            ),
+            border: Border.all(color: AppTheme.of(context).alternate),
           ),
           child: Wrap(
             spacing: TargetAudienceUIConstants.chipSpacing,
@@ -86,7 +85,8 @@ class DetailedTargetSelector extends ConsumerWidget {
                 selected: isSelected,
                 onSelected: (_) {
                   debugPrint(
-                      '[DetailedTargetSelector] 관심사 토글: $interest (현재: $isSelected)');
+                    '[DetailedTargetSelector] 관심사 토글: $interest (현재: $isSelected)',
+                  );
                   notifier.toggleInterest(interest);
                 },
                 selectedColor: AppTheme.of(context).primary,
@@ -106,8 +106,10 @@ class DetailedTargetSelector extends ConsumerWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
               );
             }).toList(),
           ),
@@ -126,9 +128,9 @@ class DetailedTargetSelector extends ConsumerWidget {
       children: [
         Text(
           '연령대',
-          style: AppTheme.of(context).bodyLarge.override(
-                fontWeight: FontWeight.w600,
-              ),
+          style: AppTheme.of(
+            context,
+          ).bodyLarge.override(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -140,13 +142,16 @@ class DetailedTargetSelector extends ConsumerWidget {
             return InkWell(
               onTap: () {
                 debugPrint(
-                    '[DetailedTargetSelector] 연령대 선택: ${entry.value} (${entry.key})');
+                  '[DetailedTargetSelector] 연령대 선택: ${entry.value} (${entry.key})',
+                );
                 notifier.setAgeGroup(entry.key);
               },
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppTheme.of(context).primary
@@ -191,8 +196,9 @@ class DetailedTargetSelector extends ConsumerWidget {
                         color: isSelected
                             ? Colors.white
                             : AppTheme.of(context).primaryText,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -215,9 +221,9 @@ class DetailedTargetSelector extends ConsumerWidget {
       children: [
         Text(
           '성별',
-          style: AppTheme.of(context).bodyLarge.override(
-                fontWeight: FontWeight.w600,
-              ),
+          style: AppTheme.of(
+            context,
+          ).bodyLarge.override(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Row(
@@ -228,7 +234,8 @@ class DetailedTargetSelector extends ConsumerWidget {
             return Expanded(
               child: Padding(
                 padding: EdgeInsets.only(
-                  right: entry.key !=
+                  right:
+                      entry.key !=
                           TargetAudienceConstants.genderOptions.keys.last
                       ? 8
                       : 0,
@@ -236,7 +243,8 @@ class DetailedTargetSelector extends ConsumerWidget {
                 child: InkWell(
                   onTap: () {
                     debugPrint(
-                        '[DetailedTargetSelector] 성별 선택: ${entry.value} (${entry.key})');
+                      '[DetailedTargetSelector] 성별 선택: ${entry.value} (${entry.key})',
+                    );
                     notifier.setGender(entry.key);
                   },
                   borderRadius: BorderRadius.circular(12),
@@ -261,8 +269,9 @@ class DetailedTargetSelector extends ConsumerWidget {
                           height: 16,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color:
-                                isSelected ? Colors.white : Colors.transparent,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.transparent,
                             border: Border.all(
                               color: isSelected
                                   ? Colors.white
@@ -314,18 +323,16 @@ class DetailedTargetSelector extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppTheme.of(context).primaryBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.of(context).alternate,
-        ),
+        border: Border.all(color: AppTheme.of(context).alternate),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '고급 옵션',
-            style: AppTheme.of(context).bodyLarge.override(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: AppTheme.of(
+              context,
+            ).bodyLarge.override(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           InkWell(
@@ -365,16 +372,16 @@ class DetailedTargetSelector extends ConsumerWidget {
                       children: [
                         Text(
                           '활성 사용자 우선',
-                          style: AppTheme.of(context).bodyMedium.override(
-                                fontWeight: FontWeight.w500,
-                              ),
+                          style: AppTheme.of(
+                            context,
+                          ).bodyMedium.override(fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '최근 1시간 이내 활동',
                           style: AppTheme.of(context).bodySmall.override(
-                                color: AppTheme.of(context).secondaryText,
-                              ),
+                            color: AppTheme.of(context).secondaryText,
+                          ),
                         ),
                       ],
                     ),

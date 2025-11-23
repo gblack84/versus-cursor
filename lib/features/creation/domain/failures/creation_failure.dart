@@ -29,9 +29,8 @@ sealed class CreationFailure with _$CreationFailure implements Failure {
   List<Object?> get props => [message];
 
   @override
-  String? get code => whenOrNull(
-        firestoreWriteFailed: (_, __, ___, code) => code,
-      );
+  String? get code =>
+      whenOrNull(firestoreWriteFailed: (_, __, ___, code) => code);
 
   @override
   bool? get stringify => true;
@@ -193,22 +192,25 @@ sealed class CreationFailure with _$CreationFailure implements Failure {
       creationValidationFailed: (fieldErrors) => '유효성 검증에 실패했습니다',
       postCreationRepositoryFailed: (operation, postId) =>
           '게시물 Repository 작업 실패',
-      mediaRepositoryFailed: (mediaType, failedPaths) =>
-          '미디어 Repository 작업 실패',
+      mediaRepositoryFailed: (mediaType, failedPaths) => '미디어 Repository 작업 실패',
       metricsRepositoryFailed: (metricType) => '통계 Repository 작업 실패',
       moderationRepositoryFailed: (moderationStep, rejectedReasons) =>
           '검열 Repository 작업 실패',
       visibilityRepositoryFailed: (visibility) => '가시성 Repository 작업 실패',
       firestoreWriteFailed: (collectionPath, operation, attemptedData, code) =>
           'Firestore 쓰기 작업 실패',
-      aiModerationFailed: (aiProvider, confidenceScore, detectedCategories,
-              suggestions, rejectedReasons) =>
-          'AI 검열에서 부적절한 콘텐츠 감지',
+      aiModerationFailed:
+          (
+            aiProvider,
+            confidenceScore,
+            detectedCategories,
+            suggestions,
+            rejectedReasons,
+          ) => 'AI 검열에서 부적절한 콘텐츠 감지',
       mediaProcessingFailed: (failedStep, affectedFiles, details) =>
           '미디어 처리 실패',
-      audienceConfigurationFailed: (invalidField, attemptedValue,
-              validationRule) =>
-          '타겟 오디언스 설정 오류',
+      audienceConfigurationFailed:
+          (invalidField, attemptedValue, validationRule) => '타겟 오디언스 설정 오류',
       postValidationFailed: (missingFields, invalidFields, fieldErrors) =>
           '게시물 유효성 검증 실패',
     );

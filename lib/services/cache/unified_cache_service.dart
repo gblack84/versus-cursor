@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:fpdart/fpdart.dart';
 import 'simple_memory_cache.dart';
@@ -16,6 +15,7 @@ import '/features/profile/domain/entities/character.dart';
 import '/features/voting/domain/entities/dialog/vote_counts_model.dart';
 import '/features/voting/domain/entities/dialog/vote_cache_state.dart';
 import '/features/auth/domain/entities/auth_user.dart';
+import '/services/logging/logger_service.dart';
 
 /// 캐시 레이어 정의
 enum CacheLayer {
@@ -139,23 +139,43 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     // Hive 박스 열기 - 손상된 경우 자동 재생성
     try {
       _localCache = await Hive.openBox('unified_cache');
-      _logDebug('Hive cache opened successfully');
+      Logger.debug(
+        'Hive cache opened successfully - Box: unified_cache',
+        tag: 'Cache/Init',
+      );
     } catch (e) {
       // 손상된 캐시 제거 후 재생성
-      _logDebug('Hive cache corrupted, resetting: $e');
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Hive box open failed',
+        error: e,
+      );
       try {
         await Hive.deleteBoxFromDisk('unified_cache');
-        _logDebug('Corrupted Hive cache deleted');
+        Logger.info(
+          'Corrupted Hive cache deleted - Box: unified_cache',
+          tag: 'Cache/Init',
+        );
       } catch (deleteError) {
-        _logDebug('Failed to delete corrupted cache: $deleteError');
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive box delete failed',
+          error: deleteError,
+        );
       }
 
       // 새로운 박스 생성
       _localCache = await Hive.openBox('unified_cache');
-      _logDebug('New Hive cache created');
+      Logger.debug(
+        'New Hive cache created after corruption - Box: unified_cache',
+        tag: 'Cache/Init',
+      );
     }
 
-    _logDebug('UnifiedCacheService initialized with Hive');
+    Logger.info(
+      'UnifiedCacheService initialized - L1: Memory (LRU 100), L2: Hive, L3: Firestore',
+      tag: 'Cache/Init',
+    );
   }
 
   @override
@@ -167,7 +187,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       if (layer == CacheLayer.memory || layer == CacheLayer.all) {
         final memoryResult = _memoryCache.get<T>(key);
         if (memoryResult != null) {
-          _logDebug('Cache HIT from Memory: $key');
+          CacheLogger.cacheHit(key: key, layer: 'L1');
           return right(memoryResult);
         }
       }
@@ -181,10 +201,13 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
             if (localResult is T) {
               // Promote to memory cache
               _memoryCache.set(key, localResult);
-              _logDebug('Cache HIT from Hive: $key');
+              CacheLogger.cacheHit(key: key, layer: 'L2');
               return right(localResult);
             } else {
-              _logDebug('Type mismatch in Hive cache for $key: expected $T, got ${localResult.runtimeType}');
+              CacheLogger.cacheError(
+                errorType: 'typeMismatch',
+                message: 'Type mismatch: expected $T, got ${localResult.runtimeType}',
+              );
               // Delete corrupted cache entry
               await _localCache.delete(key);
               return left(CacheFailure.typeMismatch(
@@ -194,7 +217,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
             }
           }
         } on HiveError catch (e) {
-          _logDebug('Hive get error for $key: $e');
+          CacheLogger.cacheError(
+            errorType: 'hiveError',
+            message: 'Cache get failed',
+            error: e,
+          );
           return left(CacheFailure.hiveError(e.message));
         }
       }
@@ -202,10 +229,14 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L3: Remote (Firestore는 자체 오프라인 캐시 사용)
       // 특정 쿼리는 도메인별 메서드에서 처리
 
-      _logDebug('Cache MISS for $key');
+      CacheLogger.cacheMiss(key: key, layer: 'L1+L2');
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting $key', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Cache get operation failed',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -219,23 +250,31 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       if (layer == CacheLayer.memory || layer == CacheLayer.all) {
         _memoryCache.set(key, value, ttl: ttl);
-        _logDebug('Cached to Memory: $key');
+        CacheLogger.cacheSet(key: key, layer: 'L1', ttl: ttl);
       }
 
       // L2: Local DB (Hive)
       if (layer == CacheLayer.local || layer == CacheLayer.all) {
         try {
           await _localCache.put(key, value);
-          _logDebug('Cached to Hive: $key');
+          CacheLogger.cacheSet(key: key, layer: 'L2');
         } on HiveError catch (e) {
-          _logError('Hive set error for $key', e);
+          CacheLogger.cacheError(
+            errorType: 'hiveError',
+            message: 'Cache set failed',
+            error: e,
+          );
           return left(CacheFailure.hiveError(e.message));
         }
       }
 
       return right(null);
     } catch (e) {
-      _logError('Unexpected error setting $key', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Cache set operation failed',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -247,23 +286,31 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       if (layer == CacheLayer.memory || layer == CacheLayer.all) {
         _memoryCache.remove(key);
-        _logDebug('Removed from Memory: $key');
+        CacheLogger.cacheInvalidated(key: key);
       }
 
       // L2: Local DB
       if (layer == CacheLayer.local || layer == CacheLayer.all) {
         try {
           await _localCache.delete(key);
-          _logDebug('Removed from Hive: $key');
+          CacheLogger.cacheInvalidated(key: key);
         } on HiveError catch (e) {
-          _logError('Hive remove error for $key', e);
+          CacheLogger.cacheError(
+            errorType: 'hiveError',
+            message: 'Cache remove failed',
+            error: e,
+          );
           return left(CacheFailure.hiveError(e.message));
         }
       }
 
       return right(null);
     } catch (e) {
-      _logError('Unexpected error removing $key', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Cache remove operation failed',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -275,7 +322,10 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       if (layer == CacheLayer.memory || layer == CacheLayer.all) {
         _memoryCache.invalidate(pattern);
-        _logDebug('Invalidated Memory cache matching: $pattern');
+        Logger.debug(
+          'Cache invalidation (L1/Memory) - Pattern: ${Logger.maskSensitive(pattern)}',
+          tag: 'Cache/Invalidate',
+        );
       }
 
       // L2: Local DB
@@ -284,20 +334,33 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final keysToDelete = _localCache.keys
               .where((key) => key.toString().contains(pattern))
               .toList();
+
+          Logger.debug(
+            'Cache invalidation (L2/Hive) - Pattern: ${Logger.maskSensitive(pattern)}, Found: ${keysToDelete.length} keys',
+            tag: 'Cache/Invalidate',
+          );
+
           for (final key in keysToDelete) {
             await _localCache.delete(key);
+            CacheLogger.cacheInvalidated(key: key.toString());
           }
-          _logDebug(
-              'Invalidated ${keysToDelete.length} keys from Hive matching: $pattern');
         } on HiveError catch (e) {
-          _logError('Hive invalidate error for pattern $pattern', e);
+          CacheLogger.cacheError(
+            errorType: 'hiveError',
+            message: 'Cache invalidate failed',
+            error: e,
+          );
           return left(CacheFailure.hiveError(e.message));
         }
       }
 
       return right(null);
     } catch (e) {
-      _logError('Unexpected error invalidating pattern $pattern', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Cache invalidate operation failed',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -309,23 +372,38 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       if (layer == CacheLayer.memory || layer == CacheLayer.all) {
         _memoryCache.clear();
-        _logDebug('Cleared Memory cache');
+        Logger.info(
+          'Cache cleared (L1/Memory)',
+          tag: 'Cache/Clear',
+        );
       }
 
       // L2: Local DB
       if (layer == CacheLayer.local || layer == CacheLayer.all) {
         try {
           await _localCache.clear();
-          _logDebug('Cleared Hive cache');
+          Logger.info(
+            'Cache cleared (L2/Hive)',
+            tag: 'Cache/Clear',
+          );
         } on HiveError catch (e) {
-          _logError('Hive clear error', e);
+          CacheLogger.cacheError(
+            errorType: 'hiveError',
+            message: 'Cache clear failed',
+            error: e,
+          );
           return left(CacheFailure.hiveError(e.message));
         }
       }
 
+      CacheLogger.cacheCleared();
       return right(null);
     } catch (e) {
-      _logError('Unexpected error clearing cache', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Cache clear operation failed',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -350,8 +428,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
         stopwatch.stop();
         CacheStatistics.instance
             .recordL1Hit(responseTimeMs: stopwatch.elapsedMilliseconds);
-        _logDebug(
-            'Chat messages from MEMORY: $chatId (${stopwatch.elapsedMilliseconds}ms)');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(chatId), layer: 'L1');
         // 백그라운드에서 동기화
         _syncChatMessagesInBackground(chatId);
         return right(cached);
@@ -374,13 +451,19 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
             } catch (e) {
               // 손상된 데이터 발견
               hasCorruptedData = true;
-              _logDebug('Corrupted message data found in cache: $e');
+              Logger.debug(
+                'Corrupted message data found in cache: $e',
+                tag: 'Cache/Chat',
+              );
             }
           }
 
           // 손상된 데이터가 있으면 Hive 캐시 제거
           if (hasCorruptedData) {
-            _logDebug('Removing corrupted cache entry for: $cacheKey');
+            Logger.debug(
+              'Corrupted cache data detected - Key: ${Logger.maskSensitive(cacheKey)}',
+              tag: 'Cache/Chat',
+            );
             await _localCache.delete(cacheKey);
             // Firestore에서 다시 로드하도록 진행
           } else if (validMessages.isNotEmpty) {
@@ -390,22 +473,28 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
             stopwatch.stop();
             CacheStatistics.instance
                 .recordL2Hit(responseTimeMs: stopwatch.elapsedMilliseconds);
-            _logDebug(
-                'Chat messages from HIVE: $chatId (${stopwatch.elapsedMilliseconds}ms)');
+            CacheLogger.cacheHit(key: Logger.maskSensitive(chatId), layer: 'L2');
             // 백그라운드에서 동기화
             _syncChatMessagesInBackground(chatId);
             return right(validMessages);
           }
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for chat messages', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read failed for chat messages',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for chat messages: $e');
+        Logger.debug('Hive read error for chat messages: $e', tag: 'Cache/Chat');
         // 캐시 데이터가 완전히 손상된 경우 삭제
         try {
           await _localCache.delete(cacheKey);
-          _logDebug('Removed corrupted cache entry: $cacheKey');
+          Logger.debug(
+            'Removed corrupted cache entry - Key: ${Logger.maskSensitive(cacheKey)}',
+            tag: 'Cache/Chat',
+          );
         } catch (_) {}
       }
 
@@ -429,13 +518,12 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
         try {
           await _localCache.put(cacheKey, messages);
         } catch (e) {
-          _logDebug('Failed to save to Hive: $e');
+          Logger.debug('Failed to save to Hive: $e', tag: 'Cache/Chat');
         }
         stopwatch.stop();
         CacheStatistics.instance
             .recordL3Hit(responseTimeMs: stopwatch.elapsedMilliseconds);
-        _logDebug(
-            'Chat messages from FIRESTORE CACHE: $chatId (${stopwatch.elapsedMilliseconds}ms)');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(chatId), layer: 'L3');
 
         return right(messages);
       } catch (e) {
@@ -458,22 +546,29 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           try {
             await _localCache.put(cacheKey, messages);
           } catch (e) {
-            _logDebug('Failed to save to Hive: $e');
+            Logger.debug('Failed to save to Hive: $e', tag: 'Cache/Chat');
           }
           stopwatch.stop();
           CacheStatistics.instance
               .recordNetworkHit(responseTimeMs: stopwatch.elapsedMilliseconds);
-          _logDebug(
-              'Chat messages from SERVER: $chatId (${stopwatch.elapsedMilliseconds}ms)');
+          CacheLogger.cacheMiss(key: Logger.maskSensitive(chatId), layer: 'L1+L2+L3');
 
           return right(messages);
         } on FirebaseException catch (e) {
-          _logError('Firestore error getting chat messages', e);
+          CacheLogger.cacheError(
+            errorType: 'firestoreError',
+            message: 'Firestore error getting chat messages',
+            error: e,
+          );
           return left(CacheFailure.firestoreError(e.message ?? e.toString()));
         }
       }
     } catch (e) {
-      _logError('Unexpected error getting chat messages for $chatId', e);
+      CacheLogger.cacheError(
+        errorType: 'firestoreError',
+        message: 'Unexpected error getting chat messages',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -486,9 +581,14 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       final cacheKey = CacheKeys.chatMessages(chatId);
       _memoryCache.set(cacheKey, messages, ttl: const Duration(minutes: 5));
+      CacheLogger.cacheSet(key: Logger.maskSensitive(chatId), layer: 'L1', ttl: const Duration(minutes: 5));
       return right(null);
     } catch (e) {
-      _logError('Error setting chat messages for $chatId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting chat messages',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -528,7 +628,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final cached = _memoryCache.get<List<Map<String, dynamic>>>(cacheKey);
       if (cached != null) {
-        _logDebug('Feed posts from MEMORY');
+        CacheLogger.cacheHit(key: 'feed_posts', layer: 'L1');
         return right(cached);
       }
 
@@ -549,6 +649,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
         }).toList();
 
         _memoryCache.set(cacheKey, posts, ttl: const Duration(minutes: 10));
+        CacheLogger.cacheHit(key: 'feed_posts', layer: 'L3');
         return right(posts);
       } catch (e) {
         // 서버에서 가져오기
@@ -567,14 +668,23 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           }).toList();
 
           _memoryCache.set(cacheKey, posts, ttl: const Duration(minutes: 10));
+          CacheLogger.cacheMiss(key: 'feed_posts', layer: 'L1+L3');
           return right(posts);
         } on FirebaseException catch (e) {
-          _logError('Firestore error getting feed posts', e);
+          CacheLogger.cacheError(
+            errorType: 'firestoreError',
+            message: 'Firestore error getting feed posts',
+            error: e,
+          );
           return left(CacheFailure.firestoreError(e.message ?? e.toString()));
         }
       }
     } catch (e) {
-      _logError('Unexpected error getting feed posts', e);
+      CacheLogger.cacheError(
+        errorType: 'firestoreError',
+        message: 'Unexpected error getting feed posts',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -584,9 +694,14 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       final cacheKey = CacheKeys.feedPosts();
       _memoryCache.set(cacheKey, posts, ttl: const Duration(minutes: 10));
+      CacheLogger.cacheSet(key: 'feed_posts', layer: 'L1', ttl: const Duration(minutes: 10));
       return right(null);
     } catch (e) {
-      _logError('Error setting feed posts', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting feed posts',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -596,9 +711,14 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       final cacheKey = CacheKeys.feedPosts();
       _memoryCache.remove(cacheKey);
+      CacheLogger.cacheInvalidated(key: 'feed_posts');
       return right(null);
     } catch (e) {
-      _logError('Error clearing feed posts', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing feed posts',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -613,7 +733,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<UserProfile>(cacheKey);
       if (memCached != null) {
-        _logDebug('User profile from MEMORY: $userId');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L1');
         return right(memCached);
       }
 
@@ -624,14 +744,18 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final profile = UserProfile.fromJson(Map<String, dynamic>.from(hiveData));
           // Promote to memory cache
           _memoryCache.set(cacheKey, profile, ttl: const Duration(hours: 1));
-          _logDebug('User profile from HIVE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L2');
           return right(profile);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for user profile $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read error for user profile',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for user profile $userId: $e');
+        Logger.debug('Hive read error for user profile: $e', tag: 'Cache/Profile');
       }
 
       // L3: Firestore
@@ -645,24 +769,35 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           _memoryCache.set(cacheKey, user, ttl: const Duration(hours: 1));
           try {
             await _localCache.put(cacheKey, user.toJson());
-            _logDebug('Cached user profile to Hive: $userId');
+            Logger.debug(
+              'Cached user profile to Hive - User: ${Logger.maskSensitive(userId)}',
+              tag: 'Cache/Profile',
+            );
           } catch (e) {
-            _logDebug('Failed to save user profile to Hive: $e');
+            Logger.debug('Failed to save user profile to Hive: $e', tag: 'Cache/Profile');
           }
 
-          _logDebug('User profile from FIRESTORE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L3');
           return right(user);
         }
       } on FirebaseException catch (e) {
-        _logError('Firestore error getting user profile $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'firestoreError',
+          message: 'Firestore error getting user profile',
+          error: e,
+        );
         return left(CacheFailure.firestoreError(e.message ?? e.toString()));
       } catch (e) {
-        _logDebug('Failed to get user profile from Firestore: $userId');
+        Logger.debug('Failed to get user profile from Firestore', tag: 'Cache/Profile');
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting user profile $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'firestoreError',
+        message: 'Unexpected error getting user profile',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -674,21 +809,30 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // L1: Memory Cache
       _memoryCache.set(cacheKey, user, ttl: const Duration(hours: 1));
+      CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L1', ttl: const Duration(hours: 1));
 
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, user.toJson());
-        _logDebug('Set user profile to L1+L2: $userId');
+        CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L2');
       } on HiveError catch (e) {
-        _logError('Failed to save user profile to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save user profile to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save user profile to Hive: $e');
+        Logger.debug('Failed to save user profile to Hive: $e', tag: 'Cache/Profile');
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting user profile for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting user profile',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -703,7 +847,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<UserSettings>(cacheKey);
       if (memCached != null) {
-        _logDebug('User settings from MEMORY: $userId');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L1');
         return right(memCached);
       }
 
@@ -714,14 +858,18 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final settings = UserSettings.fromJson(Map<String, dynamic>.from(hiveData));
           // Promote to memory cache
           _memoryCache.set(cacheKey, settings, ttl: const Duration(hours: 1));
-          _logDebug('User settings from HIVE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L2');
           return right(settings);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for user settings $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read error for user settings',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for user settings $userId: $e');
+        Logger.debug('Hive read error for user settings: $e', tag: 'Cache/Settings');
       }
 
       // L3: Firestore
@@ -735,24 +883,35 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           _memoryCache.set(cacheKey, settings, ttl: const Duration(hours: 1));
           try {
             await _localCache.put(cacheKey, settings.toJson());
-            _logDebug('Cached user settings to Hive: $userId');
+            Logger.debug(
+              'Cached user settings to Hive - User: ${Logger.maskSensitive(userId)}',
+              tag: 'Cache/Settings',
+            );
           } catch (e) {
-            _logDebug('Failed to save user settings to Hive: $e');
+            Logger.debug('Failed to save user settings to Hive: $e', tag: 'Cache/Settings');
           }
 
-          _logDebug('User settings from FIRESTORE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L3');
           return right(settings);
         }
       } on FirebaseException catch (e) {
-        _logError('Firestore error getting user settings $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'firestoreError',
+          message: 'Firestore error getting user settings',
+          error: e,
+        );
         return left(CacheFailure.firestoreError(e.message ?? e.toString()));
       } catch (e) {
-        _logDebug('Failed to get user settings from Firestore: $userId');
+        Logger.debug('Failed to get user settings from Firestore', tag: 'Cache/Settings');
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting user settings $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'firestoreError',
+        message: 'Unexpected error getting user settings',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -764,21 +923,30 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // L1: Memory Cache
       _memoryCache.set(cacheKey, settings, ttl: const Duration(hours: 1));
+      CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L1', ttl: const Duration(hours: 1));
 
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, settings.toJson());
-        _logDebug('Set user settings to L1+L2: $userId');
+        CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L2');
       } on HiveError catch (e) {
-        _logError('Failed to save user settings to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save user settings to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save user settings to Hive: $e');
+        Logger.debug('Failed to save user settings to Hive: $e', tag: 'Cache/Settings');
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting user settings for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting user settings',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -789,7 +957,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.userSettings(userId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing user settings for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing user settings',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -804,7 +976,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<List<String>>(cacheKey);
       if (memCached != null) {
-        _logDebug('User interests from MEMORY: $userId');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L1');
         return right(memCached);
       }
 
@@ -815,14 +987,18 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final interests = List<String>.from(hiveData);
           // Promote to memory cache
           _memoryCache.set(cacheKey, interests, ttl: const Duration(hours: 1));
-          _logDebug('User interests from HIVE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L2');
           return right(interests);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for user interests $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read error for user interests',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for user interests $userId: $e');
+        Logger.debug('Hive read error for user interests: $e', tag: 'Cache/Interests');
       }
 
       // L3: Firestore
@@ -839,24 +1015,35 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           _memoryCache.set(cacheKey, interests, ttl: const Duration(hours: 1));
           try {
             await _localCache.put(cacheKey, interests);
-            _logDebug('Cached user interests to Hive: $userId');
+            Logger.debug(
+              'Cached user interests to Hive - User: ${Logger.maskSensitive(userId)}',
+              tag: 'Cache/Interests',
+            );
           } catch (e) {
-            _logDebug('Failed to save user interests to Hive: $e');
+            Logger.debug('Failed to save user interests to Hive: $e', tag: 'Cache/Interests');
           }
 
-          _logDebug('User interests from FIRESTORE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L3');
           return right(interests);
         }
       } on FirebaseException catch (e) {
-        _logError('Firestore error getting user interests $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'firestoreError',
+          message: 'Firestore error getting user interests',
+          error: e,
+        );
         return left(CacheFailure.firestoreError(e.message ?? e.toString()));
       } catch (e) {
-        _logDebug('Failed to get user interests from Firestore: $userId');
+        Logger.debug('Failed to get user interests from Firestore', tag: 'Cache/Interests');
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting user interests $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'firestoreError',
+        message: 'Unexpected error getting user interests',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -868,21 +1055,30 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // L1: Memory Cache
       _memoryCache.set(cacheKey, interests, ttl: const Duration(hours: 1));
+      CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L1', ttl: const Duration(hours: 1));
 
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, interests);
-        _logDebug('Set user interests to L1+L2: $userId');
+        CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L2');
       } on HiveError catch (e) {
-        _logError('Failed to save user interests to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save user interests to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save user interests to Hive: $e');
+        Logger.debug('Failed to save user interests to Hive: $e', tag: 'Cache/Interests');
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting user interests for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting user interests',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -893,7 +1089,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.userInterests(userId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing user interests for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing user interests',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -908,7 +1108,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<ProfileInfo>(cacheKey);
       if (memCached != null) {
-        _logDebug('ProfileInfo from MEMORY: $userId');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L1');
         return right(memCached);
       }
 
@@ -919,14 +1119,21 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final profileInfo = ProfileInfo.fromJson(Map<String, dynamic>.from(hiveData));
           // Promote to memory cache
           _memoryCache.set(cacheKey, profileInfo, ttl: const Duration(hours: 1));
-          _logDebug('ProfileInfo from HIVE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L2');
           return right(profileInfo);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for ProfileInfo $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read failed for ProfileInfo',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for ProfileInfo $userId: $e');
+        Logger.debug(
+          'Hive read error for ProfileInfo ${Logger.maskSensitive(userId)}: $e',
+          tag: 'Cache/ProfileInfo',
+        );
       }
 
       // L3: Firestore
@@ -964,24 +1171,41 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           _memoryCache.set(cacheKey, profileInfo, ttl: const Duration(hours: 1));
           try {
             await _localCache.put(cacheKey, profileInfo.toJson());
-            _logDebug('Cached ProfileInfo to Hive: $userId');
+            Logger.debug(
+              'Cached ProfileInfo to Hive: ${Logger.maskSensitive(userId)}',
+              tag: 'Cache/ProfileInfo',
+            );
           } catch (e) {
-            _logDebug('Failed to save ProfileInfo to Hive: $e');
+            Logger.debug(
+              'Failed to save ProfileInfo to Hive: $e',
+              tag: 'Cache/ProfileInfo',
+            );
           }
 
-          _logDebug('ProfileInfo from FIRESTORE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L3');
           return right(profileInfo);
         }
       } on FirebaseException catch (e) {
-        _logError('Firestore error getting ProfileInfo $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'firestoreError',
+          message: 'Firestore error getting ProfileInfo',
+          error: e,
+        );
         return left(CacheFailure.firestoreError(e.message ?? e.toString()));
       } catch (e) {
-        _logDebug('Failed to get ProfileInfo from Firestore: $userId');
+        Logger.debug(
+          'Failed to get ProfileInfo from Firestore: ${Logger.maskSensitive(userId)}',
+          tag: 'Cache/ProfileInfo',
+        );
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting ProfileInfo $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Unexpected error getting ProfileInfo',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -993,21 +1217,33 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // L1: Memory Cache
       _memoryCache.set(cacheKey, info, ttl: const Duration(hours: 1));
+      CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L1', ttl: const Duration(hours: 1));
 
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, info.toJson());
-        _logDebug('Set ProfileInfo to L1+L2: $userId');
+        CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L2');
       } on HiveError catch (e) {
-        _logError('Failed to save ProfileInfo to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save ProfileInfo to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save ProfileInfo to Hive: $e');
+        Logger.debug(
+          'Failed to save ProfileInfo to Hive: $e',
+          tag: 'Cache/ProfileInfo',
+        );
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting ProfileInfo for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting ProfileInfo',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1018,7 +1254,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.profileInfo(userId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing ProfileInfo for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing ProfileInfo',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1033,7 +1273,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<double>(cacheKey);
       if (memCached != null) {
-        _logDebug('Profile completion from MEMORY: $userId');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L1');
         return right(memCached);
       }
 
@@ -1043,14 +1283,21 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
         if (hiveData != null && hiveData is double) {
           // Promote to memory cache
           _memoryCache.set(cacheKey, hiveData, ttl: const Duration(minutes: 30));
-          _logDebug('Profile completion from HIVE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L2');
           return right(hiveData);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for profile completion $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read failed for profile completion',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for profile completion $userId: $e');
+        Logger.debug(
+          'Hive read error for profile completion ${Logger.maskSensitive(userId)}: $e',
+          tag: 'Cache/ProfileCompletion',
+        );
       }
 
       // L3: 프로필 완성도는 계산된 값이므로 Firestore에서 직접 가져오지 않음
@@ -1058,7 +1305,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting profile completion $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Unexpected error getting profile completion',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1070,21 +1321,33 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // L1: Memory Cache (30분 TTL - 자주 변할 수 있음)
       _memoryCache.set(cacheKey, percentage, ttl: const Duration(minutes: 30));
+      CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L1', ttl: const Duration(minutes: 30));
 
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, percentage);
-        _logDebug('Set profile completion to L1+L2: $userId');
+        CacheLogger.cacheSet(key: Logger.maskSensitive(userId), layer: 'L2');
       } on HiveError catch (e) {
-        _logError('Failed to save profile completion to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save profile completion to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save profile completion to Hive: $e');
+        Logger.debug(
+          'Failed to save profile completion to Hive: $e',
+          tag: 'Cache/ProfileCompletion',
+        );
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting profile completion for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting profile completion',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1095,7 +1358,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.profileCompletion(userId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing profile completion for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing profile completion',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1110,7 +1377,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<List<Character>>(cacheKey);
       if (memCached != null) {
-        _logDebug('Available characters from MEMORY');
+        CacheLogger.cacheHit(key: 'available_characters', layer: 'L1');
         return right(memCached);
       }
 
@@ -1123,14 +1390,21 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
               .toList();
           // Promote to memory cache (24시간 TTL - 거의 변하지 않음)
           _memoryCache.set(cacheKey, characters, ttl: const Duration(hours: 24));
-          _logDebug('Available characters from HIVE');
+          CacheLogger.cacheHit(key: 'available_characters', layer: 'L2');
           return right(characters);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for available characters', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read failed for available characters',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for available characters: $e');
+        Logger.debug(
+          'Hive read error for available characters: $e',
+          tag: 'Cache/Characters',
+        );
       }
 
       // L3: Firestore
@@ -1160,23 +1434,40 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
         try {
           final serializedCharacters = characters.map((c) => c.toJson()).toList();
           await _localCache.put(cacheKey, serializedCharacters);
-          _logDebug('Cached available characters to Hive');
+          Logger.debug(
+            'Cached available characters to Hive',
+            tag: 'Cache/Characters',
+          );
         } catch (e) {
-          _logDebug('Failed to save available characters to Hive: $e');
+          Logger.debug(
+            'Failed to save available characters to Hive: $e',
+            tag: 'Cache/Characters',
+          );
         }
 
-        _logDebug('Available characters from FIRESTORE');
+        CacheLogger.cacheHit(key: 'available_characters', layer: 'L3');
         return right(characters);
       } on FirebaseException catch (e) {
-        _logError('Firestore error getting available characters', e);
+        CacheLogger.cacheError(
+          errorType: 'firestoreError',
+          message: 'Firestore error getting available characters',
+          error: e,
+        );
         return left(CacheFailure.firestoreError(e.message ?? e.toString()));
       } catch (e) {
-        _logDebug('Failed to get available characters from Firestore: $e');
+        Logger.debug(
+          'Failed to get available characters from Firestore: $e',
+          tag: 'Cache/Characters',
+        );
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting available characters', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Unexpected error getting available characters',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1188,22 +1479,34 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // L1: Memory Cache (24시간 TTL)
       _memoryCache.set(cacheKey, characters, ttl: const Duration(hours: 24));
+      CacheLogger.cacheSet(key: 'available_characters', layer: 'L1', ttl: const Duration(hours: 24));
 
       // L2: Hive Cache
       try {
         final serializedCharacters = characters.map((c) => c.toJson()).toList();
         await _localCache.put(cacheKey, serializedCharacters);
-        _logDebug('Set available characters to L1+L2');
+        CacheLogger.cacheSet(key: 'available_characters', layer: 'L2');
       } on HiveError catch (e) {
-        _logError('Failed to save available characters to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save available characters to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save available characters to Hive: $e');
+        Logger.debug(
+          'Failed to save available characters to Hive: $e',
+          tag: 'Cache/Characters',
+        );
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting available characters', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting available characters',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1214,7 +1517,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.availableCharacters();
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing available characters', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing available characters',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1229,7 +1536,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<VoteCounts>(cacheKey);
       if (memCached != null) {
-        _logDebug('Vote counts from MEMORY: $postId');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(postId), layer: 'L1');
         return right(memCached);
       }
 
@@ -1240,14 +1547,21 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final counts = VoteCounts.fromJson(Map<String, dynamic>.from(hiveData));
           // Promote to memory cache
           _memoryCache.set(cacheKey, counts, ttl: const Duration(minutes: 5));
-          _logDebug('Vote counts from HIVE: $postId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(postId), layer: 'L2');
           return right(counts);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for vote counts $postId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read failed for vote counts',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for vote counts $postId: $e');
+        Logger.debug(
+          'Hive read error for vote counts ${Logger.maskSensitive(postId)}: $e',
+          tag: 'Cache/VoteCounts',
+        );
       }
 
       // L3: Firestore
@@ -1266,24 +1580,41 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           _memoryCache.set(cacheKey, counts, ttl: const Duration(minutes: 5));
           try {
             await _localCache.put(cacheKey, counts.toJson());
-            _logDebug('Cached vote counts to Hive: $postId');
+            Logger.debug(
+              'Cached vote counts to Hive: ${Logger.maskSensitive(postId)}',
+              tag: 'Cache/VoteCounts',
+            );
           } catch (e) {
-            _logDebug('Failed to save vote counts to Hive: $e');
+            Logger.debug(
+              'Failed to save vote counts to Hive: $e',
+              tag: 'Cache/VoteCounts',
+            );
           }
 
-          _logDebug('Vote counts from FIRESTORE: $postId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(postId), layer: 'L3');
           return right(counts);
         }
       } on FirebaseException catch (e) {
-        _logError('Firestore error getting vote counts $postId', e);
+        CacheLogger.cacheError(
+          errorType: 'firestoreError',
+          message: 'Firestore error getting vote counts',
+          error: e,
+        );
         return left(CacheFailure.firestoreError(e.message ?? e.toString()));
       } catch (e) {
-        _logDebug('Failed to get vote counts from Firestore: $postId');
+        Logger.debug(
+          'Failed to get vote counts from Firestore: ${Logger.maskSensitive(postId)}',
+          tag: 'Cache/VoteCounts',
+        );
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting vote counts $postId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Unexpected error getting vote counts',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1295,21 +1626,33 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // L1: Memory Cache
       _memoryCache.set(cacheKey, counts, ttl: const Duration(minutes: 5));
+      CacheLogger.cacheSet(key: Logger.maskSensitive(postId), layer: 'L1', ttl: const Duration(minutes: 5));
 
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, counts.toJson());
-        _logDebug('Set vote counts to L1+L2: $postId');
+        CacheLogger.cacheSet(key: Logger.maskSensitive(postId), layer: 'L2');
       } on HiveError catch (e) {
-        _logError('Failed to save vote counts to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save vote counts to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save vote counts to Hive: $e');
+        Logger.debug(
+          'Failed to save vote counts to Hive: $e',
+          tag: 'Cache/VoteCounts',
+        );
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting vote counts for $postId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting vote counts',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1320,7 +1663,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.voteCounts(postId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing vote counts for $postId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing vote counts',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1335,7 +1682,10 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<VoteCacheState>(cacheKey);
       if (memCached != null) {
-        _logDebug('Vote state from MEMORY: $postId, $userId');
+        CacheLogger.cacheHit(
+          key: '${Logger.maskSensitive(postId)}/${Logger.maskSensitive(userId)}',
+          layer: 'L1',
+        );
         return right(memCached);
       }
 
@@ -1346,14 +1696,24 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final state = VoteCacheState.fromJson(Map<String, dynamic>.from(hiveData));
           // Promote to memory cache
           _memoryCache.set(cacheKey, state, ttl: const Duration(hours: 1));
-          _logDebug('Vote state from HIVE: $postId, $userId');
+          CacheLogger.cacheHit(
+            key: '${Logger.maskSensitive(postId)}/${Logger.maskSensitive(userId)}',
+            layer: 'L2',
+          );
           return right(state);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for vote state $postId/$userId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read failed for vote state',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for vote state $postId/$userId: $e');
+        Logger.debug(
+          'Hive read error for vote state ${Logger.maskSensitive(postId)}/${Logger.maskSensitive(userId)}: $e',
+          tag: 'Cache/VoteState',
+        );
       }
 
       // L3: Firestore
@@ -1377,24 +1737,44 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           _memoryCache.set(cacheKey, state, ttl: const Duration(hours: 1));
           try {
             await _localCache.put(cacheKey, state.toJson());
-            _logDebug('Cached vote state to Hive: $postId/$userId');
+            Logger.debug(
+              'Cached vote state to Hive: ${Logger.maskSensitive(postId)}/${Logger.maskSensitive(userId)}',
+              tag: 'Cache/VoteState',
+            );
           } catch (e) {
-            _logDebug('Failed to save vote state to Hive: $e');
+            Logger.debug(
+              'Failed to save vote state to Hive: $e',
+              tag: 'Cache/VoteState',
+            );
           }
 
-          _logDebug('Vote state from FIRESTORE: $postId, $userId');
+          CacheLogger.cacheHit(
+            key: '${Logger.maskSensitive(postId)}/${Logger.maskSensitive(userId)}',
+            layer: 'L3',
+          );
           return right(state);
         }
       } on FirebaseException catch (e) {
-        _logError('Firestore error getting vote state $postId/$userId', e);
+        CacheLogger.cacheError(
+          errorType: 'firestoreError',
+          message: 'Firestore error getting vote state',
+          error: e,
+        );
         return left(CacheFailure.firestoreError(e.message ?? e.toString()));
       } catch (e) {
-        _logDebug('Failed to get vote state from Firestore: $postId/$userId');
+        Logger.debug(
+          'Failed to get vote state from Firestore: ${Logger.maskSensitive(postId)}/${Logger.maskSensitive(userId)}',
+          tag: 'Cache/VoteState',
+        );
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting vote state $postId/$userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Unexpected error getting vote state',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1406,21 +1786,40 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // L1: Memory Cache
       _memoryCache.set(cacheKey, state, ttl: const Duration(hours: 1));
+      CacheLogger.cacheSet(
+        key: '${Logger.maskSensitive(postId)}/${Logger.maskSensitive(userId)}',
+        layer: 'L1',
+        ttl: const Duration(hours: 1),
+      );
 
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, state.toJson());
-        _logDebug('Set vote state to L1+L2: $postId/$userId');
+        CacheLogger.cacheSet(
+          key: '${Logger.maskSensitive(postId)}/${Logger.maskSensitive(userId)}',
+          layer: 'L2',
+        );
       } on HiveError catch (e) {
-        _logError('Failed to save vote state to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save vote state to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save vote state to Hive: $e');
+        Logger.debug(
+          'Failed to save vote state to Hive: $e',
+          tag: 'Cache/VoteState',
+        );
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting vote state for $postId/$userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting vote state',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1431,7 +1830,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.voteState(postId, userId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing vote state for $postId/$userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing vote state',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1446,7 +1849,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache
       final memCached = _memoryCache.get<List<Map<String, dynamic>>>(cacheKey);
       if (memCached != null) {
-        _logDebug('Vote history from MEMORY: $userId');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L1');
         return right(memCached);
       }
 
@@ -1457,14 +1860,21 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final history = hiveData.cast<Map<String, dynamic>>();
           // Promote to memory cache
           _memoryCache.set(cacheKey, history, ttl: const Duration(hours: 1));
-          _logDebug('Vote history from HIVE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L2');
           return right(history);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for vote history $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read failed for vote history',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for vote history $userId: $e');
+        Logger.debug(
+          'Hive read error for vote history ${Logger.maskSensitive(userId)}: $e',
+          tag: 'Cache/VoteHistory',
+        );
       }
 
       // L3: Firestore
@@ -1486,24 +1896,41 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           _memoryCache.set(cacheKey, history, ttl: const Duration(hours: 1));
           try {
             await _localCache.put(cacheKey, history);
-            _logDebug('Cached vote history to Hive: $userId');
+            Logger.debug(
+              'Cached vote history to Hive: ${Logger.maskSensitive(userId)}',
+              tag: 'Cache/VoteHistory',
+            );
           } catch (e) {
-            _logDebug('Failed to save vote history to Hive: $e');
+            Logger.debug(
+              'Failed to save vote history to Hive: $e',
+              tag: 'Cache/VoteHistory',
+            );
           }
 
-          _logDebug('Vote history from FIRESTORE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L3');
           return right(history);
         }
       } on FirebaseException catch (e) {
-        _logError('Firestore error getting vote history $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'firestoreError',
+          message: 'Firestore error getting vote history',
+          error: e,
+        );
         return left(CacheFailure.firestoreError(e.message ?? e.toString()));
       } catch (e) {
-        _logDebug('Failed to get vote history from Firestore: $userId');
+        Logger.debug(
+          'Failed to get vote history from Firestore: ${Logger.maskSensitive(userId)}',
+          tag: 'Cache/VoteHistory',
+        );
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting vote history $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Unexpected error getting vote history',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1519,17 +1946,32 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, history);
-        _logDebug('Set vote history to L1+L2: $userId');
+        CacheLogger.cacheSet(
+          key: Logger.maskSensitive(userId),
+          layer: 'L1+L2',
+          ttl: const Duration(hours: 1),
+        );
       } on HiveError catch (e) {
-        _logError('Failed to save vote history to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save vote history to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save vote history to Hive: $e');
+        Logger.debug(
+          'Failed to save vote history to Hive: $e',
+          tag: 'Cache/VoteHistory',
+        );
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting vote history for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting vote history',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1544,7 +1986,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // L1: Memory Cache (<1ms)
       final memCached = _memoryCache.get<AuthUser>(cacheKey);
       if (memCached != null) {
-        _logDebug('Auth user from MEMORY: $userId');
+        CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L1');
         return right(memCached);
       }
 
@@ -1555,19 +1997,30 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           final user = AuthUser.fromJson(Map<String, dynamic>.from(hiveData));
           // Promote to memory cache
           _memoryCache.set(cacheKey, user, ttl: const Duration(hours: 1));
-          _logDebug('Auth user from HIVE: $userId');
+          CacheLogger.cacheHit(key: Logger.maskSensitive(userId), layer: 'L2');
           return right(user);
         }
       } on HiveError catch (e) {
-        _logError('Hive read error for auth user $userId', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Hive read failed for auth user',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Hive read error for auth user $userId: $e');
+        Logger.debug(
+          'Hive read error for auth user ${Logger.maskSensitive(userId)}: $e',
+          tag: 'Cache/Auth',
+        );
       }
 
       return left(const CacheFailure.notFound());
     } catch (e) {
-      _logError('Unexpected error getting auth user $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Unexpected error getting auth user',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1576,24 +2029,40 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   Future<Either<CacheFailure, void>> setAuthUser(String userId, AuthUser user, {Duration? ttl}) async {
     try {
       final cacheKey = CacheKeys.authUser(userId);
+      final ttlDuration = ttl ?? const Duration(hours: 1);
 
       // L1: Memory Cache
-      _memoryCache.set(cacheKey, user, ttl: ttl ?? const Duration(hours: 1));
+      _memoryCache.set(cacheKey, user, ttl: ttlDuration);
 
       // L2: Hive Cache
       try {
         await _localCache.put(cacheKey, user.toJson());
-        _logDebug('Set auth user to L1+L2: $userId');
+        CacheLogger.cacheSet(
+          key: Logger.maskSensitive(userId),
+          layer: 'L1+L2',
+          ttl: ttlDuration,
+        );
       } on HiveError catch (e) {
-        _logError('Failed to save auth user to Hive', e);
+        CacheLogger.cacheError(
+          errorType: 'hiveError',
+          message: 'Failed to save auth user to Hive',
+          error: e,
+        );
         return left(CacheFailure.hiveError(e.message));
       } catch (e) {
-        _logDebug('Failed to save auth user to Hive: $e');
+        Logger.debug(
+          'Failed to save auth user to Hive: $e',
+          tag: 'Cache/Auth',
+        );
       }
 
       return right(null);
     } catch (e) {
-      _logError('Error setting auth user for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting auth user',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1604,7 +2073,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.authUser(userId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing auth user for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing auth user',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1623,7 +2096,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.authToken(userId);
       return await set(cacheKey, token, ttl: ttl ?? const Duration(hours: 1));
     } catch (e) {
-      _logError('Error setting auth token for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error setting auth token',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1634,7 +2111,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.authToken(userId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing auth token for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing auth token',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1656,18 +2137,32 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
         final result = await getChatMessages(chatId: chatDoc.id);
         // Continue even if individual chat fails
         result.fold(
-          (failure) => _logDebug('Failed to preload chat ${chatDoc.id}: $failure'),
+          (failure) => Logger.debug(
+            'Failed to preload chat ${Logger.maskSensitive(chatDoc.id)}: $failure',
+            tag: 'Cache/Preload',
+          ),
           (_) => null,
         );
       }
 
-      _logDebug('Preloaded ${chatsSnapshot.docs.length} recent chats');
+      Logger.debug(
+        'Preloaded ${chatsSnapshot.docs.length} recent chats',
+        tag: 'Cache/Preload',
+      );
       return right(null);
     } on FirebaseException catch (e) {
-      _logError('Firestore error preloading recent chats', e);
+      CacheLogger.cacheError(
+        errorType: 'firestoreError',
+        message: 'Firestore error preloading recent chats',
+        error: e,
+      );
       return left(CacheFailure.firestoreError(e.message ?? e.toString()));
     } catch (e) {
-      _logError('Error preloading recent chats', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error preloading recent chats',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1679,16 +2174,27 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final result = await getFeedPosts(limit: 10);
       return result.fold(
         (failure) {
-          _logError('Failed to preload popular posts', failure);
+          CacheLogger.cacheError(
+            errorType: 'hiveError',
+            message: 'Failed to preload popular posts',
+            error: failure,
+          );
           return left(failure);
         },
         (_) {
-          _logDebug('Preloaded popular posts');
+          Logger.debug(
+            'Preloaded popular posts',
+            tag: 'Cache/Preload',
+          );
           return right(null);
         },
       );
     } catch (e) {
-      _logError('Error preloading popular posts', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error preloading popular posts',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1706,7 +2212,10 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       return _localCache.length;
     } catch (e) {
-      _logDebug('Error getting Hive size: $e');
+      Logger.debug(
+        'Error getting Hive size: $e',
+        tag: 'Cache/Stats',
+      );
       return 0;
     }
   }
@@ -1719,7 +2228,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.chatMessages(chatId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing chat messages for $chatId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing chat messages',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1730,7 +2243,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final cacheKey = CacheKeys.userProfile(userId);
       return await remove(cacheKey, layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing user profile for $userId', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing user profile',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1740,7 +2257,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       return await clear(layer: CacheLayer.all);
     } catch (e) {
-      _logError('Error clearing all cache', e);
+      CacheLogger.cacheError(
+        errorType: 'hiveError',
+        message: 'Error clearing all cache',
+        error: e,
+      );
       return left(CacheFailure.hiveError(e.toString()));
     }
   }
@@ -1769,19 +2290,5 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   /// 캐시 통계 요약 가져오기
   String getStatisticsSummary() {
     return CacheStatistics.instance.getSummary();
-  }
-
-  // 디버그 로깅
-  void _logDebug(String message) {
-    if (kDebugMode) {
-      debugPrint('[UnifiedCache] $message');
-    }
-  }
-
-  // 에러 로깅
-  void _logError(String message, Object error) {
-    if (kDebugMode) {
-      debugPrint('[UnifiedCache ERROR] $message: $error');
-    }
   }
 }

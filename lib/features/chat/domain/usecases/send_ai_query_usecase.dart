@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
+import '/services/logging/dev_logger.dart';
 import '../failures/chat_failure.dart';
 import '../ports/i_ai_service.dart';
 
@@ -19,10 +20,10 @@ import '../ports/i_ai_service.dart';
 /// final result = await useCase.execute(query: 'Hello AI');
 ///
 /// result.fold(
-///   (failure) => print('AI 쿼리 실패: ${failure.message}'),
+///   (failure) => ChatLogger.aiError(error: failure, message: failure.message),
 ///   (stream) async {
 ///     await for (final chunk in stream) {
-///       print('AI 응답: $chunk');
+///       ChatLogger.aiResponseChunk(chunk: chunk);
 ///     }
 ///   },
 /// );
@@ -49,17 +50,40 @@ class SendAIQueryUseCase {
   Future<Either<ChatFailure, Stream<String>>> execute({
     required String query,
   }) async {
+    DevLogger.params({
+      'query': query,
+      'queryLength': query.length,
+    }, tag: 'SendAIQuery');
+
     try {
       // 입력 검증
       if (query.trim().isEmpty) {
+        DevLogger.validation(
+          field: 'query',
+          reason: 'Query cannot be empty',
+          tag: 'SendAIQuery',
+        );
         return left(const InvalidMessageContent());
       }
 
       // AI Service 호출
+      DevLogger.checkpoint('Sending query to AI service', tag: 'SendAIQuery');
       final stream = _aiService.sendQuery(query.trim());
 
+      DevLogger.result(
+        isSuccess: true,
+        data: 'AI stream started',
+        tag: 'SendAIQuery',
+      );
+
       return right(stream);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      DevLogger.error(
+        'AI query failed',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'SendAIQuery',
+      );
       return left(const AIQueryFailed());
     }
   }
@@ -70,7 +94,9 @@ class SendAIQueryUseCase {
   /// - 사용자가 Stop 버튼 클릭
   /// - 새로운 쿼리 전송으로 이전 쿼리 중단 필요
   Future<void> cancelCurrentQuery() async {
+    DevLogger.checkpoint('Canceling current AI query', tag: 'SendAIQuery');
     await _aiService.cancelCurrentQuery();
+    DevLogger.checkpoint('AI query canceled', tag: 'SendAIQuery');
   }
 
   /// AI 스트리밍 진행 상태 확인

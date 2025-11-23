@@ -15,8 +15,8 @@ class CollectionTypeSelector extends ConsumerWidget {
     final notifier = ref.read(targetAudienceProvider.notifier);
 
     // 모든 타입 표시
-    final availableTypes =
-        TargetAudienceConstants.collectionTypes.entries.toList();
+    final availableTypes = TargetAudienceConstants.collectionTypes.entries
+        .toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
@@ -25,9 +25,9 @@ class CollectionTypeSelector extends ConsumerWidget {
         children: [
           Text(
             '투표 수집 방식을 선택하세요',
-            style: AppTheme.of(context).headlineSmall.override(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: AppTheme.of(
+              context,
+            ).headlineSmall.override(fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -45,11 +45,14 @@ class CollectionTypeSelector extends ConsumerWidget {
                 isSelected: isSelected,
                 onTap: () {
                   debugPrint(
-                      '[CollectionTypeSelector] 수집 방식 선택: ${typeInfo.id}');
+                    '[CollectionTypeSelector] 수집 방식 선택: ${typeInfo.id}',
+                  );
                   debugPrint(
-                      '[CollectionTypeSelector]   - 제목: ${typeInfo.title}');
+                    '[CollectionTypeSelector]   - 제목: ${typeInfo.title}',
+                  );
                   debugPrint(
-                      '[CollectionTypeSelector]   - 설명: ${typeInfo.subtitle}');
+                    '[CollectionTypeSelector]   - 설명: ${typeInfo.subtitle}',
+                  );
                   notifier.setCollectionType(typeInfo.id);
                 },
               ),
@@ -115,11 +118,11 @@ class CollectionTypeSelector extends ConsumerWidget {
                       Text(
                         typeInfo.title,
                         style: AppTheme.of(context).bodyLarge.override(
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? AppTheme.of(context).primary
-                                  : AppTheme.of(context).primaryText,
-                            ),
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? AppTheme.of(context).primary
+                              : AppTheme.of(context).primaryText,
+                        ),
                       ),
                       if (typeInfo.description.isNotEmpty) ...[
                         const SizedBox(width: 8),
@@ -135,9 +138,9 @@ class CollectionTypeSelector extends ConsumerWidget {
                           child: Text(
                             typeInfo.description,
                             style: AppTheme.of(context).bodySmall.override(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -147,8 +150,8 @@ class CollectionTypeSelector extends ConsumerWidget {
                   Text(
                     typeInfo.subtitle,
                     style: AppTheme.of(context).bodySmall.override(
-                          color: AppTheme.of(context).secondaryText,
-                        ),
+                      color: AppTheme.of(context).secondaryText,
+                    ),
                   ),
                 ],
               ),

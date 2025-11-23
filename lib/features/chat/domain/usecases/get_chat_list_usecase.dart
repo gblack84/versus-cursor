@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
+import '/services/logging/dev_logger.dart';
 import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/chat.dart';
@@ -17,8 +18,8 @@ import '../entities/chat.dart';
 ///
 /// stream.listen((either) {
 ///   either.fold(
-///     (failure) => print('에러: $failure'),
-///     (chats) => print('받은 채팅: ${chats.length}개'),
+///     (failure) => ChatLogger.chatListError(error: failure, userId: 'user123'),
+///     (chats) => ChatLogger.chatListLoaded(count: chats.length, userId: 'user123'),
 ///   );
 /// });
 /// ```
@@ -51,11 +52,21 @@ class GetChatListUseCase {
     required String userId,
     int limit = 50,
   }) async* {
+    DevLogger.params({'userId': userId, 'limit': limit}, tag: 'GetChatList');
+    DevLogger.checkpoint('Starting chat list stream', tag: 'GetChatList');
+
     // ✅ 입력 검증
     if (userId.isEmpty) {
+      DevLogger.validation(
+        field: 'userId',
+        reason: 'User ID cannot be empty',
+        tag: 'GetChatList',
+      );
       yield left(const ChatNotFound());
       return;
     }
+
+    DevLogger.checkpoint('Querying repository for chat list', tag: 'GetChatList');
 
     // ✅ Repository에서 이미 Either 반환하므로 그대로 전달 (패스스루)
     await for (final either in _chatRepository.queryChats(
@@ -64,7 +75,25 @@ class GetChatListUseCase {
       orderBy: 'lastMessageAt',
       descending: true,
     )) {
+      either.fold(
+        (failure) {
+          DevLogger.error(
+            'Chat list stream error',
+            error: failure,
+            tag: 'GetChatList',
+          );
+        },
+        (chats) {
+          DevLogger.result(
+            isSuccess: true,
+            data: '${chats.length} chats emitted',
+            tag: 'GetChatList',
+          );
+        },
+      );
       yield either; // 패스스루: Repository → UseCase → Provider
     }
+
+    DevLogger.checkpoint('Chat list stream ended', tag: 'GetChatList');
   }
 }

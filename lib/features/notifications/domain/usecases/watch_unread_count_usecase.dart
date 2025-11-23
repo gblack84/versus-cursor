@@ -1,3 +1,4 @@
+import '/services/logging/dev_logger.dart';
 import '../repositories/i_notification_repository.dart';
 import 'base/stream_use_case.dart';
 
@@ -14,13 +15,21 @@ class WatchUnreadCountUseCase implements StreamUseCase<String, int> {
 
   @override
   Stream<int> call(String userId) {
+    DevLogger.params({'userId': userId}, tag: 'WatchUnreadCount');
+    DevLogger.checkpoint('Starting unread count stream', tag: 'WatchUnreadCount');
+
     // 비즈니스 로직: 읽지 않은 알림 개수 실시간 감시
     return _repository.watchUnreadCount(userId).map((count) {
       // 비즈니스 규칙: 최대 99+로 표시
-      if (count > 99) {
-        return 99; // UI에서 "99+"로 표시
-      }
-      return count;
+      final displayCount = count > 99 ? 99 : count;
+
+      DevLogger.result(
+        isSuccess: true,
+        data: 'Unread count: $count${count > 99 ? " (capped at 99)" : ""}',
+        tag: 'WatchUnreadCount',
+      );
+
+      return displayCount; // UI에서 "99+"로 표시
     });
   }
 }

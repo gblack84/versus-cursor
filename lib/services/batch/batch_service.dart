@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import '/services/logging/logger_service.dart';
 
 /// Shared Batch Service for Atomic Firestore Operations
 ///
@@ -51,30 +52,60 @@ class BatchService {
     final chunks = _splitIntoChunks(operations, maxBatchSize);
     _logDebug('Executing ${operations.length} operations in ${chunks.length} batch(es)');
 
+    // Start timing
+    final stopwatch = Stopwatch()..start();
+
+    // Log batch execution start
+    BatchLogger.batchExecutionStarted(
+      operationCount: operations.length,
+      batchType: 'General',
+    );
+
     int completedOps = 0;
 
-    for (int i = 0; i < chunks.length; i++) {
-      final chunk = chunks[i];
-      final batch = _firestore.batch();
+    try {
+      for (int i = 0; i < chunks.length; i++) {
+        final chunk = chunks[i];
+        final batch = _firestore.batch();
 
-      // Apply all operations to this batch
-      for (final operation in chunk) {
-        operation.apply(batch);
+        // Apply all operations to this batch
+        for (final operation in chunk) {
+          operation.apply(batch);
+        }
+
+        // Commit this batch
+        try {
+          await batch.commit();
+          completedOps += chunk.length;
+          onProgress?.call(completedOps, operations.length);
+          _logDebug('Batch ${i + 1}/${chunks.length} committed (${chunk.length} ops)');
+        } catch (e) {
+          // Log individual batch failure
+          BatchLogger.batchExecutionError(
+            batchType: 'General',
+            failedCount: chunk.length,
+            error: e,
+          );
+          _logError('Batch ${i + 1}/${chunks.length} failed: $e');
+          rethrow;
+        }
       }
 
-      // Commit this batch
-      try {
-        await batch.commit();
-        completedOps += chunk.length;
-        onProgress?.call(completedOps, operations.length);
-        _logDebug('Batch ${i + 1}/${chunks.length} committed (${chunk.length} ops)');
-      } catch (e) {
-        _logError('Batch ${i + 1}/${chunks.length} failed: $e');
-        rethrow;
-      }
+      stopwatch.stop();
+
+      // Log successful completion
+      BatchLogger.batchExecutionCompleted(
+        operationCount: operations.length,
+        batchType: 'General',
+        executionTime: stopwatch.elapsed,
+      );
+
+      _logDebug('Successfully executed ${operations.length} operations');
+    } catch (e) {
+      stopwatch.stop();
+      // Already logged in individual batch catch
+      rethrow;
     }
-
-    _logDebug('Successfully executed ${operations.length} operations');
   }
 
   /// Profile Feature: Update full user profile atomically
@@ -87,6 +118,7 @@ class BatchService {
     List<String>? interests,
   }) async {
     final operations = <BatchOperation>[];
+    final collections = <String>['users'];
 
     // Update main user profile
     final userRef = _firestore.collection('users').doc(userId);
@@ -95,14 +127,24 @@ class BatchService {
     // Update settings if provided
     if (settingsData != null) {
       operations.add(BatchOperation.update(userRef, settingsData));
+      if (!collections.contains('settings')) collections.add('settings');
     }
 
     // Update interests if provided
     if (interests != null) {
       operations.add(BatchOperation.update(userRef, {'interests': interests}));
+      if (!collections.contains('interests')) collections.add('interests');
     }
 
     await executeBatch(operations: operations);
+
+    // Log profile batch execution
+    BatchLogger.profileBatchExecuted(
+      userId: userId,
+      updateCount: operations.length,
+      collections: collections,
+    );
+
     _logDebug('Updated full profile for user: $userId');
   }
 
@@ -115,24 +157,40 @@ class BatchService {
     required List<String> postIds,
   }) async {
     final operations = <BatchOperation>[];
+    final deletedCollections = <String>[];
 
     // Delete user profile
     final userRef = _firestore.collection('users').doc(userId);
     operations.add(BatchOperation.delete(userRef));
+    deletedCollections.add('users');
 
     // Delete all user's chats
-    for (final chatId in chatIds) {
-      final chatRef = _firestore.collection('chats').doc(chatId);
-      operations.add(BatchOperation.delete(chatRef));
+    if (chatIds.isNotEmpty) {
+      for (final chatId in chatIds) {
+        final chatRef = _firestore.collection('chats').doc(chatId);
+        operations.add(BatchOperation.delete(chatRef));
+      }
+      deletedCollections.add('chats');
     }
 
     // Delete all user's posts
-    for (final postId in postIds) {
-      final postRef = _firestore.collection('posts').doc(postId);
-      operations.add(BatchOperation.delete(postRef));
+    if (postIds.isNotEmpty) {
+      for (final postId in postIds) {
+        final postRef = _firestore.collection('posts').doc(postId);
+        operations.add(BatchOperation.delete(postRef));
+      }
+      deletedCollections.add('posts');
     }
 
     await executeBatch(operations: operations);
+
+    // Log account deletion batch
+    BatchLogger.accountDeletionBatchExecuted(
+      userId: userId,
+      deletedCollections: deletedCollections,
+      deletedCount: operations.length,
+    );
+
     _logDebug('Deleted account and related data for user: $userId');
   }
 
@@ -149,6 +207,13 @@ class BatchService {
       final notificationRef = _firestore.collection('notifications').doc();
       operations.add(BatchOperation.set(notificationRef, notificationData));
     }
+
+    // Log before batch execution
+    BatchLogger.notificationsBatchCreated(
+      recipientCount: notifications.length,
+      notificationType: 'System', // Default type, could be extracted from data
+      batchSize: notifications.length,
+    );
 
     await executeBatch(
       operations: operations,
@@ -191,6 +256,14 @@ class BatchService {
     }));
 
     await executeBatch(operations: operations);
+
+    // Log vote batch submission
+    BatchLogger.voteBatchSubmitted(
+      voteId: postId,
+      userId: userId,
+      updatedCounters: ['votesA', 'votesB'],
+    );
+
     _logDebug('Submitted vote for post: $postId');
   }
 

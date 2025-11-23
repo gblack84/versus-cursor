@@ -13,9 +13,9 @@ import '../failures/chat_failure.dart';
 /// - 순수 Dart 타입만 사용
 /// - Infrastructure 구현 세부사항은 Data Layer에서 처리
 ///
-/// **Phase 4 - Idempotency & CRUD Cleanup**:
+/// **Phase 4 - CRUD Cleanup**:
 /// - Either 패턴 적용 (명시적 에러 처리)
-/// - eventId 파라미터 추가 (중복 방지)
+/// - Natural idempotency via deterministic IDs
 /// - Transaction 기반 CRUD (서브컬렉션 정리)
 abstract class IChatRepository {
   // Chat queries (Clean Architecture v4.0 + Phase 1: Either Pattern)
@@ -109,41 +109,36 @@ abstract class IChatRepository {
   /// - [eventId]: UUID v4 (클라이언트 생성, 중복 방지용)
   ///
   /// **Returns**: Either<ChatFailure, Unit>
-  /// - IdempotencyService로 중복 생성 방지
+  /// - Firestore set() provides natural idempotency via chat.chatId
   /// - Transaction으로 원자성 보장
   Future<Either<ChatFailure, Unit>> createChat({
     required Chat chat,
-    required String eventId,
   });
 
-  /// 채팅 업데이트 (중복 방지)
+  /// 채팅 업데이트
   ///
   /// **Parameters**:
-  /// - [chat]: 업데이트할 채팅 엔티티
-  /// - [eventId]: UUID v4 (클라이언트 생성, 중복 방지용)
+  /// - [chat]: 업데이트할 채팅 엔티티 (chat.chatId provides idempotency)
   ///
   /// **Returns**: Either<ChatFailure, Unit>
   Future<Either<ChatFailure, Unit>> updateChat({
     required Chat chat,
-    required String eventId,
   });
 
-  /// 채팅 삭제 (서브컬렉션 포함, 중복 방지)
+  /// 채팅 삭제 (서브컬렉션 포함)
   ///
   /// **Parameters**:
-  /// - [chatId]: 삭제할 채팅 ID
-  /// - [eventId]: UUID v4 (클라이언트 생성, 중복 방지용)
+  /// - [chatId]: 삭제할 채팅 ID (deterministic ID provides idempotency)
   ///
   /// **Returns**: Either<ChatFailure, Unit>
   ///
-  /// **Phase 4 - Complete Cleanup**:
+  /// **Complete Cleanup**:
   /// - messages 서브컬렉션 삭제
   /// - participants 서브컬렉션 삭제
   /// - chat 문서 삭제
   /// - Transaction으로 원자성 보장 (일부 실패 시 전체 롤백)
   Future<Either<ChatFailure, Unit>> deleteChat({
     required String chatId,
-    required String eventId,
   });
 
   // ========== Message operations (Phase 4: Either Pattern + Idempotency) ==========
@@ -153,32 +148,29 @@ abstract class IChatRepository {
   /// **Parameters**:
   /// - [chatId]: 채팅방 ID
   /// - [message]: 전송할 메시지 엔티티
-  /// - [eventId]: UUID v4 (클라이언트 생성, 중복 전송 방지용)
   ///
   /// **Returns**: Either<ChatFailure, Unit>
   ///
-  /// **Phase 4 - IdempotencyService Integration**:
-  /// - 동일 eventId 재시도: 작업 스킵 (네트워크 재시도)
-  /// - 다른 eventId 중복: IdempotencyViolation 발생
+  /// **Idempotency**:
+  /// - Message document ID: messages/{message.id} (deterministic)
+  /// - Firestore set() overwrites on retry (no duplicates)
+  /// - No additional idempotency service needed
   /// - Transaction으로 메시지 + lastMessageAt 원자적 업데이트
   Future<Either<ChatFailure, Unit>> sendMessage({
     required String chatId,
     required Message message,
-    required String eventId,
   });
 
   /// 메시지 삭제 (중복 방지)
   ///
   /// **Parameters**:
   /// - [chatId]: 채팅방 ID
-  /// - [messageId]: 삭제할 메시지 ID
-  /// - [eventId]: UUID v4 (클라이언트 생성, 중복 방지용)
+  /// - [messageId]: 삭제할 메시지 ID (deterministic ID provides idempotency)
   ///
   /// **Returns**: Either<ChatFailure, Unit>
   Future<Either<ChatFailure, Unit>> deleteMessage({
     required String chatId,
     required String messageId,
-    required String eventId,
   });
 
   // Media upload operations (Clean Architecture v4.0)
@@ -237,55 +229,55 @@ abstract class IChatRepository {
     required String query,
   });
 
-  /// 친구 요청 보내기 (Phase 1: Either Pattern + Idempotency)
+  /// 친구 요청 보내기 (Phase 1: Either Pattern)
   ///
   /// **Parameters**:
   /// - [fromUserId]: 요청 보내는 사용자 ID
   /// - [toUserId]: 요청 받는 사용자 ID
-  /// - [eventId]: UUID v4 (클라이언트 생성, 중복 방지용)
   ///
   /// **Returns**:
   /// - Either<ChatFailure, Unit>
   ///   - Left: FriendRequestFailed (친구 요청 실패)
   ///   - Right: Unit (성공)
+  ///
+  /// **Note**: 미구현 기능 (TODO)
   Future<Either<ChatFailure, Unit>> sendFriendRequest({
     required String fromUserId,
     required String toUserId,
-    required String eventId,
   });
 
-  /// 사용자 팔로우 (Phase 1: Either Pattern + Idempotency)
+  /// 사용자 팔로우 (Phase 1: Either Pattern)
   ///
   /// **Parameters**:
   /// - [userId]: 팔로우하는 사용자 ID
   /// - [targetUserId]: 팔로우 대상 사용자 ID
-  /// - [eventId]: UUID v4 (클라이언트 생성, 중복 방지용)
   ///
   /// **Returns**:
   /// - Either<ChatFailure, Unit>
   ///   - Left: FollowToggleFailed (팔로우 실패)
   ///   - Right: Unit (성공)
+  ///
+  /// **Note**: 미구현 기능 (TODO)
   Future<Either<ChatFailure, Unit>> followUser({
     required String userId,
     required String targetUserId,
-    required String eventId,
   });
 
-  /// 사용자 언팔로우 (Phase 1: Either Pattern + Idempotency)
+  /// 사용자 언팔로우 (Phase 1: Either Pattern)
   ///
   /// **Parameters**:
   /// - [userId]: 언팔로우하는 사용자 ID
   /// - [targetUserId]: 언팔로우 대상 사용자 ID
-  /// - [eventId]: UUID v4 (클라이언트 생성, 중복 방지용)
   ///
   /// **Returns**:
   /// - Either<ChatFailure, Unit>
   ///   - Left: FollowToggleFailed (언팔로우 실패)
   ///   - Right: Unit (성공)
+  ///
+  /// **Note**: 미구현 기능 (TODO)
   Future<Either<ChatFailure, Unit>> unfollowUser({
     required String userId,
     required String targetUserId,
-    required String eventId,
   });
 
   /// 팔로우 여부 확인 (Phase 1: Either Pattern)

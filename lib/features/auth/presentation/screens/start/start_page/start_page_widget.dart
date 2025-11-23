@@ -1,11 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import 'package:versus_space/gen/fonts.gen.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
-import '/services/error/error_handler_service.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -192,9 +190,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                           ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                           final signInWithAppleUseCase = ref.read(signInWithAppleUseCaseProvider);
-                                          final result = await signInWithAppleUseCase.execute(
-                                            eventId: const Uuid().v4(),
-                                          );
+                                          final result = await signInWithAppleUseCase.execute();
 
                                           result.fold(
                                             (failure) {
@@ -281,9 +277,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                     ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                     final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
-                                    final result = await signInWithGoogleUseCase.execute(
-                                      eventId: const Uuid().v4(),
-                                    );
+                                    final result = await signInWithGoogleUseCase.execute();
 
                                     result.fold(
                                       (failure) {
@@ -363,9 +357,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                     ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                     final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
-                                    final result = await signInWithGoogleUseCase.execute(
-                                      eventId: const Uuid().v4(),
-                                    );
+                                    final result = await signInWithGoogleUseCase.execute();
 
                                     result.fold(
                                       (failure) {
@@ -444,9 +436,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                   ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                   final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
-                                  final result = await signInWithGoogleUseCase.execute(
-                                    eventId: const Uuid().v4(),
-                                  );
+                                  final result = await signInWithGoogleUseCase.execute();
 
                                   result.fold(
                                     (failure) {

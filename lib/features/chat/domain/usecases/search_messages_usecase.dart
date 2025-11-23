@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
+import '/services/logging/dev_logger.dart';
 import '../failures/chat_failure.dart';
 import '../entities/message.dart';
 
@@ -18,8 +19,8 @@ import '../entities/message.dart';
 /// );
 ///
 /// result.fold(
-///   (failure) => print('검색 실패: ${failure.message}'),
-///   (filtered) => print('검색 결과: ${filtered.length}개'),
+///   (failure) => ChatLogger.searchError(error: failure, query: 'AI'),
+///   (filtered) => ChatLogger.messagesSearched(count: filtered.length, query: 'AI'),
 /// );
 /// ```
 class SearchMessagesUseCase {
@@ -40,21 +41,46 @@ class SearchMessagesUseCase {
     required List<Message> allMessages,
     required String query,
   }) {
+    DevLogger.params({
+      'messageCount': allMessages.length,
+      'query': query,
+      'queryLength': query.length,
+    }, tag: 'SearchMessages');
+
     try {
       // 검색어가 비어있으면 전체 반환
       if (query.trim().isEmpty) {
+        DevLogger.checkpoint('Empty query, returning all messages', tag: 'SearchMessages');
+        DevLogger.result(
+          isSuccess: true,
+          data: '${allMessages.length} messages returned (no filter)',
+          tag: 'SearchMessages',
+        );
         return right(allMessages);
       }
 
       final lowerQuery = query.toLowerCase();
 
       // 메시지 content에서 검색
+      DevLogger.checkpoint('Filtering messages by query', tag: 'SearchMessages');
       final filtered = allMessages.where((msg) {
         return msg.content.toLowerCase().contains(lowerQuery);
       }).toList();
 
+      DevLogger.result(
+        isSuccess: true,
+        data: '${filtered.length}/${allMessages.length} messages matched',
+        tag: 'SearchMessages',
+      );
+
       return right(filtered);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      DevLogger.error(
+        'Search messages failed',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'SearchMessages',
+      );
       return left(const SearchFailed());
     }
   }

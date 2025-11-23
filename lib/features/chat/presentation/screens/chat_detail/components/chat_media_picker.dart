@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:uuid/uuid.dart';
 import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
 import '/app/di.dart';
@@ -247,10 +246,10 @@ class ChatMediaPicker {
       );
 
       // UseCase를 통한 미디어 업로드 및 메시지 전송
+      // message.id provides idempotency (deterministic UUID)
       final result = await sendMessageUseCase.execute(
         chatId: chatId,
         message: message,
-        eventId: const Uuid().v4(), // 중복 전송 방지용 UUID
         mediaFile: file, // ← UseCase가 업로드 처리!
       );
 

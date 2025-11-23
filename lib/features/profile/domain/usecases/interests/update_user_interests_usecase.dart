@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_interests_repository.dart';
 import '../../entities/interest.dart';
@@ -22,33 +23,39 @@ class UpdateUserInterestsUseCase {
   /// - `userId`: 사용자 ID
   /// - `expertise`: 전문분야 리스트 (최대 4개)
   /// - `hobbies`: 취미 리스트 (최대 8개)
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(Unit)`: 업데이트 성공
   /// - `Left(ProfileFailure)`: 업데이트 실패
-  ///   - `ProfileFailure.duplicateOperation`: 이미 처리된 작업 (eventId 중복)
   ///
-  /// **Phase 1.3**: IdempotencyService 지원 추가
+  /// **Natural Idempotency**: Deterministic userId provides natural idempotency
   Future<Either<ProfileFailure, Unit>> execute({
     required String userId,
     required List<String> expertise,
     required List<String> hobbies,
-    String? eventId,
   }) async {
+    DevLogger.params({
+      'userId': userId,
+      'expertiseCount': expertise.length,
+      'hobbiesCount': hobbies.length,
+    }, tag: 'UpdateUserInterests');
+
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
+        DevLogger.validation(field: 'userId', reason: 'Empty userId', tag: 'UpdateUserInterests');
         return left(ProfileFailure.validation('userId'));
       }
 
       // 2. 전문분야 검증 (최대 4개)
       if (expertise.length > 4) {
+        DevLogger.validation(field: 'expertise.length', reason: 'Too many expertise (>4)', tag: 'UpdateUserInterests');
         return left(ProfileFailure.validation('expertise.length'));
       }
 
       // 3. 취미 검증 (최대 8개)
       if (hobbies.length > 8) {
+        DevLogger.validation(field: 'hobbies.length', reason: 'Too many hobbies (>8)', tag: 'UpdateUserInterests');
         return left(ProfileFailure.validation('hobbies.length'));
       }
 
@@ -76,10 +83,20 @@ class UpdateUserInterestsUseCase {
       final allInterests = [...expertiseInterests, ...hobbiesInterests];
 
       // 5. Repository를 통한 업데이트 (이미 Either 반환)
-      return await _repository.updateUserInterests(userId, allInterests, eventId: eventId);
+      DevLogger.checkpoint('Calling repository.updateUserInterests', tag: 'UpdateUserInterests');
+      final result = await _repository.updateUserInterests(userId, allInterests);
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'UpdateUserInterests'),
+        (_) => DevLogger.result(isSuccess: true, data: '${allInterests.length} interests updated', tag: 'UpdateUserInterests'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'UpdateUserInterests');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'UpdateUserInterests');
       return left(ProfileFailure.unknown(e.toString()));
     }
   }
@@ -102,15 +119,24 @@ class UpdateUserInterestsUseCase {
     required String interest,
     required String category,
   }) async {
+    DevLogger.params({
+      'userId': userId,
+      'interest': interest,
+      'category': category,
+    }, tag: 'AddInterest');
+
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
+        DevLogger.validation(field: 'userId', reason: 'Empty userId', tag: 'AddInterest');
         return left(ProfileFailure.validation('userId'));
       }
       if (interest.isEmpty) {
+        DevLogger.validation(field: 'interest', reason: 'Empty interest', tag: 'AddInterest');
         return left(ProfileFailure.validation('interest'));
       }
       if (category != 'expertise' && category != 'hobby') {
+        DevLogger.validation(field: 'category', reason: 'Invalid category (must be expertise or hobby)', tag: 'AddInterest');
         return left(ProfileFailure.validation('category'));
       }
 
@@ -124,13 +150,23 @@ class UpdateUserInterestsUseCase {
       );
 
       // 3. Repository를 통한 추가
-      return await _repository.addInterest(
+      DevLogger.checkpoint('Calling repository.addInterest', tag: 'AddInterest');
+      final result = await _repository.addInterest(
         userId: userId,
         interest: interestObj,
       );
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'AddInterest'),
+        (_) => DevLogger.result(isSuccess: true, data: 'Interest added: $interest', tag: 'AddInterest'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'AddInterest');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'AddInterest');
       return left(ProfileFailure.unknown(e.toString()));
     }
   }
@@ -153,15 +189,24 @@ class UpdateUserInterestsUseCase {
     required String interest,
     required String category,
   }) async {
+    DevLogger.params({
+      'userId': userId,
+      'interest': interest,
+      'category': category,
+    }, tag: 'RemoveInterest');
+
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
+        DevLogger.validation(field: 'userId', reason: 'Empty userId', tag: 'RemoveInterest');
         return left(ProfileFailure.validation('userId'));
       }
       if (interest.isEmpty) {
+        DevLogger.validation(field: 'interest', reason: 'Empty interest', tag: 'RemoveInterest');
         return left(ProfileFailure.validation('interest'));
       }
       if (category != 'expertise' && category != 'hobby') {
+        DevLogger.validation(field: 'category', reason: 'Invalid category (must be expertise or hobby)', tag: 'RemoveInterest');
         return left(ProfileFailure.validation('category'));
       }
 
@@ -175,13 +220,23 @@ class UpdateUserInterestsUseCase {
       );
 
       // 3. Repository를 통한 제거
-      return await _repository.removeInterest(
+      DevLogger.checkpoint('Calling repository.removeInterest', tag: 'RemoveInterest');
+      final result = await _repository.removeInterest(
         userId: userId,
         interest: interestObj,
       );
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'RemoveInterest'),
+        (_) => DevLogger.result(isSuccess: true, data: 'Interest removed: $interest', tag: 'RemoveInterest'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'RemoveInterest');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'RemoveInterest');
       return left(ProfileFailure.unknown(e.toString()));
     }
   }

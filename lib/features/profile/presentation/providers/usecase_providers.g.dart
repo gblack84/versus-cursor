@@ -1139,7 +1139,7 @@ final class IsAdminUserFamily extends $Family
 /// final currentRoleAsync = ref.watch(currentUserRoleProvider);
 ///
 /// currentRoleAsync.when(
-///   data: (role) => print('My role: $role'),
+///   data: (role) => Logger.info('My role: $role', tag: 'Profile'),
 ///   loading: () => null,
 ///   error: (error, stack) => null,
 /// );
@@ -1155,7 +1155,7 @@ const currentUserRoleProvider = CurrentUserRoleProvider._();
 /// final currentRoleAsync = ref.watch(currentUserRoleProvider);
 ///
 /// currentRoleAsync.when(
-///   data: (role) => print('My role: $role'),
+///   data: (role) => Logger.info('My role: $role', tag: 'Profile'),
 ///   loading: () => null,
 ///   error: (error, stack) => null,
 /// );
@@ -1171,7 +1171,7 @@ final class CurrentUserRoleProvider
   /// final currentRoleAsync = ref.watch(currentUserRoleProvider);
   ///
   /// currentRoleAsync.when(
-  ///   data: (role) => print('My role: $role'),
+  ///   data: (role) => Logger.info('My role: $role', tag: 'Profile'),
   ///   loading: () => null,
   ///   error: (error, stack) => null,
   /// );

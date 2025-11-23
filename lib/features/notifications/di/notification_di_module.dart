@@ -39,9 +39,9 @@ import '../data/repositories/notification_repository_impl.dart';
 import '../data/services/notification_service.dart';
 
 // ===== Services Layer (App-wide) =====
+import '/services/batch/batch_service.dart';
 import '/services/notification/notification_queue_service.dart';
 import '/services/notification/fcm_service.dart';
-import '/services/idempotency/idempotency_service.dart';
 
 // ===== Domain Layer - UseCases (5 total) =====
 import '../domain/usecases/get_user_notifications_usecase.dart';
@@ -113,12 +113,15 @@ void _registerServices(GetIt getIt) {
 /// **Phase 5 Complete**: Firebase-Centric v2.0
 /// - Direct FirebaseFirestore injection (no DataSource layer)
 /// - Extension Pattern for Entity ↔ Firestore conversion
-/// - Phase 4 IdempotencyService preserved for duplicate prevention
+///
+/// **Phase 6 Complete**: IdempotencyService 제거
+/// - Natural idempotency via deterministic IDs
+/// - Firestore operations are inherently idempotent
 void _registerRepository(GetIt getIt) {
   getIt.registerLazySingleton<INotificationRepository>(
     () => NotificationRepositoryImpl(
       firestore: FirebaseFirestore.instance,
-      idempotencyService: getIt<IdempotencyService>(),
+      batchService: getIt<BatchService>(),
     ),
   );
 }

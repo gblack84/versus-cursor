@@ -47,7 +47,7 @@ Firestore → Extension → Entity
 | **DTO** | ❌ 없음 | 없음 |
 | **Mapper** | ❌ 없음 | 없음 |
 | **Extension Pattern** | ✅ 적용 | Phase 1에서 ranking_extensions.dart 생성 |
-| **SearchesModel** | ⚠️ 레거시 | fromSnapshot() 메서드 사용 (Extension 전환 필요) |
+| **SearchHistory** | ✅ 완료 | SearchHistoryFirestore extension 완료 (2025-11-22) |
 
 **결론**: Search Feature는 **처음부터 Firebase-Centric 접근**을 사용했으며, Phase 1에서 Ranking Extension Pattern을 완성했습니다.
 
@@ -185,118 +185,151 @@ Stream<Either<SearchFailure, List<Ranking>>> queryRankings({
 
 ---
 
-## 🔄 SearchesModel 마이그레이션 (TODO)
+## ✅ SearchHistory 마이그레이션 (완료)
 
-### 현재 상태: 레거시 fromSnapshot() 패턴
+**완료 일자**: 2025-11-22
 
-**파일**: `domain/models/search_history_model.dart`
+### 마이그레이션 완료 상태
+
+**파일**: `domain/models/search_history.dart`
 
 ```dart
-/// ⚠️ 현재: fromSnapshot() 메서드 사용 (레거시 패턴)
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+part 'search_history.freezed.dart';
+part 'search_history.g.dart';
+part 'search_history_extensions.dart';  // ✅ Extension 참조
+
 @freezed
-class SearchesModel with _$SearchesModel {
-  const factory SearchesModel({
-    String? uid,
-    String? query,
-    DateTime? createdTime,
-    DateTime? modifiedTime,
-  }) = _SearchesModel;
+sealed class SearchHistory with _$SearchHistory {
+  const SearchHistory._();
 
-  /// ❌ 레거시: fromSnapshot() 메서드
-  factory SearchesModel.fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>?;
+  const factory SearchHistory({
+    required String searchId,
+    required String userId,
+    required String query,
+    DateTime? date,
+  }) = _SearchHistory;
 
-    return SearchesModel(
-      uid: snapshot.id,
-      query: data?['query'] as String?,
-      createdTime: (data?['created_time'] as Timestamp?)?.toDate(),
-      modifiedTime: (data?['modified_time'] as Timestamp?)?.toDate(),
-    );
-  }
-
-  /// Collection reference
-  static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('searches');
-
-  /// Query helper
-  static Query queryRecords({required Query Function(Query) queryBuilder}) {
-    return queryBuilder(collection);
-  }
+  factory SearchHistory.fromJson(Map<String, dynamic> json) =>
+      _$SearchHistoryFromJson(json);
 }
 ```
 
-### 권장 마이그레이션: Extension Pattern
+### Extension Pattern 구현
 
-**파일**: `domain/models/search_history_extensions.dart` (신규 생성 권장)
+**파일**: `domain/models/search_history_extensions.dart`
 
 ```dart
-part of 'search_history_model.dart';
+part of 'search_history.dart';
 
-/// SearchesModel Firestore Extensions
+/// SearchHistory Firestore Extensions
 ///
-/// **Phase 5 (2025-11-07)**: Extension Pattern Migration
-/// - fromSnapshot() → fromFirestore() 전환
-/// - Extension 메서드로 통일
-extension SearchesModelFirestore on SearchesModel {
-  /// Firestore DocumentSnapshot → SearchesModel Entity
+/// Firestore DocumentSnapshot ↔ SearchHistory Entity 변환
+///
+/// **Phase 5 (2025-11-22)**: Extension Pattern Migration
+/// - 인라인 메서드 → Extension으로 분리
+/// - Firebase-Centric Architecture v2.0
+/// - Ranking Extension 패턴과 일관성 유지
+extension SearchHistoryFirestore on SearchHistory {
+  /// Firestore DocumentSnapshot → SearchHistory Entity
   ///
   /// **Usage**:
   /// ```dart
   /// final doc = await firestore.collection('searches').doc(id).get();
-  /// final search = SearchesModelFirestore.fromFirestore(doc);
+  /// final searchHistory = SearchHistoryFirestore.fromFirestore(doc);
   /// ```
-  static SearchesModel fromFirestore(DocumentSnapshot doc) {
+  static SearchHistory fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
 
-    return SearchesModel(
-      uid: doc.id,
-      query: data['query'] as String?,
-      createdTime: (data['created_time'] as Timestamp?)?.toDate(),
-      modifiedTime: (data['modified_time'] as Timestamp?)?.toDate(),
+    return SearchHistory(
+      searchId: doc.id,
+      userId: data['userId'] as String? ?? '',
+      query: data['query'] as String? ?? '',
+      date: (data['date'] as Timestamp?)?.toDate(),
     );
   }
 
-  /// SearchesModel Entity → Firestore Map
+  /// SearchHistory Entity → Firestore Map
   ///
   /// **Usage**:
   /// ```dart
-  /// final search = SearchesModel(...);
-  /// await firestore.collection('searches').doc(id).set(search.toFirestore());
+  /// final searchHistory = SearchHistory(...);
+  /// await firestore.collection('searches').doc(id).set(searchHistory.toFirestore());
   /// ```
   Map<String, dynamic> toFirestore() {
     return {
-      if (query != null) 'query': query,
-      if (createdTime != null) 'created_time': Timestamp.fromDate(createdTime!),
-      if (modifiedTime != null) 'modified_time': Timestamp.fromDate(modifiedTime!),
+      'userId': userId,
+      'query': query,
+      if (date != null) 'date': Timestamp.fromDate(date!),
     };
   }
 }
 ```
 
-**마이그레이션 단계**:
+### Repository 사용 예시
 
-1. **search_history_extensions.dart 생성**
-2. **search_history_model.dart 수정**:
-   ```dart
-   part 'search_history_model.freezed.dart';
-   part 'search_history_model.g.dart';
-   part 'search_history_extensions.dart'; // ✅ 추가
-   ```
+**파일**: `data/repositories/search_repository_impl.dart` (line 59)
 
-3. **Repository에서 fromSnapshot() → fromFirestore() 전환**:
-   ```dart
-   // Before:
-   final models = snapshot.docs
-       .map((doc) => SearchesModel.fromSnapshot(doc))
-       .toList();
+```dart
+Stream<Either<SearchFailure, List<SearchHistory>>> querySearches({
+  Query Function(Query)? queryBuilder,
+  int limit = -1,
+  bool singleRecord = false,
+}) {
+  try {
+    Query query = _firestore.collection('searches');
 
-   // After:
-   final models = snapshot.docs
-       .map((doc) => SearchesModelFirestore.fromFirestore(doc))
-       .toList();
-   ```
+    if (queryBuilder != null) {
+      query = queryBuilder(query);
+    }
 
-4. **fromSnapshot() 메서드 제거** (호환성 유지 기간 후)
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    if (singleRecord) {
+      query = query.limit(1);
+    }
+
+    return query.snapshots().map((snapshot) {
+      try {
+        // ✅ SearchHistoryFirestore extension 사용
+        final models = snapshot.docs
+            .map((doc) => SearchHistoryFirestore.fromFirestore(doc))
+            .toList();
+        return right<SearchFailure, List<SearchHistory>>(models);
+      } catch (e) {
+        return left<SearchFailure, List<SearchHistory>>(SearchFailure.firestoreReadFailed(
+          collection: 'searches',
+          message: e.toString(),
+        ));
+      }
+    }).handleError((e) {
+      return left<SearchFailure, List<SearchHistory>>(SearchFailure.firestoreReadFailed(
+        collection: 'searches',
+        message: e.toString(),
+      ));
+    });
+  } catch (e) {
+    return Stream.value(left(SearchFailure.unexpected(e.toString())));
+  }
+}
+```
+
+### 마이그레이션 결과
+
+✅ **완료된 작업**:
+1. **search_history_extensions.dart 생성** - Extension Pattern 구현
+2. **search_history.dart 수정** - part directive 추가, 인라인 메서드 제거
+3. **search_repository_impl.dart 업데이트** - SearchHistoryFirestore.fromFirestore() 사용
+4. **flutter analyze 검증** - 0 errors (1개 무관한 test 파일 warning만 존재)
+
+📊 **개선 효과**:
+- **코드 일관성**: Ranking Extension 패턴과 100% 일치
+- **관심사 분리**: Entity는 순수 Domain 객체, Firestore 변환 로직은 Extension으로 분리
+- **유지보수성**: Extension 파일만 수정하면 변환 로직 변경 가능
 
 ---
 

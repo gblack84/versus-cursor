@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/services/cache/unified_image_cache_service.dart';
 import 'image_viewer/components/image_viewer_app_bar.dart';
@@ -131,22 +130,6 @@ class _VotingImageViewerState extends ConsumerState<VotingImageViewer> {
     // 각 박스별 PageController 초기화
     _pageControllerA = PageController(initialPage: _currentIndexInBoxA);
     _pageControllerB = PageController(initialPage: _currentIndexInBoxB);
-
-    _logInitState();
-  }
-
-  void _logInitState() {
-    if (kDebugMode) {
-      print('[VotingImageViewer] ===== initState 디버그 =====');
-      print('  - widget.imageUrlsA: ${widget.imageUrlsA?.length ?? 0}개');
-      print('  - widget.imageUrlsB: ${widget.imageUrlsB?.length ?? 0}개');
-      print('  - effectiveUrlsA: ${_effectiveUrlsA.length}개');
-      print('  - effectiveUrlsB: ${_effectiveUrlsB.length}개');
-      print('  - initialIndex: ${widget.initialIndex}');
-      print('  - 시작 박스: $_currentBoxType');
-      print('  - A박스 인덱스: $_currentIndexInBoxA');
-      print('  - B박스 인덱스: $_currentIndexInBoxB');
-    }
   }
 
   @override
@@ -193,9 +176,6 @@ class _VotingImageViewerState extends ConsumerState<VotingImageViewer> {
 
   void _handleSwitchToA() {
     if (_effectiveUrlsA.isNotEmpty && _currentBoxType == 'B') {
-      if (kDebugMode) {
-        print('[VotingImageViewer] B에서 A로 전환!');
-      }
       setState(() {
         _currentBoxType = 'A';
       });
@@ -204,9 +184,6 @@ class _VotingImageViewerState extends ConsumerState<VotingImageViewer> {
 
   void _handleSwitchToB() {
     if (_effectiveUrlsB.isNotEmpty && _currentBoxType == 'A') {
-      if (kDebugMode) {
-        print('[VotingImageViewer] A에서 B로 전환!');
-      }
       setState(() {
         _currentBoxType = 'B';
       });

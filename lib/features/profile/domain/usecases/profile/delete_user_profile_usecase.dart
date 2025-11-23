@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../failures/profile_failure.dart';
 
@@ -22,29 +23,41 @@ class DeleteUserProfileUseCase {
   ///
   /// **Parameters**:
   /// - `userId`: 삭제할 사용자 ID
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(Unit)`: 삭제 성공
   /// - `Left(ProfileFailure)`: 삭제 실패
-  ///   - `ProfileFailure.duplicateOperation`: 이미 처리된 작업 (eventId 중복)
   ///
-  /// **Phase 1.3**: IdempotencyService 지원 추가
+  /// **Natural Idempotency**: Deterministic userId provides natural idempotency
   Future<Either<ProfileFailure, Unit>> execute({
     required String userId,
-    String? eventId,
   }) async {
+    DevLogger.params({
+      'userId': userId,
+    }, tag: 'DeleteUserProfile');
+
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
+        DevLogger.validation(field: 'userId', reason: 'Empty userId', tag: 'DeleteUserProfile');
         return left(ProfileFailure.validation('userId'));
       }
 
       // 2. Repository 호출 (이미 Either 반환)
-      return await _repository.deleteUser(userId, eventId: eventId);
+      DevLogger.checkpoint('Calling repository.deleteUser', tag: 'DeleteUserProfile');
+      final result = await _repository.deleteUser(userId);
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'DeleteUserProfile'),
+        (_) => DevLogger.result(isSuccess: true, data: 'User deleted successfully', tag: 'DeleteUserProfile'),
+      );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'DeleteUserProfile');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'DeleteUserProfile');
       return left(ProfileFailure.unknown(e.toString()));
     }
   }

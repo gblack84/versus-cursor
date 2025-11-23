@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:get_it/get_it.dart';
-import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/widgets/auth_user_stream_widget.dart' hide currentUserId;
@@ -57,9 +56,7 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
     _timer.fetchEnded.listen((_) async {
       // 시간 초과 - 사용자 계정 삭제
       final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
-      await accountManagementUseCase.deleteAccount(
-        eventId: const Uuid().v4(),
-      );
+      await accountManagementUseCase.deleteAccount();
 
       if (mounted) {
         Navigator.pop(context);
@@ -294,9 +291,7 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                           : () async {
                               // 사용자 계정 삭제
                               final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
-                              await accountManagementUseCase.deleteAccount(
-                                eventId: const Uuid().v4(),
-                              );
+                              await accountManagementUseCase.deleteAccount();
 
                               Navigator.pop(context);
                               context.pushNamed(CreateAccountWidget.routeName);
@@ -350,16 +345,11 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                                 if (userId == null) return;
 
                                 final emailVerificationUseCase = ref.read(emailVerificationUseCaseProvider);
-                                await emailVerificationUseCase.sendVerificationEmail(
-                                  userId: userId,
-                                  eventId: const Uuid().v4(),
-                                );
+                                await emailVerificationUseCase.sendVerificationEmail();
                               } else {
                                 // 사용자 계정 삭제
                                 final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
-                                await accountManagementUseCase.deleteAccount(
-                                  eventId: const Uuid().v4(),
-                                );
+                                await accountManagementUseCase.deleteAccount();
 
                                 Navigator.pop(context);
                                 BotToast.showText(

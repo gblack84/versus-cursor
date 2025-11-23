@@ -1,4 +1,6 @@
 import 'package:fpdart/fpdart.dart';
+
+import '/services/logging/dev_logger.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';
 import '../failures/post_failure.dart';
@@ -35,21 +37,44 @@ class GetPopularPostsUseCase {
     int limit = 20,
     Duration? timeWindow,
   }) async {
+    DevLogger.params({
+      'limit': limit,
+      'timeWindow': timeWindow?.inHours != null ? '${timeWindow!.inHours}h' : 'none',
+    }, tag: 'GetPopularPosts');
+
     // Validate input
     if (limit <= 0) {
+      DevLogger.validation(
+        field: 'limit',
+        reason: 'Limit must be greater than 0',
+        tag: 'GetPopularPosts',
+      );
       return left(const PostFailure.invalidInput(field: 'limit'));
     }
 
     try {
       // Get popular posts from repository
+      DevLogger.checkpoint('Fetching popular posts from repository', tag: 'GetPopularPosts');
       final stream = _postRepository.getPopularPosts(
         limit: limit,
         timeWindow: timeWindow,
       );
       final posts = await stream.first;
 
+      DevLogger.result(
+        isSuccess: true,
+        data: '${posts.length} popular posts fetched',
+        tag: 'GetPopularPosts',
+      );
+
       return right(posts);
-    } catch (error) {
+    } catch (error, stackTrace) {
+      DevLogger.error(
+        'Failed to load popular posts',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'GetPopularPosts',
+      );
       return left(PostFailure.queryFailed(
         reason: 'Failed to load popular posts: $error',
       ));
@@ -72,19 +97,35 @@ class GetPopularPostsUseCase {
     int limit = 20,
     Duration? timeWindow,
   }) {
+    DevLogger.params({
+      'limit': limit,
+      'timeWindow': timeWindow?.inHours != null ? '${timeWindow!.inHours}h' : 'none',
+    }, tag: 'GetPopularStream');
+
     // Validate input
     if (limit <= 0) {
+      DevLogger.validation(
+        field: 'limit',
+        reason: 'Limit must be greater than 0',
+        tag: 'GetPopularStream',
+      );
       return Stream.error(
         const PostFailure.invalidInput(field: 'limit'),
       );
     }
 
     try {
+      DevLogger.checkpoint('Starting popular posts stream', tag: 'GetPopularStream');
       return _postRepository.getPopularPosts(
         limit: limit,
         timeWindow: timeWindow,
       );
     } catch (error) {
+      DevLogger.error(
+        'Failed to create popular stream',
+        error: error,
+        tag: 'GetPopularStream',
+      );
       return Stream.error(
         PostFailure.queryFailed(
           reason: 'Failed to create popular stream: $error',

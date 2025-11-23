@@ -3,7 +3,6 @@ import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '/core/utils/app_utils.dart';
-import '/services/idempotency/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_profile_extensions.dart';
@@ -40,7 +39,6 @@ import '../../domain/repositories/i_user_repository.dart';
 /// - FirebaseAuth를 통한 현재 사용자 관리
 class UserRepositoryImpl implements IUserRepository {
   final FirebaseAuth _auth;
-  final IdempotencyService _idempotencyService;
   final UnifiedCacheService _cacheService;
 
   static UserRepositoryImpl? _instance;
@@ -52,30 +50,28 @@ class UserRepositoryImpl implements IUserRepository {
     if (_instance == null) {
       throw StateError(
         'UserRepositoryImpl not initialized. '
-        'Call UserRepositoryImpl.initialize(authContract, idempotencyService, cacheService) first in DI module.'
+        'Call UserRepositoryImpl.initialize(auth, cacheService) first in DI module.'
       );
     }
     return _instance!;
   }
 
-  UserRepositoryImpl._(this._auth, this._idempotencyService, this._cacheService);
+  UserRepositoryImpl._(this._auth, this._cacheService);
 
   /// 싱글톤 초기화 (DI Module에서 호출)
   ///
   /// **사용 예시** (profile_module.dart):
   /// ```dart
   /// final auth = FirebaseAuth.instance;
-  /// final idempotencyService = sl<IdempotencyService>();
   /// final cacheService = UnifiedCacheService.instance;
-  /// UserRepositoryImpl.initialize(auth, idempotencyService, cacheService);
+  /// UserRepositoryImpl.initialize(auth, cacheService);
   /// sl.registerLazySingleton<IUserRepository>(() => UserRepositoryImpl.instance);
   /// ```
   static void initialize(
     FirebaseAuth auth,
-    IdempotencyService idempotencyService,
     UnifiedCacheService cacheService,
   ) {
-    _instance = UserRepositoryImpl._(auth, idempotencyService, cacheService);
+    _instance = UserRepositoryImpl._(auth, cacheService);
   }
 
   // ============= Private Firestore Instance =============
@@ -197,38 +193,19 @@ class UserRepositoryImpl implements IUserRepository {
   @override
   Future<Either<ProfileFailure, Unit>> updateUser(
     String uid,
-    Map<String, dynamic> data, {
-    String? eventId,
-  }) async {
+    Map<String, dynamic> data,
+  ) async {
     try {
       debugPrint('[UserRepository] Updating user: $uid');
 
-      // IdempotencyService로 래핑
-      if (eventId != null && eventId.isNotEmpty) {
-        await _idempotencyService.executeIdempotent<void>(
-          entityType: 'user_updates',
-          entityId: uid,
-          userId: uid,
-          eventId: eventId,
-          operation: (transaction) async {
-            // Transaction 내부에서 update
-            final docRef = _firestore.collection('users').doc(uid);
-            transaction.update(docRef, data);
-          },
-        );
-      } else {
-        // eventId 없으면 기존 로직 (backward compatibility)
-        await _firestore.collection('users').doc(uid).update(data);
-      }
+      // Natural idempotency via deterministic userId
+      await _firestore.collection('users').doc(uid).update(data);
 
       // 🔥 캐시 무효화 (업데이트 후 캐시 클리어)
       await _cacheService.clearUserProfile(uid);
 
       debugPrint('[UserRepository] User updated successfully');
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      debugPrint('[UserRepository] Idempotency violation: $e');
-      return left(ProfileFailure.duplicateOperation('User already updated: ${e.message}'));
     } on FirebaseException catch (e) {
       debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
       return left(_mapFirebaseException(e));
@@ -242,51 +219,25 @@ class UserRepositoryImpl implements IUserRepository {
 
   @override
   Future<Either<ProfileFailure, Unit>> updateUserProfile(
-    UserProfile user, {
-    String? eventId,
-  }) async {
+    UserProfile user,
+  ) async {
     try {
       debugPrint('[UserRepository] Updating user profile: ${user.uid}');
 
-      // IdempotencyService로 래핑
-      if (eventId != null && eventId.isNotEmpty) {
-        await _idempotencyService.executeIdempotent<void>(
-          entityType: 'profile_updates',
-          entityId: user.uid,
-          userId: user.uid,
-          eventId: eventId,
-          operation: (transaction) async {
-            // Extension으로 변환
-            final data = user.toFirestore();
+      // Extension으로 변환
+      final data = user.toFirestore();
 
-            // Add lastActiveTime
-            data['lastActiveTime'] = Timestamp.fromDate(getCurrentTimestamp());
+      // Add lastActiveTime
+      data['lastActiveTime'] = Timestamp.fromDate(getCurrentTimestamp());
 
-            // Transaction 내부에서 update
-            final docRef = _firestore.collection('users').doc(user.uid);
-            transaction.update(docRef, data);
-          },
-        );
-      } else {
-        // eventId 없으면 기존 로직 (backward compatibility)
-        // Extension으로 변환
-        final data = user.toFirestore();
-
-        // Add lastActiveTime
-        data['lastActiveTime'] = Timestamp.fromDate(getCurrentTimestamp());
-
-        // 직접 Firebase SDK 사용
-        await _firestore.collection('users').doc(user.uid).update(data);
-      }
+      // Natural idempotency via deterministic userId
+      await _firestore.collection('users').doc(user.uid).update(data);
 
       // 🔥 캐시 무효화 (업데이트 후 캐시 클리어)
       await _cacheService.clearUserProfile(user.uid);
 
       debugPrint('[UserRepository] User profile updated successfully');
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      debugPrint('[UserRepository] Idempotency violation: $e');
-      return left(ProfileFailure.duplicateOperation('Profile already updated: ${e.message}'));
     } on FirebaseException catch (e) {
       debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
       return left(_mapFirebaseException(e));
@@ -300,9 +251,8 @@ class UserRepositoryImpl implements IUserRepository {
 
   @override
   Future<Either<ProfileFailure, UserProfile>> updateLanguage(
-    String languageCode, {
-    String? eventId,
-  }) async {
+    String languageCode,
+  ) async {
     try {
       debugPrint('[UserRepository] Updating language to: $languageCode');
 
@@ -315,29 +265,11 @@ class UserRepositoryImpl implements IUserRepository {
 
       final userId = currentUser.uid;
 
-      // 2. IdempotencyService로 래핑
-      if (eventId != null && eventId.isNotEmpty) {
-        await _idempotencyService.executeIdempotent<void>(
-          entityType: 'language_updates',
-          entityId: userId,
-          userId: userId,
-          eventId: eventId,
-          operation: (transaction) async {
-            // Transaction 내부에서 language 필드만 update
-            final docRef = _firestore.collection('users').doc(userId);
-            transaction.update(docRef, {
-              'language': languageCode,
-              'lastActiveTime': Timestamp.fromDate(getCurrentTimestamp()),
-            });
-          },
-        );
-      } else {
-        // eventId 없으면 기존 로직 (backward compatibility)
-        await _firestore.collection('users').doc(userId).update({
-          'language': languageCode,
-          'lastActiveTime': Timestamp.fromDate(getCurrentTimestamp()),
-        });
-      }
+      // 2. Natural idempotency via deterministic userId
+      await _firestore.collection('users').doc(userId).update({
+        'language': languageCode,
+        'lastActiveTime': Timestamp.fromDate(getCurrentTimestamp()),
+      });
 
       // 3. 캐시 무효화 (업데이트 후 캐시 클리어)
       await _cacheService.clearUserProfile(userId);
@@ -355,9 +287,6 @@ class UserRepositoryImpl implements IUserRepository {
           return right(updatedProfile);
         },
       );
-    } on IdempotencyViolation catch (e) {
-      debugPrint('[UserRepository] Idempotency violation: $e');
-      return left(ProfileFailure.duplicateOperation('Language already updated: ${e.message}'));
     } on FirebaseException catch (e) {
       debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
       return left(_mapFirebaseException(e));
@@ -371,38 +300,19 @@ class UserRepositoryImpl implements IUserRepository {
 
   @override
   Future<Either<ProfileFailure, Unit>> deleteUser(
-    String uid, {
-    String? eventId,
-  }) async {
+    String uid,
+  ) async {
     try {
       debugPrint('[UserRepository] Deleting user: $uid');
 
-      // IdempotencyService로 래핑
-      if (eventId != null && eventId.isNotEmpty) {
-        await _idempotencyService.executeIdempotent<void>(
-          entityType: 'profile_deletions',
-          entityId: uid,
-          userId: uid,
-          eventId: eventId,
-          operation: (transaction) async {
-            // Transaction 내부에서 delete
-            final docRef = _firestore.collection('users').doc(uid);
-            transaction.delete(docRef);
-          },
-        );
-      } else {
-        // eventId 없으면 기존 로직 (backward compatibility)
-        await _firestore.collection('users').doc(uid).delete();
-      }
+      // Natural idempotency via deterministic userId
+      await _firestore.collection('users').doc(uid).delete();
 
       // 🔥 캐시 무효화 (삭제 후 캐시 클리어)
       await _cacheService.clearUserProfile(uid);
 
       debugPrint('[UserRepository] User deleted successfully');
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      debugPrint('[UserRepository] Idempotency violation: $e');
-      return left(ProfileFailure.duplicateOperation('Profile already deleted: ${e.message}'));
     } on FirebaseException catch (e) {
       debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
       return left(_mapFirebaseException(e));
@@ -526,10 +436,9 @@ class UserRepositoryImpl implements IUserRepository {
   @override
   Future<Either<ProfileFailure, Unit>> updateUserSettings(
     String userId,
-    Map<String, dynamic> settings, {
-    String? eventId,
-  }) {
-    return updateUser(userId, settings, eventId: eventId);
+    Map<String, dynamic> settings,
+  ) {
+    return updateUser(userId, settings);
   }
 
   // ============= Auth 데이터 조회 =============

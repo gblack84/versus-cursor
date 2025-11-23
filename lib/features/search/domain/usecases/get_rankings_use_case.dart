@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import '../models/ranking.dart';
 import '../repositories/i_search_repository.dart';
 import '../failures/search_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// Parameters for getting rankings
 ///
@@ -30,6 +31,26 @@ class GetRankingsUseCase {
   /// - Left: SearchFailure when error occurs
   /// - Right: List<Ranking> when successful
   Future<Either<SearchFailure, List<Ranking>>> call(GetRankingsParams params) async {
-    return repository.getTopRankings(limit: params.limit);
+    DevLogger.params({
+      'limit': params.limit,
+    }, tag: 'GetRankings');
+
+    DevLogger.checkpoint('Calling repository.getTopRankings', tag: 'GetRankings');
+    final result = await repository.getTopRankings(limit: params.limit);
+
+    result.fold(
+      (failure) => DevLogger.result(
+        isSuccess: false,
+        data: failure.toString(),
+        tag: 'GetRankings',
+      ),
+      (rankings) => DevLogger.result(
+        isSuccess: true,
+        data: {'count': rankings.length},
+        tag: 'GetRankings',
+      ),
+    );
+
+    return result;
   }
 }

@@ -69,8 +69,9 @@ class _ChatDetailWidgetCleanState extends ConsumerState<ChatDetailWidgetClean> w
   String? _lastMessageId;
   bool _hasMore = true;
 
-  // Phase C-2: Auth Provider 사용
-  String get currentUserId => ref.watch(currentUserIdProvider).value ?? '';
+  // Phase C-2: Auth Provider 사용 - REMOVED buggy getter
+  // ❌ OLD: String get currentUserId => ref.watch(currentUserIdProvider).value ?? '';
+  // ✅ NEW: Properly handle AsyncValue in build method with nested .when()
 
   // AI 채팅 감지
   bool get isAiChat =>
@@ -126,11 +127,17 @@ class _ChatDetailWidgetCleanState extends ConsumerState<ChatDetailWidgetClean> w
 
     // ChatMessageLifecycleService: 채팅방 진입 시 자동 읽음 처리
     if (widget.chatDocument != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(chatMessageLifecycleServiceProvider).markMessagesAsSeen(
-          chatId: widget.chatDocument!.id,
-          currentUserId: currentUserId,
-        );
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // ✅ FIX: Properly read AsyncValue from currentUserIdProvider
+        final userIdAsync = ref.read(currentUserIdProvider);
+        final userId = userIdAsync.value;
+
+        if (userId != null && userId.isNotEmpty) {
+          ref.read(chatMessageLifecycleServiceProvider).markMessagesAsSeen(
+            chatId: widget.chatDocument!.id,
+            currentUserId: userId,
+          );
+        }
       });
     }
   }
@@ -549,77 +556,124 @@ class _ChatDetailWidgetCleanState extends ConsumerState<ChatDetailWidgetClean> w
             _lastMessageId = messages.first.id;
           }
 
-          // 검색 필터 적용
-          final searchUseCase = ref.read(searchMessagesUseCaseProvider);
-          final filteredResult = searchUseCase.execute(
-            allMessages: messages,
-            query: _searchQuery,
-          );
+          // ✅ FIX: Properly watch currentUserIdProvider and handle AsyncValue
+          final currentUserAsync = ref.watch(currentUserIdProvider);
 
-          final displayMessages = filteredResult.fold(
-            (failure) => <Message>[],
-            (filtered) => filtered,
-          );
-
-          // Entity → flutter_chat_ui Message 변환
-          final chatMessages = FlutterChatAdapter.convertEntitiesToMessages(displayMessages);
-
-          // ChatController 동기화
-          _updateChatController(chatMessages);
-
-          // 채팅 UI
-          return Stack(
-            children: [
-              Column(
+          return currentUserAsync.when(
+            // userId 로딩 중
+            loading: () => const Center(
+              child: CircularProgressIndicator(),
+            ),
+            // userId 에러
+            error: (error, stack) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 메시지 목록
-                  Expanded(
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: _handleScrollNotification,
-                      child: Chat(
-                        currentUserId: currentUserId,
-                        resolveUser: _resolveUser,
-                        chatController: _chatController,
-                        theme: _buildChatTheme(),
-                        timeFormat: DateFormat('h:mm a'),
-                        onMessageSend: isAiChat ? null : _handleSendPressed,
-                        onAttachmentTap: isAiChat ? null : _handleAttachmentPressed,
-                        builders: core.Builders(
-                          composerBuilder: isAiChat
-                              ? (context) => const SizedBox.shrink()
-                              : null,
-                          customMessageBuilder: _buildCustomMessage,
-                          systemMessageBuilder: _buildSystemMessage,
-                          emptyChatListBuilder: (context) => Center(
-                            child: Text(
-                              isAiChat
-                                  ? 'AI 피클에게 질문해보세요!'
-                                  : '첫 메시지를 보내보세요!',
-                              style: VersusTextStyles.bodyLarge.copyWith(
-                                color: VersusColors.textSecondary,
+                  Icon(Icons.error_outline,
+                      size: 48, color: VersusColors.error),
+                  const SizedBox(height: 16),
+                  Text(
+                    '로그인이 필요합니다',
+                    style: VersusTextStyles.bodyLarge,
+                  ),
+                ],
+              ),
+            ),
+            // userId 성공
+            data: (currentUserId) {
+              // ✅ Validate userId
+              if (currentUserId == null || currentUserId.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.login,
+                          size: 48, color: VersusColors.textSecondary),
+                      const SizedBox(height: 16),
+                      Text(
+                        '로그인이 필요합니다',
+                        style: VersusTextStyles.bodyLarge.copyWith(
+                          color: VersusColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // 검색 필터 적용
+              final searchUseCase = ref.read(searchMessagesUseCaseProvider);
+              final filteredResult = searchUseCase.execute(
+                allMessages: messages,
+                query: _searchQuery,
+              );
+
+              final displayMessages = filteredResult.fold(
+                (failure) => <Message>[],
+                (filtered) => filtered,
+              );
+
+              // Entity → flutter_chat_ui Message 변환
+              final chatMessages = FlutterChatAdapter.convertEntitiesToMessages(displayMessages);
+
+              // ChatController 동기화
+              _updateChatController(chatMessages);
+
+              // 채팅 UI
+              return Stack(
+                children: [
+                  Column(
+                    children: [
+                      // 메시지 목록
+                      Expanded(
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: _handleScrollNotification,
+                          child: Chat(
+                            currentUserId: currentUserId,  // ✅ Now properly validated
+                            resolveUser: _resolveUser,
+                            chatController: _chatController,
+                            theme: _buildChatTheme(),
+                            timeFormat: DateFormat('h:mm a'),
+                            onMessageSend: isAiChat ? null : _handleSendPressed,
+                            onAttachmentTap: isAiChat ? null : _handleAttachmentPressed,
+                            builders: core.Builders(
+                              composerBuilder: isAiChat
+                                  ? (context) => const SizedBox.shrink()
+                                  : null,
+                              customMessageBuilder: _buildCustomMessage,
+                              systemMessageBuilder: _buildSystemMessage,
+                              emptyChatListBuilder: (context) => Center(
+                                child: Text(
+                                  isAiChat
+                                      ? 'AI 피클에게 질문해보세요!'
+                                      : '첫 메시지를 보내보세요!',
+                                  style: VersusTextStyles.bodyLarge.copyWith(
+                                    color: VersusColors.textSecondary,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+                      // AI 채팅방일 때 검색창 표시
+                      if (isAiChat) _buildAISearchInput(),
+                    ],
                   ),
-                  // AI 채팅방일 때 검색창 표시
-                  if (isAiChat) _buildAISearchInput(),
+                  // FAB (하단으로 스크롤 버튼)
+                  if (!_isAtBottom)
+                    ChatDetailFAB(
+                      isAtBottom: _isAtBottom,
+                      scaleAnimation: _fabScaleAnimation,
+                      bounceAnimation: _fabBounceAnimation,
+                      onPressed: () {
+                        _scrollToBottom();
+                        _fabBounceController.forward(from: 0);
+                      },
+                    ),
                 ],
-              ),
-              // FAB (하단으로 스크롤 버튼)
-              if (!_isAtBottom)
-                ChatDetailFAB(
-                  isAtBottom: _isAtBottom,
-                  scaleAnimation: _fabScaleAnimation,
-                  bounceAnimation: _fabBounceAnimation,
-                  onPressed: () {
-                    _scrollToBottom();
-                    _fabBounceController.forward(from: 0);
-                  },
-                ),
-            ],
+              );
+            },
           );
         },
       ),

@@ -43,16 +43,18 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
   @override
   void initState() {
     super.initState();
-    _validationSessionId = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch.toString().substring(10)}';
+    _validationSessionId =
+        '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch.toString().substring(10)}';
 
     // Animation setup
     _shakeController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _shakeAnimation = Tween(begin: 0.0, end: 8.0)
-        .chain(CurveTween(curve: Curves.easeInOut))
-        .animate(_shakeController);
+    _shakeAnimation = Tween(
+      begin: 0.0,
+      end: 8.0,
+    ).chain(CurveTween(curve: Curves.easeInOut)).animate(_shakeController);
 
     _scrollController.addListener(_scrollListener);
   }
@@ -180,10 +182,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
             Navigator.of(context).pop();
           },
         ),
-        title: Text(
-          '질문 작성',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
+        title: Text('질문 작성', style: Theme.of(context).textTheme.headlineMedium),
         centerTitle: true,
         elevation: 2,
       ),
@@ -199,16 +198,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
                   children: [
                     const SizedBox(height: 20),
 
-                    // 텍스트 입력 섹션
+                    // 1. 제목 입력 (Title Only)
                     TextInputWidget(
-                      showOptionB: !_absellected,
+                      showTitle: true,
+                      showDescription: false,
+                      showOptionA: false,
+                      showOptionB: false,
                       validationSessionId: _validationSessionId,
                       onTitleChanged: (text) {
-                        setState(() {
-                          // 버튼 표시 업데이트
-                        });
-                      },
-                      onDescriptionChanged: (text) {
                         setState(() {
                           // 버튼 표시 업데이트
                         });
@@ -217,7 +214,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
 
                     const SizedBox(height: 24),
 
-                    // 이미지 선택 섹션
+                    // 2. 이미지 선택 섹션 (Image Section)
                     ImageSelectionWidget(
                       absellected: _absellected,
                       isDynamic: true,
@@ -227,27 +224,28 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
                           // 이미지 선택 후 UI 업데이트
                         });
                       },
+                      onBBoxBecameEmpty: () {
+                        // Issue #13: Auto-hide B box when all images deleted
+                        setState(() {
+                          _absellected = true;
+                        });
+                      },
                     ),
 
                     const SizedBox(height: 24),
 
-                    // A/B 모드 토글
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          const Text('B 옵션 숨기기'),
-                          const SizedBox(width: 8),
-                          Switch(
-                            value: _absellected,
-                            onChanged: (value) {
-                              setState(() {
-                                _absellected = value;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
+                    // 3. 설명 + 옵션 입력 (Description + Options)
+                    TextInputWidget(
+                      showTitle: false,
+                      showDescription: true,
+                      showOptionA: true,
+                      showOptionB: !_absellected,
+                      validationSessionId: _validationSessionId,
+                      onDescriptionChanged: (text) {
+                        setState(() {
+                          // 버튼 표시 업데이트
+                        });
+                      },
                     ),
                   ],
                 ),

@@ -66,8 +66,6 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
 
   /// Bot Toast 메시지 표시 헬퍼
   void _showToast(String message, {bool isError = false, IconData? icon}) {
-    print('[DEBUG] _showToast 호출됨: $message (isError: $isError)');
-
     // 메시지 내용에 따라 아이콘 자동 결정
     if (icon == null && isError) {
       if (message.contains('편집된 텍스트가 부적절합니다')) {
@@ -92,11 +90,7 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                color: Colors.white,
-                size: 20,
-              ),
+              Icon(icon, color: Colors.white, size: 20),
               const SizedBox(width: 8),
             ],
             Flexible(
@@ -139,31 +133,24 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
       final height = image.height.toDouble();
       final ratio = width / height;
 
-      print('[MediaEditor] 편집된 이미지 비율 계산:');
-      print('  - 이미지 크기: ${width.toInt()}x${height.toInt()}');
-      print('  - 계산된 비율: $ratio');
-
       return ratio;
     } catch (e) {
-      print('[MediaEditor] 이미지 비율 계산 실패: $e');
+      // 이미지 비율 계산 실패 - Flutter DevTools에서 확인 가능
       return null;
     }
   }
 
   /// 거부 메시지 생성 (Step 6: MediaProcessingFailure 사용)
-  String _buildRejectionMessage(dynamic result,
-      {ImageCheckResult? moderationResult}) {
-    print('[DEBUG] _buildRejectionMessage 호출됨');
-    print('[DEBUG] rejectedCount: ${result.rejectedCount}');
-    print(
-        '[DEBUG] moderationResult: ${moderationResult != null ? "있음" : "없음"}');
-
+  String _buildRejectionMessage(
+    dynamic result, {
+    ImageCheckResult? moderationResult,
+  }) {
     // Step 6: MediaProcessingFailed 생성으로 중앙화된 메시지 사용
     final failure = CreationFailure.mediaProcessingFailed(
       failedStep: MediaProcessingStep.moderationCheck,
-      affectedFiles: result.rejectedIndices
-          ?.map<String>((i) => 'image_$i')
-          ?.toList() ?? [],
+      affectedFiles:
+          result.rejectedIndices?.map<String>((i) => 'image_$i')?.toList() ??
+          [],
       details: moderationResult?.reason,
     );
 
@@ -188,12 +175,6 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
 
   /// 이미지 편집 완료 처리
   Future<void> _handleImageEditingComplete(Uint8List bytes) async {
-    print('[MediaEditor] onImageEditingComplete 호출됨');
-    print(
-        '[MediaEditor] allSelectedFiles 수: ${widget.allSelectedFiles.length}');
-    print('[MediaEditor] startWithEditor: ${widget.startWithEditor}');
-    print('[MediaEditor] mounted 상태: $mounted');
-
     // ProImageEditor의 i18n loadingDialogMsg가 표시됨
 
     // ProImageEditor가 자동으로 닫히는 것을 기다림
@@ -257,8 +238,6 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
 
         // 성공: 일부 이미지가 거부되었을 수도 있음
         if (mounted) {
-          print('[MediaEditor] 멀티 이미지 처리 완료');
-
           // 비율 업데이트 - Provider 메서드 사용 (Clean Architecture)
           if (aspectRatio != null) {
             selectionNotifier.replaceFileAtIndex(
@@ -269,9 +248,7 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
             );
           }
 
-          print('[MediaEditor] Navigator.pop 호출 전');
           Navigator.pop(context); // 에디터 닫기
-          print('[MediaEditor] Navigator.pop 호출 완료');
 
           // 콜백 호출 (File이 AppState에 저장됨)
           if (widget.onMultiComplete != null) {
@@ -310,11 +287,13 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
             final failure = CreationFailure.mediaProcessingFailed(
               failedStep: MediaProcessingStep.moderationCheck,
               affectedFiles: [editedFile.path],
-              details: result.moderationResult?.reason ?? result.rejectionReason,
+              details:
+                  result.moderationResult?.reason ?? result.rejectionReason,
             );
             String rejectionMessage = failure.getUserMessage();
             if (result.moderationResult?.reason != null) {
-              rejectionMessage = '$rejectionMessage: ${result.moderationResult!.reason}';
+              rejectionMessage =
+                  '$rejectionMessage: ${result.moderationResult!.reason}';
             }
             _showToast(rejectionMessage, isError: true);
 
@@ -350,7 +329,6 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
           }
 
           Navigator.pop(context);
-          print('단일 이미지 처리 완료 및 모달 닫기');
 
           // 콜백 호출 (File이 AppState에 저장됨)
           if (widget.onSingleComplete != null) {
@@ -362,7 +340,6 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
       }
     } catch (e) {
       // Step 6: 에러 처리 - CreationFailure.mediaProcessingFailed() 사용
-      print('이미지 업로드 에러: $e');
       if (mounted) {
         final failure = CreationFailure.mediaProcessingFailed(
           failedStep: MediaProcessingStep.upload,
@@ -435,9 +412,7 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
                   done: "완료",
                   filters: I18nFilters(),
                 ),
-                emojiEditor: I18nEmojiEditor(
-                  bottomNavigationBarText: "이모지",
-                ),
+                emojiEditor: I18nEmojiEditor(bottomNavigationBarText: "이모지"),
                 stickerEditor: I18nStickerEditor(
                   bottomNavigationBarText: "스티커",
                 ),
@@ -503,8 +478,10 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
                 }
               },
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(20),
@@ -522,8 +499,8 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
                       widget.startWithEditor
                           ? '취소'
                           : (widget.allSelectedFiles.isNotEmpty
-                              ? '썸네일'
-                              : '갤러리'),
+                                ? '썸네일'
+                                : '갤러리'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,

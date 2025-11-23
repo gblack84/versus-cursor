@@ -4,6 +4,7 @@ import '../../domain/repositories/i_search_repository.dart';
 import '../../domain/failures/search_failure.dart';
 import '../../domain/models/search_history.dart';
 import '../../domain/models/ranking.dart';
+import '/services/logging/logger_service.dart';
 
 /// Implementation of search repository
 ///
@@ -32,6 +33,12 @@ class SearchRepositoryImpl implements ISearchRepository {
     bool singleRecord = false,
   }) {
     try {
+      // ✅ Phase 3: Log search query start
+      SearchLogger.searchQueryStarted(
+        query: 'searches',
+        searchType: 'searchHistory',
+      );
+
       Query query = _firestore.collection('searches');
 
       if (queryBuilder != null) {
@@ -49,7 +56,7 @@ class SearchRepositoryImpl implements ISearchRepository {
       return query.snapshots().map((snapshot) {
         try {
           final models = snapshot.docs
-              .map((doc) => SearchHistory.fromFirestore(doc))
+              .map((doc) => SearchHistoryFirestore.fromFirestore(doc))
               .toList();
           return right<SearchFailure, List<SearchHistory>>(models);
         } catch (e) {
@@ -74,6 +81,13 @@ class SearchRepositoryImpl implements ISearchRepository {
     Query Function(Query)? queryBuilder,
     int limit = -1,
   }) async {
+    // ✅ Phase 3: Log query start
+    final startTime = DateTime.now();
+    SearchLogger.searchQueryStarted(
+      query: 'searches',
+      searchType: 'count',
+    );
+
     try {
       Query query = _firestore.collection('searches');
 
@@ -86,13 +100,34 @@ class SearchRepositoryImpl implements ISearchRepository {
       }
 
       final snapshot = await query.count().get();
-      return right(snapshot.count ?? 0);
+      final count = snapshot.count ?? 0;
+
+      // ✅ Phase 3: Log query completion
+      SearchLogger.searchQueryCompleted(
+        query: 'searches',
+        resultCount: count,
+        queryTime: DateTime.now().difference(startTime),
+      );
+
+      return right(count);
     } on FirebaseException catch (e) {
+      // ✅ Phase 3: Log Firestore error
+      SearchLogger.searchQueryError(
+        query: 'searches',
+        error: e,
+      );
+
       return left(SearchFailure.firestoreReadFailed(
         collection: 'searches',
         message: e.message,
       ));
     } catch (e) {
+      // ✅ Phase 3: Log unexpected error
+      SearchLogger.searchQueryError(
+        query: 'searches',
+        error: e,
+      );
+
       return left(SearchFailure.unexpected(e.toString()));
     }
   }
@@ -272,6 +307,13 @@ class SearchRepositoryImpl implements ISearchRepository {
   @override
   Future<Either<SearchFailure, List<Ranking>>> getTopRankings(
       {int limit = 10}) async {
+    // ✅ Phase 3: Log query start
+    final startTime = DateTime.now();
+    SearchLogger.searchQueryStarted(
+      query: 'rankings',
+      searchType: 'topRankings',
+    );
+
     try {
       final snapshot = await _firestore
           .collection('rankings')
@@ -284,13 +326,32 @@ class SearchRepositoryImpl implements ISearchRepository {
           .map((doc) => RankingFirestore.fromFirestore(doc))
           .toList();
 
+      // ✅ Phase 3: Log query completion
+      SearchLogger.searchQueryCompleted(
+        query: 'rankings',
+        resultCount: rankings.length,
+        queryTime: DateTime.now().difference(startTime),
+      );
+
       return right(rankings);
     } on FirebaseException catch (e) {
+      // ✅ Phase 3: Log Firestore error
+      SearchLogger.searchQueryError(
+        query: 'rankings',
+        error: e,
+      );
+
       return left(SearchFailure.firestoreReadFailed(
         collection: 'rankings',
         message: e.message,
       ));
     } catch (e) {
+      // ✅ Phase 3: Log unexpected error
+      SearchLogger.searchQueryError(
+        query: 'rankings',
+        error: e,
+      );
+
       return left(SearchFailure.unexpected(e.toString()));
     }
   }
@@ -302,6 +363,12 @@ class SearchRepositoryImpl implements ISearchRepository {
     bool singleRecord = false,
   }) {
     try {
+      // ✅ Phase 3: Log search query start
+      SearchLogger.searchQueryStarted(
+        query: 'rankings',
+        searchType: 'queryRankings',
+      );
+
       Query query = _firestore.collection('rankings');
 
       if (queryBuilder != null) {

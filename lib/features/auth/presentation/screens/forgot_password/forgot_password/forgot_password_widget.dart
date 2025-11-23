@@ -1,11 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/core_exports.dart';
-import '/services/error/error_handler_service.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -321,7 +319,6 @@ class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
                       final passwordManagementUseCase = ref.read(passwordManagementUseCaseProvider);
                       final result = await passwordManagementUseCase.sendPasswordResetEmail(
                         email: _emailAddressTextController.text.trim(),
-                        eventId: const Uuid().v4(),
                       );
 
                       if (context.mounted) {

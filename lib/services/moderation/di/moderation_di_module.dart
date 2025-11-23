@@ -8,11 +8,12 @@
 /// - Dependency Injection: Constructor injection for all dependencies
 /// - Clean Architecture: Services depend on abstractions, not concretions
 ///
-/// **Registered Services** (4 total):
+/// **Registered Services** (5 total):
 /// 1. IPerspectiveApiService → PerspectiveApiService (Text toxicity detection)
 /// 2. IGeminiModerationService → GeminiModerationService (AI content validation)
 /// 3. ICloudImageModerationService → CloudImageModerationService (Image moderation)
 /// 4. IAIModerationService → AIModerationService (Orchestrator)
+/// 5. IImageModerationService → ImageModerationService (Creation Feature - Cloud Vision API)
 ///
 /// **Dependencies**:
 /// - FirebaseFunctions (region: asia-northeast3) for Gemini Cloud Functions
@@ -33,11 +34,13 @@ import '../interfaces/i_ai_moderation_service.dart';
 import '../interfaces/i_gemini_moderation_service.dart';
 import '../interfaces/i_cloud_image_moderation_service.dart';
 import '../perspective_api_service.dart'; // Contains IPerspectiveApiService
+import '/features/creation/domain/services/i_image_moderation_service.dart'; // Creation Feature Image Moderation
 
 // ===== Implementations (Adapters) =====
 import '../ai_moderation_service.dart';
 import '../text/gemini_service.dart';
 import '../cloud_image_moderation_service.dart';
+import '../image_moderation_service.dart'; // Creation Feature Image Moderation Implementation
 
 /// Register all Moderation services and dependencies
 ///
@@ -133,6 +136,16 @@ void _registerModerationServices(GetIt getIt) {
     () => AIModerationService(
       perspectiveService: getIt<IPerspectiveApiService>(),
       geminiService: getIt<IGeminiModerationService>(),
+    ),
+  );
+
+  // 5. Image Moderation Service (Creation Feature - Cloud Vision API)
+  //    Depends on: FirebaseFunctions (Cloud Functions region: asia-northeast3)
+  //    Used by: ImageProcessingRepositoryImpl, ModerateContentUseCase, PostCreationRepositoryV2Impl
+  //    Note: Different from CloudImageModerationService - this uses Cloud Vision API for content analysis
+  getIt.registerLazySingleton<IImageModerationService>(
+    () => ImageModerationService(
+      functions: getIt<FirebaseFunctions>(),
     ),
   );
 }

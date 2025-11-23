@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../entities/user_profile.dart';
 import '../../failures/profile_failure.dart';
@@ -36,13 +37,11 @@ class UpdateLanguageUseCase {
   ///
   /// **Parameters**:
   /// - `languageCode`: 언어 코드 (예: 'en', 'ko', 'ja', 'zh', etc.)
-  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
   /// - `Right(UserProfile)`: 업데이트된 프로필
   /// - `Left(ProfileFailure)`: 업데이트 실패
   ///   - `ProfileFailure.validation`: 언어 코드가 비어있음
-  ///   - `ProfileFailure.duplicateOperation`: 이미 처리된 작업 (eventId 중복)
   ///   - `ProfileFailure.unauthenticated`: 인증되지 않은 사용자
   ///   - `ProfileFailure.serverError`: Firestore 에러
   ///   - `ProfileFailure.unknown`: 기타 에러
@@ -53,30 +52,44 @@ class UpdateLanguageUseCase {
   /// - 'ja': 日本語
   /// - 'zh': 中文
   /// - 기타 언어는 AppLocalizations에서 지원하는 언어 코드 사용
+  ///
+  /// **Natural Idempotency**: Current user uid provides natural idempotency
   Future<Either<ProfileFailure, UserProfile>> execute({
     required String languageCode,
-    String? eventId,
   }) async {
+    DevLogger.params({
+      'languageCode': languageCode,
+    }, tag: 'UpdateLanguage');
+
     try {
       // 1. 언어 코드 검증
       if (languageCode.isEmpty) {
+        DevLogger.validation(field: 'languageCode', reason: 'Empty languageCode', tag: 'UpdateLanguage');
         return left(const ProfileFailure.validation('languageCode is empty'));
       }
 
       // 2. 언어 코드 길이 검증 (ISO 639-1: 2자리, ISO 639-2: 3자리)
       if (languageCode.length < 2 || languageCode.length > 3) {
+        DevLogger.validation(field: 'languageCode', reason: 'Invalid length (must be 2-3 chars)', tag: 'UpdateLanguage');
         return left(const ProfileFailure.validation(
             'languageCode must be 2-3 characters'));
       }
 
       // 3. Repository를 통한 업데이트 (이미 Either 반환)
-      return await _repository.updateLanguage(
-        languageCode,
-        eventId: eventId,
+      DevLogger.checkpoint('Calling repository.updateLanguage', tag: 'UpdateLanguage');
+      final result = await _repository.updateLanguage(languageCode);
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'UpdateLanguage'),
+        (profile) => DevLogger.result(isSuccess: true, data: profile.language, tag: 'UpdateLanguage'),
       );
+
+      return result;
     } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'UpdateLanguage');
       return left(e);
     } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'UpdateLanguage');
       return left(ProfileFailure.unknown(e.toString()));
     }
   }

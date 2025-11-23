@@ -180,7 +180,7 @@ Future<bool> isAdminUser(Ref ref, String userId) async {
 /// final currentRoleAsync = ref.watch(currentUserRoleProvider);
 ///
 /// currentRoleAsync.when(
-///   data: (role) => print('My role: $role'),
+///   data: (role) => Logger.info('My role: $role', tag: 'Profile'),
 ///   loading: () => null,
 ///   error: (error, stack) => null,
 /// );

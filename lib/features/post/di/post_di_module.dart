@@ -1,12 +1,12 @@
 /// Post Feature Dependency Injection Module
 ///
 /// **Phase 3: Cache Integration**
-/// **Phase 4: Idempotency Integration**
+/// **Phase 4: Natural Idempotency via Deterministic IDs**
 ///
 /// This module configures dependency injection for the Post feature
 /// following Clean Architecture principles with Firebase-Centric v2.0:
-/// - Services (Cache, Idempotency)
-/// - Repositories (Direct Firestore + Cache + Idempotency)
+/// - Services (Cache)
+/// - Repositories (Direct Firestore + Cache + Natural Idempotency)
 /// - UseCases (Including CRUD operations)
 /// - Providers (Auto-generated Riverpod)
 
@@ -15,7 +15,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ===== Services Layer =====
 import '/services/cache/unified_cache_service.dart';
-import '/services/idempotency/idempotency_service.dart';
 import '../data/services/post_cache_service.dart';
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====
@@ -33,7 +32,7 @@ import '../domain/usecases/get_trending_posts_usecase.dart';
 import '../domain/usecases/get_popular_posts_usecase.dart';
 import '../domain/usecases/get_user_posts_usecase.dart';
 import '../domain/usecases/get_post_detail_usecase.dart';
-// CRUD UseCases (Phase 4: Idempotency)
+// CRUD UseCases
 import '../domain/usecases/create_post_usecase.dart';
 import '../domain/usecases/update_post_usecase.dart';
 import '../domain/usecases/delete_post_usecase.dart';
@@ -67,21 +66,11 @@ void registerPostModule(GetIt getIt) {
 /// **Phase 3: Cache Integration**
 /// - PostCacheService uses UnifiedCacheService
 /// - 3-Layer caching (Memory → Hive → Firestore)
-///
-/// **Phase 4: Idempotency Integration**
-/// - IdempotencyService for duplicate operation prevention
 void _registerServices(GetIt getIt) {
-  // Idempotency Service (Phase 4)
-  if (!getIt.isRegistered<IdempotencyService>()) {
-    getIt.registerLazySingleton<IdempotencyService>(
-      () => IdempotencyService(firestore: FirebaseFirestore.instance),
-    );
-  }
-
   // Post Cache Service
   getIt.registerLazySingleton<PostCacheService>(
     () => PostCacheService(
-      cache: UnifiedCacheService.instance,
+      cache: getIt<UnifiedCacheService>(),  // GetIt을 통한 안전한 접근
     ),
   );
 }
@@ -92,27 +81,26 @@ void _registerServices(GetIt getIt) {
 /// - Direct Firestore SDK usage (no DataSource layer)
 /// - Integrated with PostCacheService
 ///
-/// **Phase 4: Idempotency Integration**
-/// - IdempotencyService injection for CRUD operations
+/// **Phase 4: Natural Idempotency via Deterministic IDs**
+/// - createPost/updatePost/deletePost use deterministic document IDs
+/// - recordInteraction uses userId as document ID
 ///
 /// **Phase 6: Metrics Repository Migration** (2025-11-06)
 /// - IPostMetricsRepository moved from Creation Feature
 /// - Sharded counter support for metrics
 void _registerRepositories(GetIt getIt) {
-  // 1. Post Repository (Firebase-Centric v2.0 + Cache + Idempotency)
+  // 1. Post Repository (Firebase-Centric v2.0 + Cache + Natural Idempotency)
   getIt.registerLazySingleton<IPostDisplayRepositoryV2>(
     () => PostRepositoryImpl(
       firestore: FirebaseFirestore.instance,
       cacheService: getIt<PostCacheService>(),
-      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
-  // 2. Post Metrics Repository (Sharded counters + Idempotency)
+  // 2. Post Metrics Repository (Sharded counters + Natural Idempotency)
   getIt.registerLazySingleton<IPostMetricsRepository>(
     () => PostMetricsRepositoryImpl(
       firestore: FirebaseFirestore.instance,
-      idempotencyService: getIt<IdempotencyService>(),
       // ShardUtils는 자동 생성 (기본값 사용)
     ),
   );
@@ -120,7 +108,7 @@ void _registerRepositories(GetIt getIt) {
 
 /// Register all UseCases (9 total)
 ///
-/// **Phase 4: Added CRUD UseCases**
+/// **Phase 4: Added CRUD UseCases with Natural Idempotency**
 /// - CreatePostUseCase
 /// - UpdatePostUseCase
 /// - DeletePostUseCase
@@ -156,7 +144,7 @@ void _registerUseCases(GetIt getIt) {
     ),
   );
 
-  // 5. Get Post Detail UseCase (Phase 4: Updated with IncrementViewCountUseCase)
+  // 5. Get Post Detail UseCase
   getIt.registerLazySingleton<GetPostDetailUseCase>(
     () => GetPostDetailUseCase(
       postRepository: getIt<IPostDisplayRepositoryV2>(),
@@ -164,7 +152,7 @@ void _registerUseCases(GetIt getIt) {
     ),
   );
 
-  // ===== CRUD UseCases (4) - Phase 4: Idempotency =====
+  // ===== CRUD UseCases (4) - Natural Idempotency =====
 
   // 6. Create Post UseCase
   getIt.registerLazySingleton<CreatePostUseCase>(

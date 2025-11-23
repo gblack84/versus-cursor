@@ -226,18 +226,18 @@ String _$signInWithAppleUseCaseHash() =>
 
 /// Sign In with Phone UseCase Provider
 ///
-/// **역할**: 전화번호 OTP 로그인
+/// **역할**: 전화번호 OTP 로그인 (인증 코드 검증)
 /// **의존성**: IAuthRepository, Firebase Phone Auth
-/// **사용처**: PhoneSignInScreen
+/// **사용처**: PhoneLoginPincodeScreen
 
 @ProviderFor(signInWithPhoneUseCase)
 const signInWithPhoneUseCaseProvider = SignInWithPhoneUseCaseProvider._();
 
 /// Sign In with Phone UseCase Provider
 ///
-/// **역할**: 전화번호 OTP 로그인
+/// **역할**: 전화번호 OTP 로그인 (인증 코드 검증)
 /// **의존성**: IAuthRepository, Firebase Phone Auth
-/// **사용처**: PhoneSignInScreen
+/// **사용처**: PhoneLoginPincodeScreen
 
 final class SignInWithPhoneUseCaseProvider
     extends
@@ -249,9 +249,9 @@ final class SignInWithPhoneUseCaseProvider
     with $Provider<SignInWithPhoneUseCase> {
   /// Sign In with Phone UseCase Provider
   ///
-  /// **역할**: 전화번호 OTP 로그인
+  /// **역할**: 전화번호 OTP 로그인 (인증 코드 검증)
   /// **의존성**: IAuthRepository, Firebase Phone Auth
-  /// **사용처**: PhoneSignInScreen
+  /// **사용처**: PhoneLoginPincodeScreen
   const SignInWithPhoneUseCaseProvider._()
     : super(
         from: null,
@@ -288,6 +288,71 @@ final class SignInWithPhoneUseCaseProvider
 
 String _$signInWithPhoneUseCaseHash() =>
     r'c1b5c2f5801f4a6001ef29348f73c2fe20b477b6';
+
+/// Send Phone OTP UseCase Provider
+///
+/// **역할**: SMS OTP 전송 (전화번호 인증 시작)
+/// **의존성**: IAuthRepository, Firebase Phone Auth
+/// **사용처**: PhoneCreateAccountScreen, PhoneLoginPincodeScreen (resend)
+
+@ProviderFor(sendPhoneOtpUseCase)
+const sendPhoneOtpUseCaseProvider = SendPhoneOtpUseCaseProvider._();
+
+/// Send Phone OTP UseCase Provider
+///
+/// **역할**: SMS OTP 전송 (전화번호 인증 시작)
+/// **의존성**: IAuthRepository, Firebase Phone Auth
+/// **사용처**: PhoneCreateAccountScreen, PhoneLoginPincodeScreen (resend)
+
+final class SendPhoneOtpUseCaseProvider
+    extends
+        $FunctionalProvider<
+          SendPhoneOtpUseCase,
+          SendPhoneOtpUseCase,
+          SendPhoneOtpUseCase
+        >
+    with $Provider<SendPhoneOtpUseCase> {
+  /// Send Phone OTP UseCase Provider
+  ///
+  /// **역할**: SMS OTP 전송 (전화번호 인증 시작)
+  /// **의존성**: IAuthRepository, Firebase Phone Auth
+  /// **사용처**: PhoneCreateAccountScreen, PhoneLoginPincodeScreen (resend)
+  const SendPhoneOtpUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sendPhoneOtpUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sendPhoneOtpUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<SendPhoneOtpUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SendPhoneOtpUseCase create(Ref ref) {
+    return sendPhoneOtpUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SendPhoneOtpUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SendPhoneOtpUseCase>(value),
+    );
+  }
+}
+
+String _$sendPhoneOtpUseCaseHash() =>
+    r'689df11443ac416cd54f5223c47a67d4a5592d34';
 
 /// Sign Up with Email UseCase Provider
 ///

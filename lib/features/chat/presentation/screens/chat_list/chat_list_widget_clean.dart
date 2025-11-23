@@ -43,12 +43,8 @@ class ChatListWidgetClean extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Phase C-2: Auth Provider 사용
-    final currentUserUid = ref.watch(currentUserIdProvider).value ?? '';
-
-    // ✅ Riverpod: StreamProvider를 watch (자동 초기화, 자동 dispose)
-    final asyncChats = ref.watch(chatListStreamProvider(
-      ChatListParams(userId: currentUserUid, limit: 50),
-    ));
+    // ✅ FIX: currentUserIdProvider를 올바르게 처리
+    final currentUserAsync = ref.watch(currentUserIdProvider);
 
     return Scaffold(
       backgroundColor: VersusColors.backgroundPrimary,
@@ -79,9 +75,9 @@ class ChatListWidgetClean extends ConsumerWidget {
       ),
       body: SafeArea(
         top: true,
-        // ✅ AsyncValue.when()으로 loading/error/data 자동 분기
-        child: asyncChats.when(
-          // Loading 상태
+        // ✅ FIX: userId를 먼저 처리하고 그 다음에 채팅 리스트를 로드
+        child: currentUserAsync.when(
+          // userId 로딩 중
           loading: () => Center(
             child: SizedBox(
               width: 50.0,
@@ -93,39 +89,97 @@ class ChatListWidgetClean extends ConsumerWidget {
               ),
             ),
           ),
-          // Error 상태
-          error: (error, stack) {
-            final errorMessage = error.toString();
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline,
-                      size: 48, color: VersusColors.error),
-                  const SizedBox(height: 16),
-                  Text(
-                    '에러: $errorMessage',
-                    style: VersusTextStyles.bodyLarge,
-                  ),
-                ],
-              ),
-            );
-          },
-          // Success 상태
-          data: (chats) {
-            // 빈 목록 처리
-            if (chats.isEmpty) {
-              return _buildEmptyState();
+          // userId 에러
+          error: (error, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline,
+                    size: 48, color: VersusColors.error),
+                const SizedBox(height: 16),
+                Text(
+                  '로그인이 필요합니다',
+                  style: VersusTextStyles.bodyLarge,
+                ),
+              ],
+            ),
+          ),
+          // userId 성공
+          data: (currentUserUid) {
+            // ✅ FIX: userId가 null이거나 비어있는지 확인
+            if (currentUserUid == null || currentUserUid.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.login,
+                        size: 48, color: VersusColors.textSecondary),
+                    const SizedBox(height: 16),
+                    Text(
+                      '로그인이 필요합니다',
+                      style: VersusTextStyles.bodyLarge.copyWith(
+                        color: VersusColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
             }
 
-            // 채팅 목록 표시
-            return ListView.builder(
-              padding: EdgeInsets.zero,
-              scrollDirection: Axis.vertical,
-              itemCount: chats.length,
-              itemBuilder: (context, index) {
-                final chatItem = chats[index];
-                return _buildChatItem(context, chatItem);
+            // ✅ 이제 유효한 userId로 채팅 리스트를 로드
+            final asyncChats = ref.watch(chatListStreamProvider(
+              ChatListParams(userId: currentUserUid, limit: 50),
+            ));
+
+            // ✅ AsyncValue.when()으로 loading/error/data 자동 분기
+            return asyncChats.when(
+              // Loading 상태
+              loading: () => Center(
+                child: SizedBox(
+                  width: 50.0,
+                  height: 50.0,
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      VersusColors.primary,
+                    ),
+                  ),
+                ),
+              ),
+              // Error 상태
+              error: (error, stack) {
+                final errorMessage = error.toString();
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline,
+                          size: 48, color: VersusColors.error),
+                      const SizedBox(height: 16),
+                      Text(
+                        '에러: $errorMessage',
+                        style: VersusTextStyles.bodyLarge,
+                      ),
+                    ],
+                  ),
+                );
+              },
+              // Success 상태
+              data: (chats) {
+                // 빈 목록 처리
+                if (chats.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                // 채팅 목록 표시
+                return ListView.builder(
+                  padding: EdgeInsets.zero,
+                  scrollDirection: Axis.vertical,
+                  itemCount: chats.length,
+                  itemBuilder: (context, index) {
+                    final chatItem = chats[index];
+                    return _buildChatItem(context, chatItem);
+                  },
+                );
               },
             );
           },

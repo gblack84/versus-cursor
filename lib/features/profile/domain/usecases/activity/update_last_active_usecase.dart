@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import '/services/logging/dev_logger.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_profile_repository.dart';
 
@@ -32,8 +33,8 @@ import '../../repositories/i_profile_repository.dart';
 /// final result = await useCase('user123');
 ///
 /// result.fold(
-///   (failure) => print('실패: ${failure.getUserMessage()}'),
-///   (_) => print('최근 활동 시각 업데이트 성공'),
+///   (failure) => ProfileLogger.lastActiveError(error: failure),
+///   (_) => ProfileLogger.lastActiveUpdated(),
 /// );
 /// ```
 class UpdateLastActiveUseCase {
@@ -54,7 +55,25 @@ class UpdateLastActiveUseCase {
   /// - L1 Memory Cache 무효화
   /// - L2 Hive Cache 무효화
   /// - L3 Firestore는 자동 동기화
-  Future<Either<ProfileFailure, void>> call(String userId) {
-    return _repository.updateLastActive(userId);
+  Future<Either<ProfileFailure, void>> call(String userId) async {
+    DevLogger.params({'userId': userId}, tag: 'UpdateLastActive');
+
+    try {
+      DevLogger.checkpoint('Calling repository.updateLastActive', tag: 'UpdateLastActive');
+      final result = await _repository.updateLastActive(userId);
+
+      result.fold(
+        (failure) => DevLogger.result(isSuccess: false, data: failure.toString(), tag: 'UpdateLastActive'),
+        (_) => DevLogger.result(isSuccess: true, data: 'Last active updated', tag: 'UpdateLastActive'),
+      );
+
+      return result;
+    } on ProfileFailure catch (e) {
+      DevLogger.error('ProfileFailure caught', error: e, tag: 'UpdateLastActive');
+      return left(e);
+    } catch (e) {
+      DevLogger.error('Unexpected error', error: e, tag: 'UpdateLastActive');
+      return left(ProfileFailure.unknown(e.toString()));
+    }
   }
 }

@@ -92,7 +92,7 @@ class VoteUIManager {
     required void Function(bool hasVoted) onDismiss,
   }) async {
     if (_isShowingDialog) {
-      DebugHelper.warning('이미 다이얼로그 표시 중', tag: 'VoteUIManager');
+      Logger.warning('이미 다이얼로그 표시 중', tag: 'VoteUIManager');
       return;
     }
 
@@ -139,8 +139,8 @@ class VoteUIManager {
   }) async {
     final notificationId = notification.id;
 
-    DebugHelper.logOnce('notif_show_$notificationId',
-        '투표 요청 표시: ${DebugHelper.maskSensitive(notificationId)}',
+    Logger.logOnce('notif_show_$notificationId',
+        '투표 요청 표시: ${Logger.maskSensitive(notificationId)}',
         tag: 'VoteUIManager', level: LogLevel.INFO);
 
     // 기본 VersusBoxSizeData 생성 (필요한 경우)
@@ -171,7 +171,7 @@ class VoteUIManager {
             showDebugInfo: false,
             authorName: authorName,
             onVote: (selectedOption) async {
-              DebugHelper.info('투표 완료: $selectedOption',
+              Logger.info('투표 완료: $selectedOption',
                   tag: 'VoteUIManager');
 
               // 다이얼로그 먼저 닫기
@@ -196,7 +196,7 @@ class VoteUIManager {
       },
     );
 
-    DebugHelper.info('투표 다이얼로그 닫힘', tag: 'VoteUIManager');
+    Logger.info('투표 다이얼로그 닫힘', tag: 'VoteUIManager');
   }
 
   Future<void> showSimpleNotification({
@@ -208,14 +208,14 @@ class VoteUIManager {
     VoidCallback? onDismiss,
   }) async {
     if (_isShowingDialog) {
-      DebugHelper.warning('이미 다이얼로그 표시 중', tag: 'VoteUIManager');
+      Logger.warning('이미 다이얼로그 표시 중', tag: 'VoteUIManager');
       return;
     }
 
     _isShowingDialog = true;
 
     try {
-      DebugHelper.info('간단한 알림 표시: $title', tag: 'VoteUIManager');
+      Logger.info('간단한 알림 표시: $title', tag: 'VoteUIManager');
 
       await showDialog(
         context: context,
@@ -253,7 +253,7 @@ class VoteUIManager {
         },
       );
 
-      DebugHelper.info('간단한 알림 닫힘', tag: 'VoteUIManager');
+      Logger.info('간단한 알림 닫힘', tag: 'VoteUIManager');
     } finally {
       _isShowingDialog = false;
     }
@@ -318,7 +318,7 @@ class VoteUIManager {
         hasImageB: hasImageB,
       );
     } catch (e) {
-      DebugHelper.warning('VersusBoxSizeData 생성 실패',
+      Logger.warning('VersusBoxSizeData 생성 실패',
           tag: 'VoteUIManager');
       return null;
     }

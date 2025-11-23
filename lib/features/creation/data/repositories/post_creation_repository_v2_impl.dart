@@ -10,7 +10,6 @@ import '../../domain/services/i_target_audience_service.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '/services/cache/creation_cache_service.dart';
-import '/services/idempotency/idempotency_service.dart'; // ✅ Phase 4: Idempotency
 import '/services/logging/logger_service.dart';
 
 // Use ValidationResult from ITargetAudienceService
@@ -49,18 +48,17 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   final IImageProcessingService _imageProcessingService;
   final CollectionReference<Map<String, dynamic>> _postsCollection;
   final CreationCacheService _cacheService; // ✅ Phase 3: Cache Integration
-  final IdempotencyService _idempotencyService; // ✅ Phase 4: Idempotency
+  final FirebaseFirestore _firestore;
 
   PostCreationRepositoryV2Impl({
     ITargetAudienceService? targetAudienceService,
     required IImageProcessingService imageProcessingService,
     required CreationCacheService cacheService, // ✅ Phase 3: DI Injection
-    required IdempotencyService idempotencyService, // ✅ Phase 4: DI Injection
     FirebaseFirestore? firestore,
   }) : _targetAudienceService = targetAudienceService,
        _imageProcessingService = imageProcessingService,
        _cacheService = cacheService,
-       _idempotencyService = idempotencyService,
+       _firestore = firestore ?? FirebaseFirestore.instance,
        _postsCollection = (firestore ?? FirebaseFirestore.instance).collection(
          'posts',
        );
@@ -70,46 +68,35 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   @override
   Future<Either<CreationFailure, String>> createPost({
     required PostCreation post,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      // ✅ Phase 4: Wrap operation in Idempotency Service
-      final postId = await _idempotencyService.executeIdempotent<String>(
-        entityType: 'post_create',
-        entityId: post.id ?? 'draft_${post.userId}',
-        userId: post.userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // ✅ Phase 5: Use Extension to convert PostCreation to Firestore document
-          final data = post.toFirestore();
+      // post.id provides natural idempotency via Firestore set()
+      late String postId;
 
-          // Additional default fields for backward compatibility
-          data['postCreatedDate'] = Timestamp.fromDate(post.createdAt);
+      await _firestore.runTransaction((transaction) async {
+        // ✅ Phase 5: Use Extension to convert PostCreation to Firestore document
+        final data = post.toFirestore();
 
-          // Note: PostVoting and PostMetrics fields will be added by their respective features
-          // through onCreate triggers or after post creation
+        // Additional default fields for backward compatibility
+        data['postCreatedDate'] = Timestamp.fromDate(post.createdAt);
 
-          // Create the post using Transaction
-          final docRef = _postsCollection.doc();
-          transaction.set(docRef, data);
+        // Note: PostVoting and PostMetrics fields will be added by their respective features
+        // through onCreate triggers or after post creation
 
-          return docRef.id;
-        },
-      );
+        // Create the post using deterministic ID (post.id) for idempotency
+        // Firestore set() is idempotent - retries will overwrite, not create duplicates
+        final docRef = post.id != null
+            ? _postsCollection.doc(post.id)
+            : _postsCollection.doc();
+        transaction.set(docRef, data);
+
+        postId = docRef.id;
+      });
 
       // ✅ Phase 3: Delete Draft after successful post creation
       await deleteDraftPost(post.userId);
 
       return right(postId);
-    } on IdempotencyViolation catch (_) {
-      // User attempted same operation with different eventId (real duplicate)
-      return left(
-        CreationFailure.postCreationRepositoryFailed(
-          operation: 'create',
-          // message:'Duplicate post creation attempt: ${e.message}',
-          // code:'idempotency_violation',
-        ),
-      );
     } on FirebaseException {
       return left(
         CreationFailure.postCreationRepositoryFailed(
@@ -297,32 +284,17 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   Future<Either<CreationFailure, Unit>> updatePost({
     required String postId,
     required PostCreation post,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      // ✅ Phase 4: Wrap operation in Idempotency Service
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'post_update',
-        entityId: postId,
-        userId: post.userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          // ✅ Phase 5: Use Extension to convert PostCreation to Firestore document
-          final data = post.toFirestore();
-          final docRef = _postsCollection.doc(postId);
-          transaction.update(docRef, data);
-        },
-      );
+      // postId provides natural idempotency via Firestore update()
+      await _firestore.runTransaction((transaction) async {
+        // ✅ Phase 5: Use Extension to convert PostCreation to Firestore document
+        final data = post.toFirestore();
+        final docRef = _postsCollection.doc(postId);
+        transaction.update(docRef, data);
+      });
+
       return right(unit);
-    } on IdempotencyViolation catch (_) {
-      return left(
-        CreationFailure.postCreationRepositoryFailed(
-          operation: 'update',
-          postId: postId,
-          // message:'Duplicate post update attempt: ${e.message}',
-          // code:'idempotency_violation',
-        ),
-      );
     } on FirebaseException {
       return left(
         CreationFailure.postCreationRepositoryFailed(
@@ -382,41 +354,22 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   @override
   Future<Either<CreationFailure, Unit>> deletePost({
     required String postId,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      // ✅ Phase 4: Wrap operation in Idempotency Service
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'post_delete',
-        entityId: postId,
-        userId:
-            '', // deletePost doesn't have userId directly, use postId as identifier
-        eventId: eventId,
-        operation: (transaction) async {
-          final docRef = _postsCollection.doc(postId);
-          transaction.update(docRef, {
-            'deleted': true,
-            'deletedAt': DateTime.now(),
-          });
-        },
-      );
+      // postId provides natural idempotency via Firestore update()
+      await _firestore.runTransaction((transaction) async {
+        final docRef = _postsCollection.doc(postId);
+        transaction.update(docRef, {
+          'deleted': true,
+          'deletedAt': DateTime.now(),
+        });
+      });
       return right(unit);
-    } on IdempotencyViolation catch (_) {
-      return left(
-        CreationFailure.postCreationRepositoryFailed(
-          operation: 'delete',
-          postId: postId,
-          // message:'Duplicate post delete attempt: ${e.message}',
-          // code:'idempotency_violation',
-        ),
-      );
     } on FirebaseException {
       return left(
         CreationFailure.postCreationRepositoryFailed(
           operation: 'delete',
           postId: postId,
-          // message:'Failed to delete post: ${e.message}',
-          // code:e.code,
         ),
       );
     } catch (_) {
@@ -424,7 +377,6 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         CreationFailure.postCreationRepositoryFailed(
           operation: 'delete',
           postId: postId,
-          // message:'Unexpected error during post deletion: $e',
         ),
       );
     }
@@ -438,48 +390,29 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     required String mediaUrl,
     required String mediaType,
     String? side,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      // ✅ Phase 4: Wrap operation in Idempotency Service
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'media_upload',
-        entityId: postId,
-        userId:
-            '', // Media upload doesn't have userId, use postId as identifier
-        eventId: eventId,
-        operation: (transaction) async {
-          final field = side != null ? 'option$side.images' : 'images';
-          final docRef = _postsCollection.doc(postId);
+      // postId + mediaUrl provides natural idempotency via Firestore update()
+      await _firestore.runTransaction((transaction) async {
+        final field = side != null ? 'option$side.images' : 'images';
+        final docRef = _postsCollection.doc(postId);
 
-          transaction.update(docRef, {
-            field: FieldValue.arrayUnion([
-              {
-                'url': mediaUrl,
-                'type': mediaType,
-                'uploadedAt': DateTime.now(),
-              },
-            ]),
-          });
-        },
-      );
+        transaction.update(docRef, {
+          field: FieldValue.arrayUnion([
+            {
+              'url': mediaUrl,
+              'type': mediaType,
+              'uploadedAt': DateTime.now(),
+            },
+          ]),
+        });
+      });
       return right(unit);
-    } on IdempotencyViolation catch (_) {
-      return left(
-        CreationFailure.postCreationRepositoryFailed(
-          operation: 'uploadMedia',
-          postId: postId,
-          // message:'Duplicate media upload attempt: ${e.message}',
-          // code:'idempotency_violation',
-        ),
-      );
     } on FirebaseException {
       return left(
         CreationFailure.postCreationRepositoryFailed(
           operation: 'uploadMedia',
           postId: postId,
-          // message:'Failed to upload media: ${e.message}',
-          // code:e.code,
         ),
       );
     } catch (_) {
@@ -487,7 +420,6 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         CreationFailure.postCreationRepositoryFailed(
           operation: 'uploadMedia',
           postId: postId,
-          // message:'Unexpected error during media upload: $e',
         ),
       );
     }
@@ -549,40 +481,22 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   Future<Either<CreationFailure, Unit>> updatePostStatus({
     required String postId,
     required String status,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      // ✅ Phase 4: Wrap operation in Idempotency Service
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'post_status_update',
-        entityId: postId,
-        userId: '', // updatePostStatus doesn't have userId directly
-        eventId: eventId,
-        operation: (transaction) async {
-          final docRef = _postsCollection.doc(postId);
-          transaction.update(docRef, {
-            'status': status,
-            'updatedAt': DateTime.now(),
-          });
-        },
-      );
+      // postId provides natural idempotency via Firestore update()
+      await _firestore.runTransaction((transaction) async {
+        final docRef = _postsCollection.doc(postId);
+        transaction.update(docRef, {
+          'status': status,
+          'updatedAt': DateTime.now(),
+        });
+      });
       return right(unit);
-    } on IdempotencyViolation catch (_) {
-      return left(
-        CreationFailure.postCreationRepositoryFailed(
-          operation: 'updateStatus',
-          postId: postId,
-          // message:'Duplicate status update attempt: ${e.message}',
-          // code:'idempotency_violation',
-        ),
-      );
     } on FirebaseException {
       return left(
         CreationFailure.postCreationRepositoryFailed(
           operation: 'updateStatus',
           postId: postId,
-          // message:'Failed to update status: ${e.message}',
-          // code:e.code,
         ),
       );
     } catch (_) {
@@ -590,7 +504,6 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         CreationFailure.postCreationRepositoryFailed(
           operation: 'updateStatus',
           postId: postId,
-          // message:'Unexpected error during status update: $e',
         ),
       );
     }
@@ -600,40 +513,22 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   Future<Either<CreationFailure, Unit>> markPostAsProcessed({
     required String postId,
     DateTime? processedAt,
-    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      // ✅ Phase 4: Wrap operation in Idempotency Service
-      await _idempotencyService.executeIdempotent<void>(
-        entityType: 'post_processing_mark',
-        entityId: postId,
-        userId: '', // markPostAsProcessed doesn't have userId directly
-        eventId: eventId,
-        operation: (transaction) async {
-          final docRef = _postsCollection.doc(postId);
-          transaction.update(docRef, {
-            'processingStatus': 'completed',
-            'processedAt': processedAt ?? DateTime.now(),
-          });
-        },
-      );
+      // postId provides natural idempotency via Firestore update()
+      await _firestore.runTransaction((transaction) async {
+        final docRef = _postsCollection.doc(postId);
+        transaction.update(docRef, {
+          'processingStatus': 'completed',
+          'processedAt': processedAt ?? DateTime.now(),
+        });
+      });
       return right(unit);
-    } on IdempotencyViolation catch (_) {
-      return left(
-        CreationFailure.postCreationRepositoryFailed(
-          operation: 'markProcessed',
-          postId: postId,
-          // message:'Duplicate mark processed attempt: ${e.message}',
-          // code:'idempotency_violation',
-        ),
-      );
     } on FirebaseException {
       return left(
         CreationFailure.postCreationRepositoryFailed(
           operation: 'markProcessed',
           postId: postId,
-          // message:'Failed to mark as processed: ${e.message}',
-          // code:e.code,
         ),
       );
     } catch (_) {
@@ -641,7 +536,6 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         CreationFailure.postCreationRepositoryFailed(
           operation: 'markProcessed',
           postId: postId,
-          // message:'Unexpected error marking as processed: $e',
         ),
       );
     }
@@ -987,61 +881,53 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
   @override
   Future<Either<CreationFailure, String>> createContent(
-    PostCreation post, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  }) async {
-    // Direct delegation to createPost with eventId
-    return createPost(post: post, eventId: eventId);
+    PostCreation post,
+  ) async {
+    // Direct delegation to createPost (natural idempotency via post.id)
+    return createPost(post: post);
   }
 
   @override
   Future<Either<CreationFailure, Unit>> updateContent(
     String contentId,
-    PostCreation post, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  }) async {
-    // Direct delegation to updatePost with eventId
-    return updatePost(postId: contentId, post: post, eventId: eventId);
+    PostCreation post,
+  ) async {
+    // Direct delegation to updatePost (natural idempotency via contentId)
+    return updatePost(postId: contentId, post: post);
   }
 
   @override
   Future<Either<CreationFailure, Unit>> deleteContent(
-    String contentId, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  }) async {
-    return deletePost(postId: contentId, eventId: eventId);
+    String contentId,
+  ) async {
+    return deletePost(postId: contentId);
   }
 
   @override
   Future<Either<CreationFailure, Unit>> publishContent(
-    String contentId, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  }) async {
+    String contentId,
+  ) async {
     return updatePostStatus(
       postId: contentId,
       status: 'published',
-      eventId: eventId,
     );
   }
 
   @override
   Future<Either<CreationFailure, Unit>> saveDraft(
     String contentId,
-    PostCreation post, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  }) async {
+    PostCreation post,
+  ) async {
     // Update post and set status to draft - need to chain Either operations
     final updateResult = await updatePost(
       postId: contentId,
       post: post,
-      eventId: eventId,
     );
     if (updateResult.isLeft()) return updateResult;
 
     return updatePostStatus(
       postId: contentId,
       status: 'draft',
-      eventId: eventId,
     );
   }
 

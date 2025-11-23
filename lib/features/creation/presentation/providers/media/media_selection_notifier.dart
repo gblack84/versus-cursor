@@ -51,9 +51,7 @@ class MediaSelection extends _$MediaSelection {
     required List<AssetEntity> assets,
   }) async {
     // Convert AssetEntity to File
-    final files = await Future.wait(
-      assets.map((asset) => asset.file),
-    );
+    final files = await Future.wait(assets.map((asset) => asset.file));
     final validFiles = files.whereType<File>().toList();
 
     if (validFiles.isEmpty) return;
@@ -152,7 +150,9 @@ class MediaSelection extends _$MediaSelection {
         localPathsA: newPaths,
         aspectRatiosA: newRatios,
       );
-    } else if (box == 'B' && index >= 0 && index < state.selectedFilesB.length) {
+    } else if (box == 'B' &&
+        index >= 0 &&
+        index < state.selectedFilesB.length) {
       final newFiles = List<File>.from(state.selectedFilesB);
       final newPaths = List<String>.from(state.localPathsB);
       final newRatios = List<double>.from(state.aspectRatiosB);
@@ -171,10 +171,7 @@ class MediaSelection extends _$MediaSelection {
 
   /// Remove image at index
   /// 인덱스 위치의 이미지 제거
-  void removeAtIndex({
-    required String box,
-    required int index,
-  }) {
+  void removeAtIndex({required String box, required int index}) {
     if (box == 'A' && index >= 0 && index < state.selectedFilesA.length) {
       final newFiles = List<File>.from(state.selectedFilesA);
       final newPaths = List<String>.from(state.localPathsA);
@@ -207,7 +204,9 @@ class MediaSelection extends _$MediaSelection {
         uploadedUrlsA: newUrls,
         currentIndexA: newCurrentIndex,
       );
-    } else if (box == 'B' && index >= 0 && index < state.selectedFilesB.length) {
+    } else if (box == 'B' &&
+        index >= 0 &&
+        index < state.selectedFilesB.length) {
       final newFiles = List<File>.from(state.selectedFilesB);
       final newPaths = List<String>.from(state.localPathsB);
       final newRatios = List<double>.from(state.aspectRatiosB);
@@ -250,8 +249,10 @@ class MediaSelection extends _$MediaSelection {
     required int newIndex,
   }) {
     if (box == 'A') {
-      if (oldIndex >= 0 && oldIndex < state.selectedFilesA.length &&
-          newIndex >= 0 && newIndex < state.selectedFilesA.length) {
+      if (oldIndex >= 0 &&
+          oldIndex < state.selectedFilesA.length &&
+          newIndex >= 0 &&
+          newIndex < state.selectedFilesA.length) {
         // Create mutable copies
         final newFiles = List<File>.from(state.selectedFilesA);
         final newPaths = List<String>.from(state.localPathsA);
@@ -288,8 +289,10 @@ class MediaSelection extends _$MediaSelection {
         );
       }
     } else {
-      if (oldIndex >= 0 && oldIndex < state.selectedFilesB.length &&
-          newIndex >= 0 && newIndex < state.selectedFilesB.length) {
+      if (oldIndex >= 0 &&
+          oldIndex < state.selectedFilesB.length &&
+          newIndex >= 0 &&
+          newIndex < state.selectedFilesB.length) {
         // Create mutable copies
         final newFiles = List<File>.from(state.selectedFilesB);
         final newPaths = List<String>.from(state.localPathsB);
@@ -330,10 +333,7 @@ class MediaSelection extends _$MediaSelection {
 
   /// Move image to front (for thumbnail selection)
   /// 이미지를 맨 앞으로 이동 (썸네일 선택)
-  void moveToFront({
-    required String box,
-    required int index,
-  }) {
+  void moveToFront({required String box, required int index}) {
     if (index > 0) {
       reorderImages(box: box, oldIndex: index, newIndex: 0);
     }
@@ -341,23 +341,19 @@ class MediaSelection extends _$MediaSelection {
 
   /// Update current viewing index
   /// 현재 보고 있는 인덱스 업데이트
-  void updateCurrentIndex({
-    required String box,
-    required int index,
-  }) {
+  void updateCurrentIndex({required String box, required int index}) {
     if (box == 'A' && index >= 0 && index < state.selectedFilesA.length) {
       state = state.copyWith(currentIndexA: index);
-    } else if (box == 'B' && index >= 0 && index < state.selectedFilesB.length) {
+    } else if (box == 'B' &&
+        index >= 0 &&
+        index < state.selectedFilesB.length) {
       state = state.copyWith(currentIndexB: index);
     }
   }
 
   /// Update uploaded URLs after successful upload
   /// 업로드 성공 후 URL 업데이트
-  void updateUploadedUrls({
-    required String box,
-    required List<String> urls,
-  }) {
+  void updateUploadedUrls({required String box, required List<String> urls}) {
     if (box == 'A') {
       state = state.copyWith(uploadedUrlsA: List.from(urls));
     } else {

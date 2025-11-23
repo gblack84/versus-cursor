@@ -18,7 +18,7 @@ class FileSizeUtils {
       }
       return 0;
     } catch (e) {
-      print('Error getting local file size: $e');
+      // Error getting local file size - return 0
       return 0;
     }
   }
@@ -32,7 +32,7 @@ class FileSizeUtils {
       }
       return false;
     } catch (e) {
-      print('Error checking file size: $e');
+      // Error checking file size - return false
       return false;
     }
   }
@@ -51,7 +51,7 @@ class FileSizeUtils {
       final metadata = await ref.getMetadata();
       return metadata.size ?? 0;
     } catch (e) {
-      print('Error getting storage file size: $e');
+      // Error getting storage file size - return 0
       return 0;
     }
   }
@@ -91,7 +91,7 @@ class FileSizeUtils {
 
       return '';
     } catch (e) {
-      print('Error extracting storage path from URL: $e');
+      // Error extracting storage path from URL - return empty string
       return '';
     }
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import '/core/types/layout_type.dart';
 import '/core/utils/ui/box_sizing/config/box_calculator_config.dart';
 
@@ -81,16 +80,6 @@ class UnifiedBoxCalculator {
     } else if (hasImageA && hasImageB) {
       // 두 이미지 모두 있으면 평균 높이 사용
       unifiedHeight = (heightA + heightB) / 2;
-
-      // 디버그 출력
-      _printDebugInfo(
-        containerType: containerType,
-        layoutType: layoutType,
-        heightA: heightA,
-        heightB: heightB,
-        unifiedHeight: unifiedHeight,
-        boxWidth: boxWidth,
-      );
     } else {
       // 하나만 있으면 해당 높이 사용
       unifiedHeight = hasImageA ? heightA : heightB;
@@ -108,13 +97,6 @@ class UnifiedBoxCalculator {
         // 비율을 유지하면서 전체 크기 조정
         final scalingFactor = maxAvailableHeight / totalRequiredHeight;
         unifiedHeight *= scalingFactor;
-
-        if (!kReleaseMode) {
-          print('[UnifiedBoxCalculator] 세로 배치 스케일링 적용:');
-          print('  - 필요 높이: ${totalRequiredHeight.toStringAsFixed(1)}px');
-          print('  - 최대 높이: ${maxAvailableHeight.toStringAsFixed(1)}px');
-          print('  - 스케일링: ${(scalingFactor * 100).toStringAsFixed(1)}%');
-        }
       }
     }
 
@@ -237,24 +219,7 @@ class UnifiedBoxCalculator {
     // 6. 높이 제한 적용
     unifiedHeight = unifiedHeight.clamp(minHeight, maxHeight);
 
-    // 7. 디버그 정보
-    if (!kReleaseMode) {
-      print('\n[UnifiedBoxCalculator] 메시지 카드 계산:');
-      print('  버블 너비: ${bubbleWidth.toStringAsFixed(1)}px');
-      print('  레이아웃: ${layoutType.name}');
-      print('  박스 너비: ${boxWidth.toStringAsFixed(1)}px');
-      print('  최대 높이: ${maxHeight.toStringAsFixed(1)}px');
-      print('  계산된 높이 A: ${heightA.toStringAsFixed(1)}px');
-      print('  계산된 높이 B: ${heightB.toStringAsFixed(1)}px');
-      print('  통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
-
-      if (layoutType == LayoutType.vertical && hasImageA && hasImageB) {
-        final totalHeight = (unifiedHeight * 2) + spacing;
-        print('  세로 전체 높이: ${totalHeight.toStringAsFixed(1)}px (최대 350px)');
-      }
-    }
-
-    // 8. 최종 크기 반환
+    // 7. 최종 크기 반환
     final sizeA = hasImageA ? Size(boxWidth, unifiedHeight) : Size.zero;
     final sizeB = hasImageB ? Size(boxWidth, unifiedHeight) : Size.zero;
 
@@ -375,24 +340,7 @@ class UnifiedBoxCalculator {
     // 6. 높이 제한 적용
     unifiedHeight = unifiedHeight.clamp(minHeight, maxHeight);
 
-    // 7. 디버그 정보
-    if (!kReleaseMode) {
-      print('\n[UnifiedBoxCalculator] 알림 다이얼로그 계산:');
-      print('  다이얼로그 너비: ${dialogWidth.toStringAsFixed(1)}px');
-      print('  레이아웃: ${layoutType.name}');
-      print('  박스 너비: ${boxWidth.toStringAsFixed(1)}px (95% 사용)');
-      print('  최대 높이: ${maxHeight.toStringAsFixed(1)}px');
-      print('  계산된 높이 A: ${heightA.toStringAsFixed(1)}px');
-      print('  계산된 높이 B: ${heightB.toStringAsFixed(1)}px');
-      print('  통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
-
-      if (layoutType == LayoutType.vertical && hasImageA && hasImageB) {
-        final totalHeight = (unifiedHeight * 2) + spacing;
-        print('  세로 전체 높이: ${totalHeight.toStringAsFixed(1)}px (최대 350px)');
-      }
-    }
-
-    // 9. 최종 크기 반환
+    // 7. 최종 크기 반환
     final sizeA = hasImageA ? Size(boxWidth, unifiedHeight) : Size.zero;
     final sizeB = hasImageB ? Size(boxWidth, unifiedHeight) : Size.zero;
 
@@ -427,28 +375,6 @@ class UnifiedBoxCalculator {
     );
   }
 
-  /// 디버그 정보 출력
-  static void _printDebugInfo({
-    required String containerType,
-    required LayoutType layoutType,
-    required double heightA,
-    required double heightB,
-    required double unifiedHeight,
-    required double boxWidth,
-  }) {
-    // 프로덕션 빌드에서는 로그 비활성화
-    if (kReleaseMode) return;
-
-    print('\n[UnifiedBoxCalculator] 계산 결과:');
-    print('  컨테이너: $containerType');
-    print('  레이아웃: ${layoutType.name}');
-    print('  박스 너비: ${boxWidth.toStringAsFixed(1)}px');
-    print('  A 개별 높이: ${heightA.toStringAsFixed(1)}px');
-    print('  B 개별 높이: ${heightB.toStringAsFixed(1)}px');
-    print('  통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
-    print('  높이 차이: ${(heightA - heightB).abs().toStringAsFixed(1)}px');
-    print('  평균 사용: ✅\n');
-  }
 }
 
 /// 박스 크기 계산 결과

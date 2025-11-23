@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import '../models/ranking.dart';
 import '../repositories/i_search_repository.dart';
 import '../failures/search_failure.dart';
+import '/services/logging/dev_logger.dart';
 
 /// Parameters for streaming rankings
 ///
@@ -37,10 +38,37 @@ class StreamRankingsUseCase {
   /// - Left: SearchFailure when error occurs
   /// - Right: List<Ranking> when successful
   Stream<Either<SearchFailure, List<Ranking>>> call(StreamRankingsParams params) {
+    DevLogger.params({
+      'queryBuilder': params.queryBuilder != null ? 'provided' : 'null',
+      'limit': params.limit,
+      'singleRecord': params.singleRecord,
+    }, tag: 'StreamRankings');
+
+    DevLogger.checkpoint('Starting rankings stream watch', tag: 'StreamRankings');
+
     return repository.queryRankings(
       queryBuilder: params.queryBuilder,
       limit: params.limit,
       singleRecord: params.singleRecord,
-    );
+    ).map((either) {
+      return either.fold(
+        (failure) {
+          DevLogger.result(
+            isSuccess: false,
+            data: failure.toString(),
+            tag: 'StreamRankings',
+          );
+          return left(failure);
+        },
+        (rankings) {
+          DevLogger.result(
+            isSuccess: true,
+            data: {'count': rankings.length},
+            tag: 'StreamRankings',
+          );
+          return right(rankings);
+        },
+      );
+    });
   }
 }

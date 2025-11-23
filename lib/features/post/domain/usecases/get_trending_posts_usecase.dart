@@ -1,4 +1,6 @@
 import 'package:fpdart/fpdart.dart';
+
+import '/services/logging/dev_logger.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';
 import '../failures/post_failure.dart';
@@ -33,18 +35,38 @@ class GetTrendingPostsUseCase {
   Future<Either<PostFailure, List<PostDisplay>>> execute({
     int limit = 20,
   }) async {
+    DevLogger.params({'limit': limit}, tag: 'GetTrendingPosts');
+
     // Validate input
     if (limit <= 0) {
+      DevLogger.validation(
+        field: 'limit',
+        reason: 'Limit must be greater than 0',
+        tag: 'GetTrendingPosts',
+      );
       return left(const PostFailure.invalidInput(field: 'limit'));
     }
 
     try {
       // Get trending posts from repository
+      DevLogger.checkpoint('Fetching trending posts from repository', tag: 'GetTrendingPosts');
       final stream = _postRepository.getTrendingPosts(limit: limit);
       final posts = await stream.first;
 
+      DevLogger.result(
+        isSuccess: true,
+        data: '${posts.length} trending posts fetched',
+        tag: 'GetTrendingPosts',
+      );
+
       return right(posts);
-    } catch (error) {
+    } catch (error, stackTrace) {
+      DevLogger.error(
+        'Failed to load trending posts',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'GetTrendingPosts',
+      );
       return left(PostFailure.queryFailed(
         reason: 'Failed to load trending posts: $error',
       ));
@@ -65,16 +87,29 @@ class GetTrendingPostsUseCase {
   Stream<List<PostDisplay>> getTrendingStream({
     int limit = 20,
   }) {
+    DevLogger.params({'limit': limit}, tag: 'GetTrendingStream');
+
     // Validate input
     if (limit <= 0) {
+      DevLogger.validation(
+        field: 'limit',
+        reason: 'Limit must be greater than 0',
+        tag: 'GetTrendingStream',
+      );
       return Stream.error(
         const PostFailure.invalidInput(field: 'limit'),
       );
     }
 
     try {
+      DevLogger.checkpoint('Starting trending posts stream', tag: 'GetTrendingStream');
       return _postRepository.getTrendingPosts(limit: limit);
     } catch (error) {
+      DevLogger.error(
+        'Failed to create trending stream',
+        error: error,
+        tag: 'GetTrendingStream',
+      );
       return Stream.error(
         PostFailure.queryFailed(
           reason: 'Failed to create trending stream: $error',

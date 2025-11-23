@@ -36,7 +36,6 @@
 
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 
 class ShardUtils {
   /// 샤드 개수 (256개 고정)
@@ -74,10 +73,6 @@ class ShardUtils {
     }
 
     final shardId = hash % shardCount;
-
-    if (kDebugMode) {
-      print('[ShardUtils] userId: $userId → shard: $shardId');
-    }
 
     return shardId;
   }
@@ -138,11 +133,6 @@ class ShardUtils {
       },
       SetOptions(merge: true),
     );
-
-    if (kDebugMode) {
-      print(
-          '[ShardUtils] ✨ 샤드 증가: $counterType/$entityId/$field +$incrementBy');
-    }
   }
 
   /// 모든 샤드 합계 계산 (읽기용)
@@ -175,10 +165,6 @@ class ShardUtils {
           totals[key] = (totals[key] ?? 0) + value;
         }
       });
-    }
-
-    if (kDebugMode) {
-      print('[ShardUtils] 📊 집계 결과: $counterType/$entityId → $totals');
     }
 
     return totals;
@@ -228,9 +214,5 @@ class ShardUtils {
     }
 
     await batch.commit();
-
-    if (kDebugMode) {
-      print('[ShardUtils] 🧹 샤드 정리 완료: $counterType/$entityId');
-    }
   }
 }

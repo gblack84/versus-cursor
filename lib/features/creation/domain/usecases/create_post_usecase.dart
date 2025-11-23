@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
-import 'package:uuid/uuid.dart'; // ✅ Phase 4: UUID for idempotency
 import '../entities/post_creation.dart';
 import '../entities/target_audience.dart';
 import '../failures/creation_failure.dart';
@@ -19,11 +18,9 @@ import '/services/logging/dev_logger.dart';
 ///
 /// Phase 1.3: Service dependencies removed, now using Repository methods
 /// Phase 6: Converted to Either<Failure, T> pattern with fold/map composition
-/// Phase 4: Idempotency Pattern - UUID generation for duplicate prevention
 class CreatePostUseCase {
   final IPostCreationRepositoryV2 _postRepository;
   final IMediaRepository _mediaRepository;
-  final Uuid _uuid = const Uuid(); // ✅ Phase 4: UUID generator
 
   CreatePostUseCase({
     required IPostCreationRepositoryV2 postRepository,
@@ -201,15 +198,10 @@ class CreatePostUseCase {
       onProgress?.call(0.9);
       DevLogger.checkpoint('Progress: 90% - Post entity created', tag: 'CreatePost');
 
-      // ✅ Phase 4: Generate eventId for idempotency
-      final eventId = _uuid.v4();
-      DevLogger.checkpoint('Generated eventId for idempotency: $eventId', tag: 'CreatePost');
-
       // ✅ Phase 6: Checkpoint 8 - Save post to Firestore
       DevLogger.checkpoint('Step 8: Save post to Firestore', tag: 'CreatePost');
       final createResult = await _postRepository.createPost(
         post: post,
-        eventId: eventId, // ✅ Phase 4: UUID for idempotency
       );
 
       // Early Return on failure
@@ -229,7 +221,6 @@ class CreatePostUseCase {
           'postId': postId,
           'urlsA_count': urlsA.length,
           'urlsB_count': urlsB.length,
-          'eventId': eventId,
         },
         tag: 'CreatePost',
       );

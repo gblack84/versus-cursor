@@ -20,7 +20,7 @@ import '../../domain/ports/i_ai_service.dart';
 ///
 /// final stream = aiService.sendQuery('Hello AI');
 /// await for (final chunk in stream) {
-///   print('AI Response: $chunk');
+///   ChatLogger.aiResponseChunk(chunk: chunk);
 /// }
 /// ```
 class GeminiAIService implements IAIService {
@@ -64,7 +64,7 @@ class GeminiAIService implements IAIService {
   /// ```dart
   /// final stream = await aiService.sendQuery('Tell me a joke');
   /// await for (final chunk in stream) {
-  ///   print(chunk); // "Why did the...", "chicken cross...", "the road?"
+  ///   ChatLogger.aiResponseChunk(chunk: chunk); // "Why did the...", "chicken cross...", "the road?"
   /// }
   /// ```
   @override
